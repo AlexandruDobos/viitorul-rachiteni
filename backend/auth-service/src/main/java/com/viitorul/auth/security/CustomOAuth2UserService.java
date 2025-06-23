@@ -28,14 +28,21 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         // Salvează userul în DB dacă nu există deja
         User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .email(email)
-                                .name(oAuth2User.getAttribute("name"))
-                                .provider(AuthProvider.valueOf(provider.toUpperCase()))
-                                .registeredAt(LocalDateTime.now())
-                                .build()
-                ));
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .email(email)
+                            .name(oAuth2User.getAttribute("name"))
+                            .provider(AuthProvider.valueOf(provider.toUpperCase()))
+                            .registeredAt(LocalDateTime.now())
+                            .build();
+
+                    // ✅ Verificare de siguranță pentru useri sociali
+                    if (newUser.getProvider() != AuthProvider.LOCAL && newUser.getPasswordHash() != null) {
+                        throw new IllegalStateException("Social login user should not have a password");
+                    }
+
+                    return userRepository.save(newUser);
+                });
 
         return oAuth2User;
     }

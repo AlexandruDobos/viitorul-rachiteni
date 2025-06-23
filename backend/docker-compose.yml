@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./auth-service/.env
+
+  user-service:
+    build: ./user-service
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./user-service/.env
+
+  donations-service:
+    build: ./donations-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./donations-service/.env
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./gateway/.env

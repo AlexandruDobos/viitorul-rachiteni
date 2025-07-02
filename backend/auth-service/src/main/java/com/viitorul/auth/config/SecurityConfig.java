@@ -30,9 +30,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/oauth2/**").permitAll()
                         .anyRequest().authenticated()
                 )
-//                .oauth2Login(oauth2 -> oauth2
-//                        .successHandler(oAuth2SuccessHandler)
-//                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler)
+                )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

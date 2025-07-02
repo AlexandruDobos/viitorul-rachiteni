@@ -3,6 +3,8 @@ package com.viitorul.auth.security;
 import com.viitorul.auth.entity.User;
 import com.viitorul.auth.entity.enums.AuthProvider;
 import com.viitorul.auth.repository.UserRepository;
+import com.viitorul.auth.service.EventPublisher;
+import com.viitorul.common.events.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -12,12 +14,14 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
 
     private final UserRepository userRepository;
+    private final EventPublisher eventPublisher;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -26,23 +30,24 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String email = oAuth2User.getAttribute("email");
         String provider = userRequest.getClientRegistration().getRegistrationId(); // google/facebook
 
-        // Salvează userul în DB dacă nu există deja
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    User newUser = User.builder()
-                            .email(email)
-                            .name(oAuth2User.getAttribute("name"))
-                            .provider(AuthProvider.valueOf(provider.toUpperCase()))
-                            .registeredAt(LocalDateTime.now())
-                            .build();
+        Optional<User> existingUser = userRepository.findByEmail(email);
 
-                    // ✅ Verificare de siguranță pentru useri sociali
-                    if (newUser.getProvider() != AuthProvider.LOCAL && newUser.getPasswordHash() != null) {
-                        throw new IllegalStateException("Social login user should not have a password");
-                    }
+        if (existingUser.isPresent()) {
+            return oAuth2User;
+        }
 
-                    return userRepository.save(newUser);
-                });
+        User newUser = User.builder()
+                .email(email)
+                .name(oAuth2User.getAttribute("name"))
+                .provider(AuthProvider.valueOf(provider.toUpperCase()))
+                .registeredAt(LocalDateTime.now())
+                .build();
+
+        userRepository.save(newUser);
+
+        // ✅ Trimite evenimentul de înregistrare
+        UserRegisteredEvent event = new UserRegisteredEvent(newUser.getName(), newUser.getEmail());
+        eventPublisher.sendUserRegisteredEvent(event);
 
         return oAuth2User;
     }

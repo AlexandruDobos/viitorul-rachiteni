@@ -1,4 +1,4 @@
-package com.viitorul.auth.api;
+package com.viitorul.auth.controller;
 
 import com.viitorul.auth.dto.AuthResponse;
 import com.viitorul.auth.dto.LoginRequest;

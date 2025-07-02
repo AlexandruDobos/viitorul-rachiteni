@@ -1,10 +1,19 @@
-# Dockerfile
-FROM eclipse-temurin:17-jdk-alpine
+# Stage 1: build
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+WORKDIR /build
 
-WORKDIR /app
-
+# Copiază tot proiectul multi-modul
 COPY . .
 
-RUN ./mvnw clean package -DskipTests
+# Compilează din root ca să includă și common
+RUN mvn clean install -DskipTests
 
-CMD ["java", "-jar", "$(find target -name \"*.jar\" | head -n 1)"]
+# Stage 2: run
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
+
+# Înlocuiește `user-service` cu numele corect al folderului tău
+COPY --from=build /build/donations-service/target/*.jar app.jar
+
+EXPOSE 8083
+ENTRYPOINT ["java", "-jar", "app.jar"]

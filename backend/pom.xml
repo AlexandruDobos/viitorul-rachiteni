@@ -14,7 +14,7 @@
         <module>common</module>
         <module>auth-service</module>
         <module>email-service</module>
-        <module>user-service</module>
+        <module>app-service</module>
         <module>donations-service</module>
         <module>gateway</module>
     </modules>

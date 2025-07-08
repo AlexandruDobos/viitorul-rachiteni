@@ -63,7 +63,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<mainClass>com.viitorul.user.UserServiceApplication</mainClass>
+					<mainClass>com.viitorul.user.AppServiceApplication</mainClass>
 				</configuration>
 			</plugin>
 

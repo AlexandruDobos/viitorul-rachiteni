@@ -13,7 +13,7 @@ FROM eclipse-temurin:21-jdk
 WORKDIR /app
 
 # Înlocuiește `user-service` cu numele corect al folderului tău
-COPY --from=build /build/user-service/target/*.jar app.jar
+COPY --from=build /build/app-service/target/*.jar app.jar
 
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]

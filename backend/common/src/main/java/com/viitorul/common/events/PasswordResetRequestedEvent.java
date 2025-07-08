@@ -1,16 +1,16 @@
 package com.viitorul.common.events;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
-@Data
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
-public class UserRegisteredEvent implements Serializable {
+@NoArgsConstructor
+public class PasswordResetRequestedEvent implements Serializable {
     private String name;
     private String email;
-    private String verificationToken;
+    private String resetToken;
 }

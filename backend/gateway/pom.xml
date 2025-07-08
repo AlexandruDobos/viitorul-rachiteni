@@ -16,13 +16,13 @@
 	<description>API Gateway for routing and security</description>
 
 	<properties>
-		<spring-cloud.version>2025.0.0</spring-cloud.version>
+		<spring-cloud.version>2022.0.5</spring-cloud.version> <!-- ✅ compatibil -->
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
+			<artifactId>spring-cloud-starter-gateway</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -92,7 +92,6 @@
 					<mainClass>com.viitorul.gateway.GatewayApplication</mainClass>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
 

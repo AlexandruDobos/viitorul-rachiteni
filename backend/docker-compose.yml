@@ -12,14 +12,14 @@ services:
     depends_on:
       - rabbitmq
 
-  user-service:
+  app-service:
     build:
       context: .
-      dockerfile: ./user-service/Dockerfile
+      dockerfile: ./app-service/Dockerfile
     ports:
       - "8082:8082"
     env_file:
-      - ./user-service/.env
+      - ./app-service/.env
 
   donations-service:
     build:

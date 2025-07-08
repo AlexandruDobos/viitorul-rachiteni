@@ -4,6 +4,7 @@ import com.viitorul.auth.entity.User;
 import com.viitorul.auth.entity.enums.AuthProvider;
 import com.viitorul.auth.repository.UserRepository;
 import com.viitorul.auth.service.EventPublisher;
+import com.viitorul.common.events.UserAccountActivatedEvent;
 import com.viitorul.common.events.UserRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -38,6 +39,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         User newUser = User.builder()
                 .email(email)
+                .emailVerified(true)
                 .name(oAuth2User.getAttribute("name"))
                 .provider(AuthProvider.valueOf(provider.toUpperCase()))
                 .registeredAt(LocalDateTime.now())
@@ -45,9 +47,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
 
         userRepository.save(newUser);
 
-        // ✅ Trimite evenimentul de înregistrare
-        UserRegisteredEvent event = new UserRegisteredEvent(newUser.getName(), newUser.getEmail());
-        eventPublisher.sendUserRegisteredEvent(event);
+        //trimit mail de bun venit
+        eventPublisher.sendUserAccountActivatedEvent(new UserAccountActivatedEvent(
+                newUser.getName(),
+                newUser.getEmail()
+        ));
 
         return oAuth2User;
     }

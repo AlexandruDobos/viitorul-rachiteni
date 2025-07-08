@@ -31,7 +31,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
     private String providerId;
-
+    private boolean emailVerified;
     private LocalDateTime registeredAt;
     private LocalDateTime lastLoginAt;
 }

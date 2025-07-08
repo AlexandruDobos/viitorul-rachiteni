@@ -19,6 +19,9 @@ spring:
               - OPTIONS
             allowedHeaders:
               - "*"
+            exposedHeaders:
+              - "Authorization"
+              - "Set-Cookie"
             allowCredentials: true
 
       routes:

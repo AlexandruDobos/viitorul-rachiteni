@@ -37,6 +37,10 @@ public class AuthController {
     private final AuthService authService;
     private final JwtUtils jwtUtils;
 
+    // in AuthController
+    @Value("${FRONTEND_URL:http://localhost:5173}")
+    private String frontendUrl;
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
@@ -95,9 +99,6 @@ public class AuthController {
         ));
     }
 
-    // in AuthController
-    @Value("${app.frontend.url:http://localhost:5173}") // setează ce folosești tu
-    private String frontendUrl;
 
     @GetMapping("/confirm")
     public void confirm(@RequestParam("token") String token, HttpServletResponse response) throws IOException {

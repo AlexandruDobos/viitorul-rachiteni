@@ -7,69 +7,51 @@ spring:
     compatibility-verifier:
       enabled: false
     gateway:
-      # CORS global
       globalcors:
-        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
             allowedOrigins: ${ALLOWED_ORIGINS:https://www.viitorulrachiteni.ro,https://viitorulrachiteni.ro,http://localhost:5173}
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - PATCH
-              - DELETE
-              - OPTIONS
+            allowedMethods: [ GET, POST, PUT, PATCH, DELETE, OPTIONS ]
             allowedHeaders: "*"
-            exposedHeaders:
-              - Authorization
-              - Set-Cookie
+            exposedHeaders: [ Authorization, Set-Cookie ]
             allowCredentials: true
 
-      # Rute
       routes:
-        # API-urile serviciului de autentificare (/api/auth/**)
         - id: auth-api
           uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/**
 
-        # API-urile aplicației (/api/app/**)
         - id: app-api
           uri: http://app-service:8082
           predicates:
             - Path=/api/app/**
 
-        # Donații
         - id: donations-api
           uri: http://donations-service:8083
           predicates:
             - Path=/donations/**
 
-        # Email API
         - id: email-api
           uri: http://email-service:8085
           predicates:
             - Path=/api/email/**
 
-        # TOATE rutele OAuth trec prin /auth/** și se rescriu la /
-        # exemplu: /auth/login/oauth2/code/google -> /login/oauth2/code/google
-        - id: auth-oauth
+        # 1) Direct: /oauth2/** și /login/oauth2/** merg fără rewrite
+        - id: oauth-direct
           uri: http://auth-service:8081
           predicates:
-            - Path=/auth/login/oauth2/**,/auth/oauth2/**,/auth/oauth2/authorization/**
+            - Path=/oauth2/**,/login/oauth2/**
+
+        # 2) Compat: /auth/** se rescrie la rădăcină (păstrăm varianta cu prefix)
+        - id: oauth-prefixed
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/auth/**
           filters:
             - RewritePath=/auth/(?<segment>.*), /${segment}
 
-      # Filtre implicite + proxy host
       default-filters:
         - AddResponseHeader=X-Gateway, Viitorul
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       preserveHostHeader: true
-
-# LOGGING la nivel de bază (NU sub spring.cloud.gateway!)
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
-    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG

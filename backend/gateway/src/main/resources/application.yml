@@ -9,9 +9,9 @@ spring:
     gateway:
       # CORS global
       globalcors:
+        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
-            # listă separată prin virgulă din env; dacă nu există, folosește valorile de mai jos
             allowedOrigins: ${ALLOWED_ORIGINS:https://www.viitorulrachiteni.ro,https://viitorulrachiteni.ro,http://localhost:5173}
             allowedMethods:
               - GET
@@ -40,7 +40,7 @@ spring:
           predicates:
             - Path=/api/app/**
 
-        # Donatii (păstrează exact cum ai în backend)
+        # Donații
         - id: donations-api
           uri: http://donations-service:8083
           predicates:
@@ -52,8 +52,8 @@ spring:
           predicates:
             - Path=/api/email/**
 
-        # TOATE rutele OAuth prin prefixul /auth/**
-        # /auth/login/oauth2/**, /auth/oauth2/authorization/**, etc.
+        # TOATE rutele OAuth trec prin /auth/** și se rescriu la /
+        # exemplu: /auth/login/oauth2/code/google -> /login/oauth2/code/google
         - id: auth-oauth
           uri: http://auth-service:8081
           predicates:
@@ -61,13 +61,15 @@ spring:
           filters:
             - RewritePath=/auth/(?<segment>.*), /${segment}
 
+      # Filtre implicite + proxy host
       default-filters:
         - AddResponseHeader=X-Gateway, Viitorul
-        # previne dublarea headerelor CORS
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       preserveHostHeader: true
-      logging:
-        level:
-          org.springframework.cloud.gateway: DEBUG
-          org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
-          org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG
+
+# LOGGING la nivel de bază (NU sub spring.cloud.gateway!)
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG

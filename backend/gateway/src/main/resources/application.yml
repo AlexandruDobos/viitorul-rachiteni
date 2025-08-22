@@ -66,3 +66,8 @@ spring:
         # previne dublarea headerelor CORS
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       preserveHostHeader: true
+      logging:
+        level:
+          org.springframework.cloud.gateway: DEBUG
+          org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: DEBUG
+          org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG

@@ -1,0 +1,9 @@
+spring:
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+  main:
+    timezone: Europe/Bucharest
+
+auth:
+  base-url: http://auth-service:8081

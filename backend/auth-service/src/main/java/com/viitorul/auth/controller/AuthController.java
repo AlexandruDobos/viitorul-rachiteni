@@ -21,6 +21,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.security.Key;
 import java.io.IOException;
 import java.util.Map;
@@ -34,6 +36,7 @@ public class AuthController {
     private String jwtSecret;
     private final AuthService authService;
     private final JwtUtils jwtUtils;
+
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
@@ -87,37 +90,57 @@ public class AuthController {
             }
         }
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+        return ResponseEntity.ok(Map.of(
                 "authenticated", false
         ));
     }
 
+    // in AuthController
+    @Value("${app.frontend.url:http://localhost:5173}") // setează ce folosești tu
+    private String frontendUrl;
 
     @GetMapping("/confirm")
-    public void confirmEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
+    public void confirm(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
         String result = authService.confirmEmail(token);
-
-        if (result.equals("ok")) {
-            response.sendRedirect("http://localhost:5173/login?status=success");
+        if ("ok".equalsIgnoreCase(result)) {
+            response.sendRedirect(frontendUrl + "/login?status=success");
         } else {
-            response.sendRedirect("http://localhost:5173/login?status=error&message=" + java.net.URLEncoder.encode(result, "UTF-8"));
+            // encode ca să nu rupi URL-ul
+            String msg = java.net.URLEncoder.encode(result, java.nio.charset.StandardCharsets.UTF_8);
+            response.sendRedirect(frontendUrl + "/login?status=error&message=" + msg);
         }
     }
 
-    @PostMapping("/request-reset")
-    public ResponseEntity<String> requestResetToken(@RequestParam("email") String email) {
-        String token = authService.createResetToken(email);
+    // in com.viitorul.auth.controller.AuthController
+    @GetMapping("/introspect")
+    public ResponseEntity<?> introspect(
+            @CookieValue(name = "jwt", required = false) String jwtCookie,
+            @RequestHeader(name = "Authorization", required = false) String authHeader
+    ) {
+        String token = null;
+        if (jwtCookie != null && !jwtCookie.isBlank()) {
+            token = jwtCookie;
+        } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
 
-        // Aici trimiți emailul cu linkul de resetare, dacă vrei
-        return ResponseEntity.ok("Token generat. Verifică emailul.");
+        if (token == null || !jwtUtils.validateToken(token)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(jwtUtils.getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        String email = claims.getSubject();
+        String role = claims.get("role", String.class);
+
+        return ResponseEntity.ok(Map.of(
+                "email", email,
+                "role", role == null ? "" : role
+        ));
     }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
-        String result = authService.resetPassword(request.token(), request.newPassword());
-        if (!result.equals("ok")) return ResponseEntity.badRequest().body(result);
-        return ResponseEntity.ok("Parola a fost resetată.");
-    }
-
 
 }

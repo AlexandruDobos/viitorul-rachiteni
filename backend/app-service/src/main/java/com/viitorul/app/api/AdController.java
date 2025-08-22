@@ -1,0 +1,37 @@
+package com.viitorul.app.api;
+
+import com.viitorul.app.dto.AdDTO;
+import com.viitorul.app.service.AdService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/app/ads")
+public class AdController {
+
+    @Autowired
+    private AdService adService;
+
+    @GetMapping
+    public List<AdDTO> getAll() {
+        return adService.getAllAds();
+    }
+
+    @PostMapping
+    public AdDTO create(@RequestBody AdDTO dto) {
+        return adService.addAd(dto);
+    }
+
+    @PutMapping("/{id}")
+    public AdDTO update(@PathVariable("id") Long id, @RequestBody AdDTO dto) {
+        return adService.updateAd(id, dto);
+    }
+
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable("id") Long id) {
+        adService.deleteAd(id);
+    }
+}

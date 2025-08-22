@@ -1,16 +1,18 @@
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring:
   cloud:
     compatibility-verifier:
       enabled: false
     gateway:
+      # CORS global
       globalcors:
-        add-to-simple-url-handler-mapping: true
         corsConfigurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173"
+            # listă separată prin virgulă din env; dacă nu există, folosește valorile de mai jos
+            allowedOrigins: ${ALLOWED_ORIGINS:https://www.viitorulrachiteni.ro,https://viitorulrachiteni.ro,http://localhost:5173}
             allowedMethods:
               - GET
               - POST
@@ -18,56 +20,49 @@ spring:
               - PATCH
               - DELETE
               - OPTIONS
-            allowedHeaders:
-              - "*"
+            allowedHeaders: "*"
             exposedHeaders:
-              - "Authorization"
-              - "Set-Cookie"
+              - Authorization
+              - Set-Cookie
             allowCredentials: true
 
+      # Rute
       routes:
-        - id: auth-service
+        # API-urile serviciului de autentificare (/api/auth/**)
+        - id: auth-api
           uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/**
 
-        - id: app-service
+        # API-urile aplicației (/api/app/**)
+        - id: app-api
           uri: http://app-service:8082
           predicates:
             - Path=/api/app/**
 
-        - id: donations-service
+        # Donatii (păstrează exact cum ai în backend)
+        - id: donations-api
           uri: http://donations-service:8083
           predicates:
             - Path=/donations/**
 
-        - id: email-service
+        # Email API
+        - id: email-api
           uri: http://email-service:8085
           predicates:
             - Path=/api/email/**
 
-        - id: oauth2-auth
+        # TOATE rutele OAuth prin prefixul /auth/**
+        # /auth/login/oauth2/**, /auth/oauth2/authorization/**, etc.
+        - id: auth-oauth
           uri: http://auth-service:8081
           predicates:
-            - Path=/oauth2/authorization/**
+            - Path=/auth/**
           filters:
-            - RewritePath=/oauth2/authorization/(?<segment>.*), /oauth2/authorization/${segment}
-            - SetStatus=302
-
-        - id: oauth2-login
-          uri: http://auth-service:8081
-          predicates:
-            - Path=/login/oauth2/**
-          filters:
-            - RewritePath=/login/oauth2/(?<segment>.*), /login/oauth2/${segment}
-
-        - id: oauth2-callback
-          uri: http://auth-service:8081
-          predicates:
-            - Path=/oauth2/**
-          filters:
-            - RewritePath=/oauth2/(?<segment>.*), /oauth2/${segment}
+            - StripPrefix=1
 
       default-filters:
         - AddResponseHeader=X-Gateway, Viitorul
+        # previne dublarea headerelor CORS
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       preserveHostHeader: true

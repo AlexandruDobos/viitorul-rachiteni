@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
 
         // 🔴 Bypass pentru rutele publice
-        if (path.startsWith("/api/auth") || path.startsWith("/oauth2")) {
+        if (path.startsWith("/api/auth") || path.startsWith("/oauth2") || path.startsWith("/login/oauth2")) {
             filterChain.doFilter(request, response);
             return;
         }

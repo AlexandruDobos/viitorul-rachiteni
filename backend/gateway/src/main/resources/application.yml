@@ -57,9 +57,9 @@ spring:
         - id: auth-oauth
           uri: http://auth-service:8081
           predicates:
-            - Path=/auth/**
+            - Path=/auth/login/oauth2/**,/auth/oauth2/**,/auth/oauth2/authorization/**
           filters:
-            - StripPrefix=1
+            - RewritePath=/auth/(?<segment>.*), /${segment}
 
       default-filters:
         - AddResponseHeader=X-Gateway, Viitorul

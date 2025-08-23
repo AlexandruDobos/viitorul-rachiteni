@@ -22,7 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import lombok.extern.slf4j.Slf4j;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.web.server.ResponseStatusException;
-
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import java.security.Key;
 import java.io.IOException;
 import java.util.Map;
@@ -36,7 +37,15 @@ public class AuthController {
     private String jwtSecret;
     private final AuthService authService;
     private final JwtUtils jwtUtils;
+    // === adaugă aceleași setări ca la setarea cookie-ului ===
+    @Value("${COOKIE_SECURE:true}")
+    private boolean cookieSecure;
 
+    @Value("${COOKIE_SAMESITE:None}") // Strict / Lax / None
+    private String cookieSameSite;
+
+    @Value("${COOKIE_DOMAIN:}")       // ex: .viitorulrachiteni.ro
+    private String cookieDomain;
     // in AuthController
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
@@ -56,14 +65,21 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
-        Cookie cookie = new Cookie("jwt", null);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false); // true in prod
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // delete cookie
-        response.addCookie(cookie);
-        return ResponseEntity.ok().build();
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(cookieSecure)      // la fel ca la set
+                .path("/")                 // la fel
+                .sameSite(cookieSameSite)  // la fel
+                .maxAge(0);                // ștergere
+
+        if (cookieDomain != null && !cookieDomain.isBlank()) {
+            builder.domain(cookieDomain);  // la fel
+        }
+
+        response.setHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
+        return ResponseEntity.noContent().build();
     }
+
 
     @GetMapping("/status")
     public ResponseEntity<?> checkAuth(

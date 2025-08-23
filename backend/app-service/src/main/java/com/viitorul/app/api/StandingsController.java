@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/app/standings")
@@ -28,9 +30,18 @@ public class StandingsController {
     }
 
     @PostMapping("/scrape")
-    public ResponseEntity<StandingsResponseDTO> scrape(@Valid @RequestBody ScrapeRequestDTO req) throws Exception {
+    public ResponseEntity<?> scrape(@Valid @RequestBody ScrapeRequestDTO req) {
         log.info("Standings scrape requested: {}", req.getUrl());
-        return ResponseEntity.ok(standingsService.scrapeAndSave(req.getUrl()));
+        try {
+            var dto = standingsService.scrapeAndSave(req.getUrl());
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            log.error("Scrape failed for {}: {}", req.getUrl(), e.toString(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "SCRAPE_FAILED",
+                    "message", e.getMessage()
+            ));
+        }
     }
 
     @GetMapping("/config")

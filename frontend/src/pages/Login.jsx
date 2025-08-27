@@ -46,7 +46,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BASE_URL}/oauth2/authorization/google`;
+    window.location.href = `${BASE_URL}/auth/oauth2/authorization/google`;
   };
 
   return (

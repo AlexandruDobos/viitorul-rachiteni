@@ -51,7 +51,7 @@ const CompetitionsManager = () => {
     setLoading(true);
     setErr('');
     try {
-      const res = await fetch(`${BASE_URL}/api/app/competitions`, { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/app/competitions`, { credentials: 'include' });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       setCompetitions(Array.isArray(data) ? data : []);
@@ -81,7 +81,7 @@ const CompetitionsManager = () => {
     if (!name) return;
     try {
       setBusyId('new');
-      const res = await fetch(`${BASE_URL}/api/app/competitions`, {
+      const res = await fetch(`${BASE_URL}/app/competitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -113,7 +113,7 @@ const CompetitionsManager = () => {
     if (!name) return;
     try {
       setBusyId(id);
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${id}`, {
+      const res = await fetch(`${BASE_URL}/app/competitions/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -134,7 +134,7 @@ const CompetitionsManager = () => {
     if (!confirm('Ești sigur că vrei să dezactivezi această competiție?')) return;
     try {
       setBusyId(id);
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${id}`, {
+      const res = await fetch(`${BASE_URL}/app/competitions/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -155,7 +155,7 @@ const CompetitionsManager = () => {
     const busyKey = `${competitionId}:new`;
     try {
       setSeasonBusyKey(busyKey);
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${competitionId}/seasons`, {
+      const res = await fetch(`${BASE_URL}/app/competitions/${competitionId}/seasons`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -191,7 +191,7 @@ const CompetitionsManager = () => {
     const busyKey = `${competitionId}:${seasonId}`;
     try {
       setSeasonBusyKey(busyKey);
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${competitionId}/seasons/${seasonId}`, {
+      const res = await fetch(`${BASE_URL}/app/competitions/${competitionId}/seasons/${seasonId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -213,7 +213,7 @@ const CompetitionsManager = () => {
     const busyKey = `${competitionId}:${seasonId}`;
     try {
       setSeasonBusyKey(busyKey);
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${competitionId}/seasons/${seasonId}`, {
+      const res = await fetch(`${BASE_URL}/app/competitions/${competitionId}/seasons/${seasonId}`, {
         method: 'DELETE',
         credentials: 'include',
       });

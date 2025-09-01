@@ -5,13 +5,13 @@ const AppNameEditor = () => {
   const [appName, setAppName] = useState('');
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/app/name`)
+    fetch(`${BASE_URL}/app/name`)
       .then(res => res.json())
       .then(data => setAppName(data.name || ''));
   }, []);
 
   const handleSave = async () => {
-    await fetch(`${BASE_URL}/api/app/name`, {
+    await fetch(`${BASE_URL}/app/name`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: appName }),

@@ -19,7 +19,7 @@ const Matches = () => {
   useEffect(() => {
     const fetchMatches = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/app/matches/upcoming`, { credentials: 'include' });
+        const res = await fetch(`${BASE_URL}/app/matches/upcoming`, { credentials: 'include' });
         const data = await res.json();
         const upcoming = Array.isArray(data)
           ? data

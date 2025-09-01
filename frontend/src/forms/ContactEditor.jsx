@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { BASE_URL } from "../utils/constants";
 
-const CONTACT_API = `${BASE_URL}/api/app/contact-settings`;
+const CONTACT_API = `${BASE_URL}/app/contact-settings`;
 
 const emailRegex =
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i; // simplu și suficient pentru UI

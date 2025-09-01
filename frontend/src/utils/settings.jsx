@@ -4,7 +4,7 @@ import { BASE_URL } from '../utils/constants';
 
 export async function getSocialLinks() {
   try {
-    const res = await fetch(`${BASE_URL}/api/app/social`, {
+    const res = await fetch(`${BASE_URL}/app/social`, {
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to load social links');
@@ -21,7 +21,7 @@ export async function getSocialLinks() {
 }
 
 export async function saveSocialLinks(payload) {
-  const res = await fetch(`${BASE_URL}/api/app/social`, {
+  const res = await fetch(`${BASE_URL}/app/social`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',

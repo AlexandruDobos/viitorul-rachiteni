@@ -23,12 +23,12 @@ const MatchStatsEditor = ({ matchId }) => {
   const [openPlayerId, setOpenPlayerId] = useState(null);
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/app/players`)
+    fetch(`${BASE_URL}/app/players`)
       .then(res => res.json())
       .then(setPlayers)
       .catch(console.error);
 
-    fetch(`${BASE_URL}/api/app/matches/player-stats/${matchId}`)
+    fetch(`${BASE_URL}/app/matches/player-stats/${matchId}`)
       .then(res => res.json())
       .then(data => {
         if (!Array.isArray(data)) {
@@ -56,7 +56,7 @@ const MatchStatsEditor = ({ matchId }) => {
     const data =
       stats[playerId] ?? { playerId, matchId, goals: 0, assists: 0, yellowCards: 0, redCard: false };
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches/${matchId}/stats`, {
+      const res = await fetch(`${BASE_URL}/app/matches/${matchId}/stats`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

@@ -99,7 +99,7 @@ const InlineLineupEditor = ({
     if (!canSave) return;
     try {
       // 1) Salvează line-up în Match (PATCH)
-      const patchRes = await fetch(`${BASE_URL}/api/app/matches/${match.id}`, {
+      const patchRes = await fetch(`${BASE_URL}/app/matches/${match.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -116,7 +116,7 @@ const InlineLineupEditor = ({
 
       // 2) Upsert batch stats cu valori 0 (titulari + rezerve)
       const batchPayload = buildZeroBatch(starting, subs);
-      const batchRes = await fetch(`${BASE_URL}/api/app/matches/${match.id}/stats/batch`, {
+      const batchRes = await fetch(`${BASE_URL}/app/matches/${match.id}/stats/batch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -314,7 +314,7 @@ const AddMatchForm = () => {
   // -------- Fetch helpers --------
   const fetchTeams = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/app/teams`);
+      const res = await fetch(`${BASE_URL}/app/teams`);
       const data = await res.json();
       setTeams(data);
     } catch (err) {
@@ -324,7 +324,7 @@ const AddMatchForm = () => {
 
   const fetchPlayers = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/app/players`);
+      const res = await fetch(`${BASE_URL}/app/players`);
       const data = await res.json();
       setPlayers(data);
     } catch (err) {
@@ -334,7 +334,7 @@ const AddMatchForm = () => {
 
   const fetchMatches = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches`);
+      const res = await fetch(`${BASE_URL}/app/matches`);
       const data = await res.json();
       setMatches(data);
     } catch (err) {
@@ -344,7 +344,7 @@ const AddMatchForm = () => {
 
   const fetchCompetitions = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/app/competitions`);
+      const res = await fetch(`${BASE_URL}/app/competitions`);
       const data = await res.json();
       setCompetitions(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -359,7 +359,7 @@ const AddMatchForm = () => {
       return;
     }
     try {
-      const res = await fetch(`${BASE_URL}/api/app/competitions/${competitionId}/seasons`);
+      const res = await fetch(`${BASE_URL}/app/competitions/${competitionId}/seasons`);
       const data = await res.json();
       setSeasons(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -430,7 +430,7 @@ const AddMatchForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = editId ? `${BASE_URL}/api/app/matches/${editId}` : `${BASE_URL}/api/app/matches`;
+    const url = editId ? `${BASE_URL}/app/matches/${editId}` : `${BASE_URL}/app/matches`;
     const method = editId ? 'PUT' : 'POST';
 
     // Asigură payload corect (competitionId/seasonId, nu strings)
@@ -508,7 +508,7 @@ const AddMatchForm = () => {
     const id = confirmDeleteId;
     if (!id) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/app/matches/${id}`, { method: 'DELETE' });
       if (res.ok) {
         setConfirmDeleteId(null);
         fetchMatches();

@@ -23,7 +23,7 @@ const RequestResetPassword = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${BASE_URL}/api/auth/request-reset?email=${encodeURIComponent(email)}`,
+        `${BASE_URL}/auth/request-reset?email=${encodeURIComponent(email)}`,
         { method: 'POST', redirect: 'manual' }
       );
 

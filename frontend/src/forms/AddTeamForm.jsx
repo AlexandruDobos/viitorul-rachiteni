@@ -9,7 +9,7 @@ const AddTeamForm = () => {
   const [editId, setEditId] = useState(null);
 
   const fetchTeams = async () => {
-    const res = await fetch(`${BASE_URL}/api/app/teams`);
+    const res = await fetch(`${BASE_URL}/app/teams`);
     const data = await res.json();
     setTeams(data);
   };
@@ -21,7 +21,7 @@ const AddTeamForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch(`${BASE_URL}/api/app/teams${editId ? '/' + editId : ''}`, {
+      const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, logo }),
@@ -50,7 +50,7 @@ const AddTeamForm = () => {
   const handleDelete = async (id) => {
     if (confirm('Sigur vrei să ștergi această echipă?')) {
       try {
-        const res = await fetch(`${BASE_URL}/api/app/teams/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         fetchTeams();
       } catch {

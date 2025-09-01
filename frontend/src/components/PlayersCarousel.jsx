@@ -111,7 +111,7 @@ export default function PlayersCarousel({
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${BASE_URL}/api/app/players`);
+        const res = await fetch(`${BASE_URL}/app/players`);
         const data = await res.json();
         setPlayers(Array.isArray(data) ? data : []);
       } catch (e) {

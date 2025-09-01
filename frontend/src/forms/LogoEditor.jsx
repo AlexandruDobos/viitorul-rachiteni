@@ -5,13 +5,13 @@ const LogoEditor = () => {
   const [logoUrl, setLogoUrl] = useState('');
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/app/logo`)
+    fetch(`${BASE_URL}/app/logo`)
       .then(res => res.json())
       .then(data => setLogoUrl(data.url || ''));
   }, []);
 
   const handleSave = async () => {
-    await fetch(`${BASE_URL}/api/app/logo`, {
+    await fetch(`${BASE_URL}/app/logo`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: logoUrl }),

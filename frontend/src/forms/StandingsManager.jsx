@@ -32,8 +32,8 @@ export default function StandingsManager() {
       try {
         setLoading(true);
         const [confRes, dataRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/app/standings/config`),
-          fetch(`${BASE_URL}/api/app/standings`),
+          fetch(`${BASE_URL}/app/standings/config`),
+          fetch(`${BASE_URL}/app/standings`),
         ]);
         if (confRes.ok) {
           const conf = await confRes.json();
@@ -70,7 +70,7 @@ export default function StandingsManager() {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch(`${BASE_URL}/api/app/standings/scrape`, {
+      const res = await fetch(`${BASE_URL}/app/standings/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url: sourceUrl }),
@@ -90,7 +90,7 @@ export default function StandingsManager() {
     try {
       setSaving(true);
       setError('');
-      const res = await fetch(`${BASE_URL}/api/app/standings`, {
+      const res = await fetch(`${BASE_URL}/app/standings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,7 +113,7 @@ export default function StandingsManager() {
     try {
       setScheduleEnabled(next);
       setError('');
-      const res = await fetch(`${BASE_URL}/api/app/standings/schedule`, {
+      const res = await fetch(`${BASE_URL}/app/standings/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: next }),

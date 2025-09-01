@@ -27,7 +27,7 @@ const Login = () => {
     setErr('');
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/auth/login`, {
+      const response = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -46,7 +46,7 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${BASE_URL}/auth/oauth2/authorization/google`;
+    window.location.href = '/oauth2/authorization/google';
   };
 
   return (

@@ -109,9 +109,9 @@ export default function MatchDetails() {
       try {
         setLoading(true);
         const [resMatch, resStats, resPlayers] = await Promise.all([
-          fetch(`${BASE_URL}/api/app/matches/${matchId}`),
-          fetch(`${BASE_URL}/api/app/matches/player-stats/${matchId}`),
-          fetch(`${BASE_URL}/api/app/players`),
+          fetch(`${BASE_URL}/app/matches/${matchId}`),
+          fetch(`${BASE_URL}/app/matches/player-stats/${matchId}`),
+          fetch(`${BASE_URL}/app/players`),
         ]);
         const [matchData, statsData, playersData] = await Promise.all([
           resMatch.json(),
@@ -132,7 +132,7 @@ export default function MatchDetails() {
   /* --- Votes summary loader --- */
   const loadVotes = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches/${matchId}/votes/summary`, { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/app/matches/${matchId}/votes/summary`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setVotesSummary({
@@ -147,7 +147,7 @@ export default function MatchDetails() {
   const loadMyVote = async () => {
     if (!canVote) { setMyVote(null); return; }
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches/${matchId}/my-vote`, { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/app/matches/${matchId}/my-vote`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setMyVote(data?.playerId ?? null);
@@ -254,7 +254,7 @@ export default function MatchDetails() {
   const handleVote = async (playerId) => {
     try {
       setSavingVote(true);
-      const res = await fetch(`${BASE_URL}/api/app/matches/${matchId}/vote`, {
+      const res = await fetch(`${BASE_URL}/app/matches/${matchId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -12,7 +12,7 @@ const AddPlayerForm = () => {
   const [editId, setEditId] = useState(null);
 
   const fetchPlayers = async () => {
-    const res = await fetch(`${BASE_URL}/api/app/players`);
+    const res = await fetch(`${BASE_URL}/app/players`);
     const data = await res.json();
     setPlayers(data);
   };
@@ -30,8 +30,8 @@ const AddPlayerForm = () => {
     e.preventDefault();
     const method = editId ? 'PUT' : 'POST';
     const url = editId
-      ? `${BASE_URL}/api/app/players/${editId}`
-      : `${BASE_URL}/api/app/players`;
+      ? `${BASE_URL}/app/players/${editId}`
+      : `${BASE_URL}/app/players`;
 
     const res = await fetch(url, {
       method,
@@ -60,7 +60,7 @@ const AddPlayerForm = () => {
 
   const handleDelete = async (id) => {
     if (confirm('Sigur vrei să ștergi acest jucător?')) {
-      const res = await fetch(`${BASE_URL}/api/app/players/${id}`, {
+      const res = await fetch(`${BASE_URL}/app/players/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) fetchPlayers();

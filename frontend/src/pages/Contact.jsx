@@ -43,7 +43,7 @@ const Contact = () => {
     try {
       setState({ sending: true, sent: false, error: null });
 
-      const res = await fetch(`${BASE_URL}/api/app/contact/messages`, {
+      const res = await fetch(`${BASE_URL}/app/contact/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

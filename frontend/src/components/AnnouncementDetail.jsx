@@ -41,7 +41,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
     const run = async () => {
       try {
         setState({ loading: true, error: null });
-        const res = await fetch(`${BASE_URL}/api/app/announcements/${id}`);
+        const res = await fetch(`${BASE_URL}/app/announcements/${id}`);
         if (!res.ok) throw new Error('Eroare la încărcarea anunțului');
         const data = await res.json();
         setItem(data);

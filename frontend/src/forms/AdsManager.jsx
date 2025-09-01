@@ -17,7 +17,7 @@ const AdsManager = () => {
   const [deletingId, setDeletingId] = useState(null);
 
   const fetchAds = async () => {
-    const res = await fetch(`${BASE_URL}/api/app/ads`);
+    const res = await fetch(`${BASE_URL}/app/ads`);
     const data = await res.json();
     setAds(data);
   };
@@ -30,8 +30,8 @@ const AdsManager = () => {
     e.preventDefault();
     const method = form.id ? 'PUT' : 'POST';
     const url = form.id
-      ? `${BASE_URL}/api/app/ads/${form.id}`
-      : `${BASE_URL}/api/app/ads`;
+      ? `${BASE_URL}/app/ads/${form.id}`
+      : `${BASE_URL}/app/ads`;
 
     await fetch(url, {
       method,
@@ -62,7 +62,7 @@ const AdsManager = () => {
     const confirmDelete = window.confirm('Sigur vrei să ștergi această reclamă?');
     if (!confirmDelete) return;
     setDeletingId(id);
-    await fetch(`${BASE_URL}/api/app/ads/${id}`, { method: 'DELETE' });
+    await fetch(`${BASE_URL}/app/ads/${id}`, { method: 'DELETE' });
     setDeletingId(null);
     fetchAds();
   };

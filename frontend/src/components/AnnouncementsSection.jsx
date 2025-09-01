@@ -72,7 +72,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
   const fetchPage = async (pageNum = 0) => {
     try {
       setState({ loading: true, error: null });
-      const url = `${BASE_URL}/api/app/announcements/page?page=${pageNum}&size=${EFFECTIVE_SIZE}`;
+      const url = `${BASE_URL}/app/announcements/page?page=${pageNum}&size=${EFFECTIVE_SIZE}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();

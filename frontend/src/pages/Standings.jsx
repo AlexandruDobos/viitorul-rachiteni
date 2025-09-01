@@ -49,7 +49,7 @@ const Standings = () => {
       try {
         setLoading(true);
         setErr('');
-        const res = await fetch(`${BASE_URL}/api/app/standings`);
+        const res = await fetch(`${BASE_URL}/app/standings`);
         if (!res.ok) throw new Error('Eroare la încărcarea clasamentului');
         const data = await res.json();
         setRows(Array.isArray(data?.rows) ? data.rows : []);

@@ -11,7 +11,7 @@ const AuthProvider = ({ children }) => {
     if (inFlight.current) return;       // nu lansa alt request dacă unul e în curs
     inFlight.current = true;
     try {
-      const res = await fetch(`${BASE_URL}/api/auth/status`, { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/auth/status`, { credentials: 'include' });
       const data = await res.json();
       if (data.authenticated) {
         setUser({ email: data.email, role: data.role, method: data.method });

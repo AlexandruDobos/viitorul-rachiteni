@@ -10,7 +10,7 @@ const Starting11Selector = ({ matchId, onSave }) => {
   useEffect(() => {
     const fetchPlayers = async () => {
       try {
-        const res = await fetch(`${BASE_URL}/api/app/players`);
+        const res = await fetch(`${BASE_URL}/app/players`);
         const data = await res.json();
         setPlayers(data);
       } catch (err) {
@@ -36,7 +36,7 @@ const Starting11Selector = ({ matchId, onSave }) => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/app/matches/${matchId}/starting-players`, {
+      const res = await fetch(`${BASE_URL}/app/matches/${matchId}/starting-players`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

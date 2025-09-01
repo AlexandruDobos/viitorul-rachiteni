@@ -24,9 +24,9 @@ const MatchDetails = () => {
     const fetchMatchData = async () => {
       try {
         const [resMatch, resStats, resPlayers] = await Promise.all([
-          fetch(`${BASE_URL}/api/app/matches/${matchId}`),
-          fetch(`${BASE_URL}/api/app/matches/player-stats/${matchId}`),
-          fetch(`${BASE_URL}/api/app/players`)
+          fetch(`${BASE_URL}/app/matches/${matchId}`),
+          fetch(`${BASE_URL}/app/matches/player-stats/${matchId}`),
+          fetch(`${BASE_URL}/app/players`)
         ]);
 
         const matchData = await resMatch.json();

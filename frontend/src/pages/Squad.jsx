@@ -44,7 +44,7 @@ const Squad = () => {
   const [pos, setPos] = useState('ALL');
 
   useEffect(() => {
-    fetch(`${BASE_URL}/api/app/players`)
+    fetch(`${BASE_URL}/app/players`)
       .then((res) => res.json())
       .then((data) => setPlayers(Array.isArray(data) ? data : []))
       .catch((err) => {

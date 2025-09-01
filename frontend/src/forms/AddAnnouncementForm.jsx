@@ -118,7 +118,7 @@ function AddAnnouncementForm({ onSave }) {
   const fetchAnnouncements = async () => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${BASE_URL}/api/app/announcements`);
+      const res = await fetch(`${BASE_URL}/app/announcements`);
       if (!res.ok) throw new Error('Eroare la listare');
       const data = await res.json();
       setAnnouncements(data);
@@ -185,8 +185,8 @@ function AddAnnouncementForm({ onSave }) {
 
     const method = editId ? 'PUT' : 'POST';
     const url = editId
-      ? `${BASE_URL}/api/app/announcements/${editId}`
-      : `${BASE_URL}/api/app/announcements`;
+      ? `${BASE_URL}/app/announcements/${editId}`
+      : `${BASE_URL}/app/announcements`;
 
     try {
       const res = await fetch(url, {
@@ -221,7 +221,7 @@ function AddAnnouncementForm({ onSave }) {
   const handleDelete = async (id) => {
     if (!confirm('Sigur vrei să ștergi acest anunț?')) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/app/announcements/${id}`, {
+      const res = await fetch(`${BASE_URL}/app/announcements/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Eroare la ștergere');

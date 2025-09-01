@@ -6,4 +6,4 @@ spring:
     timezone: Europe/Bucharest
 
 auth:
-  base-url: http://auth-service:8081
+  base-url: ${AUTH_BASE_URL:http://auth-service:8081}

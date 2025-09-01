@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+  auth-service:
+    env_file:
+      - ./auth-service/.env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  app-service:
+    env_file:
+      - ./app-service/.env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  donations-service:
+    env_file:
+      - ./donations-service/.env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    ports:
+      - "80:8080"   # doar gateway expus extern
+    restart: unless-stopped
+
+  email-service:
+    env_file:
+      - ./email-service/.env.prod
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: viitorul-rachiteni
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

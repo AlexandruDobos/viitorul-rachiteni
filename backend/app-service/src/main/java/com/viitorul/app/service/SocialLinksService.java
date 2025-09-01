@@ -22,8 +22,11 @@ public class SocialLinksService {
 
     @Transactional(readOnly = true)
     public SocialLinksDTO get() {
-        return toDto(ensureRow());
+        return repo.findFirstByOrderByIdAsc()
+                .map(this::toDto)
+                .orElse(new SocialLinksDTO());
     }
+
 
     @Transactional
     public SocialLinksDTO save(SocialLinksDTO dto) {

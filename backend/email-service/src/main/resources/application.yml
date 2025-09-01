@@ -1,7 +1,4 @@
 spring:
-  application:
-    name: email-service
-
   rabbitmq:
     host: rabbitmq
     port: 5672

@@ -7,51 +7,58 @@ spring:
     compatibility-verifier:
       enabled: false
     gateway:
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: ${ALLOWED_ORIGINS:https://www.viitorulrachiteni.ro,https://viitorulrachiteni.ro,http://localhost:5173}
-            allowedMethods: [ GET, POST, PUT, PATCH, DELETE, OPTIONS ]
-            allowedHeaders: "*"
-            exposedHeaders: [ Authorization, Set-Cookie ]
-            allowCredentials: true
+      preserveHostHeader: true
+      default-filters:
+        - AddResponseHeader=X-Gateway, Viitorul
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
 
       routes:
+        # ===== API cu prefix /api =====
+
+        # /api/auth/** -> auth-service: expune de regulă /auth/**
         - id: auth-api
           uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/**
 
+        # /api/app/** -> app-service: de regulă expune /ads, /players etc.
         - id: app-api
           uri: http://app-service:8082
           predicates:
             - Path=/api/app/**
 
+        # /api/donations/** -> donations-service
         - id: donations-api
           uri: http://donations-service:8083
           predicates:
-            - Path=/donations/**
+            - Path=/api/donations/**
+          filters:
+            - StripPrefix=2
 
+        # /api/email/** -> email-service
         - id: email-api
           uri: http://email-service:8085
           predicates:
             - Path=/api/email/**
-
-        # 1) Direct: /oauth2/** și /login/oauth2/** merg fără rewrite
-        - id: oauth-direct
-          uri: http://auth-service:8081
-          predicates:
-            - Path=/oauth2/**,/login/oauth2/**
-
-        # 2) Compat: /auth/** se rescrie la rădăcină (păstrăm varianta cu prefix)
-        - id: oauth-prefixed
-          uri: http://auth-service:8081
-          predicates:
-            - Path=/auth/**
           filters:
-            - RewritePath=/auth/(?<segment>.*), /${segment}
+            - StripPrefix=1
 
-      default-filters:
-        - AddResponseHeader=X-Gateway, Viitorul
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
-      preserveHostHeader: true
+        # ===== OAuth2 FĂRĂ prefix (/oauth2/** și /login/oauth2/**) =====
+        - id: oauth2-start
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/oauth2/**
+          filters:
+            - PreserveHostHeader
+
+        - id: oauth2-callback
+          uri: http://auth-service:8081
+          predicates:
+            - Path=/login/oauth2/**
+          filters:
+            - PreserveHostHeader
+management:
+  endpoints:
+    web:
+      exposure:
+        include: gateway,health,info

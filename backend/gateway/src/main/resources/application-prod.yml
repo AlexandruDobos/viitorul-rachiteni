@@ -1,0 +1,17 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOrigins:
+              - https://www.viitorulrachiteni.ro
+              - https://viitorulrachiteni.ro
+            allowedMethods: [ GET, POST, PUT, PATCH, DELETE, OPTIONS ]
+            allowedHeaders: "*"
+            exposedHeaders: [ Authorization, Set-Cookie ]
+            allowCredentials: true

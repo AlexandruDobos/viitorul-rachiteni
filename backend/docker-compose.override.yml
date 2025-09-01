@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  auth-service:
+    env_file:
+      - ./auth-service/.env.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  app-service:
+    env_file:
+      - ./app-service/.env.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  donations-service:
+    env_file:
+      - ./donations-service/.env.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  gateway:
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "80:8080"
+    restart: unless-stopped
+
+  email-service:
+    env_file:
+      - ./email-service/.env.dev
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8085:8085"
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  rabbitmq:
+    ports:
+      - "5672:5672"
+      - "15672:15672" # UI management pe local
+
+  postgres:
+    ports:
+      - "5432:5432"

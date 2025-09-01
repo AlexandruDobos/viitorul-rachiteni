@@ -5,52 +5,62 @@ services:
     build:
       context: .
       dockerfile: ./auth-service/Dockerfile
-    env_file:
-      - ./auth-service/.env
     depends_on:
       - rabbitmq
-    restart: unless-stopped
+      - postgres
 
   app-service:
     build:
       context: .
       dockerfile: ./app-service/Dockerfile
-    ports:
-      - "8082:8082"
-    env_file:
-      - ./app-service/.env
+    depends_on:
+      - postgres
 
   donations-service:
     build:
       context: .
       dockerfile: ./donations-service/Dockerfile
-    ports:
-      - "8083:8083"
-    env_file:
-      - ./donations-service/.env
+    depends_on:
+      - postgres
 
   gateway:
     build:
       context: .
       dockerfile: ./gateway/Dockerfile
-    ports:
-      - "80:8080"
-    env_file:
-      - ./gateway/.env
 
   email-service:
     build:
       context: .
       dockerfile: ./email-service/Dockerfile
-    ports:
-      - "8085:8085"
-    env_file:
-      - ./email-service/.env
     depends_on:
       - rabbitmq
 
   rabbitmq:
     image: rabbitmq:3-management
+
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: viitorul-rachiteni
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: admin
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5050:80"
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin:

@@ -12,13 +12,14 @@ import com.viitorul.auth.config.JwtUtils;
 import com.viitorul.auth.repository.VerificationTokenRepository;
 import com.viitorul.common.events.PasswordResetRequestedEvent;
 import com.viitorul.common.events.UserAccountActivatedEvent;
-import jakarta.servlet.http.Cookie;
+import com.viitorul.common.events.UserRegisteredEvent;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.viitorul.common.events.UserRegisteredEvent;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -34,6 +35,15 @@ public class AuthService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordResetTokenRepository resetTokenRepo;
 
+    @Value("${COOKIE_SECURE:true}")
+    private boolean cookieSecure;
+
+    @Value("${COOKIE_SAMESITE:None}") // Strict / Lax / None
+    private String cookieSameSite;
+
+    @Value("${COOKIE_DOMAIN:}") // ex: .viitorulrachiteni.ro
+    private String cookieDomain;
+
     public AuthResponse register(RegisterRequest request) {
         userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
             throw new EmailAlreadyInUseException();
@@ -45,13 +55,12 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .provider(AuthProvider.LOCAL)
                 .registeredAt(LocalDateTime.now())
-                .role(request.getRole() != null ? request.getRole() : UserRole.USER)
-                .emailVerified(false) // ❗ inițial neconfirmat
+                .role(UserRole.USER) // 🚨 nu mai acceptăm rol din request, doar USER
+                .emailVerified(false)
                 .build();
 
         userRepository.save(user);
 
-        // ✅ Creare token + trimitere eveniment
         String token = createVerificationToken(user);
         eventPublisher.sendUserRegisteredEvent(new UserRegisteredEvent(user.getName(), user.getEmail(), token));
 
@@ -75,12 +84,20 @@ public class AuthService {
 
         String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
 
-        Cookie jwtCookie = new Cookie("jwt", token);
-        jwtCookie.setHttpOnly(true);
-        jwtCookie.setSecure(false); // true în producție
-        jwtCookie.setPath("/");
-        jwtCookie.setMaxAge(24 * 60 * 60);
-        response.addCookie(jwtCookie);
+        // ✅ cookie consistent cu AuthController & OAuth2SuccessHandler
+        ResponseCookie.ResponseCookieBuilder cookie =
+                ResponseCookie.from("jwt", token)
+                        .httpOnly(true)
+                        .secure(cookieSecure)
+                        .path("/")
+                        .maxAge(24 * 60 * 60)
+                        .sameSite(cookieSameSite);
+
+        if (cookieDomain != null && !cookieDomain.isBlank()) {
+            cookie.domain(cookieDomain);
+        }
+
+        response.setHeader(HttpHeaders.SET_COOKIE, cookie.build().toString());
 
         return new AuthResponse(null, "Login successful");
     }
@@ -98,8 +115,7 @@ public class AuthService {
     }
 
     public String createResetToken(String email) {
-        User user = userRepository.findByEmail(email).orElseThrow(() ->
-                new UserNotFoundByEmailException());
+        User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundByEmailException::new);
 
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = new PasswordResetToken();
@@ -109,14 +125,12 @@ public class AuthService {
 
         resetTokenRepo.save(resetToken);
 
-        // 🔔 Trimite eventul
         eventPublisher.sendPasswordResetRequestedEvent(
                 new PasswordResetRequestedEvent(user.getName(), user.getEmail(), token)
         );
 
         return token;
     }
-
 
     public String resetPassword(String token, String newPassword) {
         PasswordResetToken reset = resetTokenRepo.findByToken(token).orElse(null);
@@ -147,15 +161,13 @@ public class AuthService {
         }
 
         User user = verification.getUser();
-        user.setEmailVerified(true); // ✅ setează confirmarea
+        user.setEmailVerified(true);
         userRepository.save(user);
         verificationTokenRepository.delete(verification);
 
-        //trimit mail de bun venit dupa confirmare de email
-        eventPublisher.sendUserAccountActivatedEvent(new UserAccountActivatedEvent(
-                user.getName(),
-                user.getEmail()
-        ));
+        eventPublisher.sendUserAccountActivatedEvent(
+                new UserAccountActivatedEvent(user.getName(), user.getEmail())
+        );
 
         return "ok";
     }

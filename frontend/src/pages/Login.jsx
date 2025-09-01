@@ -45,9 +45,12 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = '/oauth2/authorization/google';
-  };
+const handleGoogleLogin = () => {
+  const api = BASE_URL?.trim() || '';
+  // dacă BASE_URL începe cu "/", înseamnă că e dev (proxy Vite) → mergem relativ
+  const oauthBase = api.startsWith('/') ? '' : api;
+  window.location.assign(`${oauthBase}/oauth2/authorization/google`);
+};
 
   return (
     <div className="flex justify-center">

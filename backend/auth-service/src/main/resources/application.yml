@@ -2,3 +2,6 @@ spring:
   rabbitmq:
     host: rabbitmq
     port: 5672
+
+server:
+  forward-headers-strategy: framework

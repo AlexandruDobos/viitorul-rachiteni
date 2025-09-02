@@ -105,7 +105,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         }
         response.setHeader(HttpHeaders.SET_COOKIE, cookie.build().toString());
 
-        response.sendRedirect(frontendUrl);
+        response.sendRedirect("https://www.viitorulrachiteni.ro/");
     }
 
     private static String asString(Object o) {

@@ -46,11 +46,10 @@ const Login = () => {
   };
 
 const handleGoogleLogin = () => {
-  // în prod BASE_URL = https://api.viitorulrachiteni.ro
-  // în dev vrem /oauth2 pe același host ca Vite (pt. proxy)
-  const isDev = import.meta.env.DEV;
-  const OAUTH_BASE = isDev ? '' : BASE_URL; // '' => /oauth2..., BASE_URL => https://api...
-  window.location.href = `${OAUTH_BASE}/oauth2/authorization/google`;
+  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+  // dacă e absolut (începe cu http), folosim doar origin; altfel "" (dev)
+  const apiOrigin = /^https?:\/\//.test(apiBase) ? new URL(apiBase).origin : '';
+  window.location.href = `${apiOrigin}/oauth2/authorization/google`;
 };
 
   return (

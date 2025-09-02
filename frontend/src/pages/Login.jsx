@@ -46,10 +46,11 @@ const Login = () => {
   };
 
 const handleGoogleLogin = () => {
-  const api = BASE_URL?.trim() || '';
-  // dacă BASE_URL începe cu "/", înseamnă că e dev (proxy Vite) → mergem relativ
-  const oauthBase = api.startsWith('/') ? '' : api;
-  window.location.assign(`${oauthBase}/oauth2/authorization/google`);
+  // în prod BASE_URL = https://api.viitorulrachiteni.ro
+  // în dev vrem /oauth2 pe același host ca Vite (pt. proxy)
+  const isDev = import.meta.env.DEV;
+  const OAUTH_BASE = isDev ? '' : BASE_URL; // '' => /oauth2..., BASE_URL => https://api...
+  window.location.href = `${OAUTH_BASE}/oauth2/authorization/google`;
 };
 
   return (

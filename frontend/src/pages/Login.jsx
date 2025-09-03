@@ -12,7 +12,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const status = searchParams.get('status');
   const message = searchParams.get('message');
-  const { setIsAuthenticated } = useContext(AuthContext);
+  const { checkAuth } = useContext(AuthContext);
 
   useEffect(() => {
     if (status === 'success') {
@@ -27,16 +27,18 @@ const Login = () => {
     setErr('');
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/auth/login`, {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) throw new Error('Autentificare eșuată. Verifică datele.');
-      await response.json();
-      setIsAuthenticated(true);
+      if (!res.ok) throw new Error('Autentificare eșuată. Verifică datele.');
+      await res.json();
+
+      // recitește statusul auth => setează user în context
+      await checkAuth();
       navigate('/');
     } catch (error) {
       setErr(error.message || 'Eroare la autentificare.');
@@ -45,12 +47,11 @@ const Login = () => {
     }
   };
 
-const handleGoogleLogin = () => {
-  const apiBase = import.meta.env.VITE_API_BASE_URL || '';
-  // dacă e absolut (începe cu http), folosim doar origin; altfel "" (dev)
-  const apiOrigin = /^https?:\/\//.test(apiBase) ? new URL(apiBase).origin : '';
-  window.location.href = `${apiOrigin}/oauth2/authorization/google`;
-};
+  const handleGoogleLogin = () => {
+    const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+    const apiOrigin = /^https?:\/\//.test(apiBase) ? new URL(apiBase).origin : '';
+    window.location.href = `${apiOrigin}/oauth2/authorization/google`;
+  };
 
   return (
     <div className="flex justify-center">
@@ -58,9 +59,7 @@ const handleGoogleLogin = () => {
         {/* Header gradient */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-6 text-white">
           <h2 className="text-2xl font-extrabold tracking-tight">Login</h2>
-          <p className="text-white/80 text-sm mt-1">
-            Autentifică-te pentru a continua.
-          </p>
+          <p className="text-white/80 text-sm mt-1">Autentifică-te pentru a continua.</p>
         </div>
 
         {/* Body */}
@@ -144,14 +143,13 @@ const handleGoogleLogin = () => {
             </div>
           </div>
 
-          {/* Google button (clean) */}
+          {/* Google button */}
           <button
             type="button"
             onClick={handleGoogleLogin}
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white
                        px-4 py-2.5 text-sm font-medium hover:bg-gray-50"
           >
-            {/* Simple G icon */}
             <svg viewBox="0 0 533.5 544.3" className="h-4 w-4" aria-hidden="true">
               <path fill="#4285f4" d="M533.5 278.4c0-17.4-1.6-34.1-4.6-50.4H272.1v95.3h147.1c-6.3 34.2-25.5 63.2-54.3 82.6v68h87.8c51.3-47.3 80.8-117 80.8-195.5z"/>
               <path fill="#34a853" d="M272.1 544.3c73.3 0 134.9-24.3 179.8-66.1l-87.8-68c-24.4 16.4-55.7 26.1-92 26.1-70.7 0-130.6-47.7-152-111.8h-91.3v70.3c44.5 88 136.1 149.5 243.3 149.5z"/>

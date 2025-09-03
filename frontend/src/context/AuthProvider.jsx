@@ -8,14 +8,14 @@ const AuthProvider = ({ children }) => {
   const inFlight = useRef(false);
 
   const checkAuth = useCallback(async () => {
-    if (inFlight.current) return;       // nu lansa alt request dacă unul e în curs
+    if (inFlight.current) return;
     inFlight.current = true;
     try {
       const res = await fetch(`${BASE_URL}/auth/status`, { credentials: 'include' });
+      if (!res.ok) throw new Error('status request failed');
       const data = await res.json();
-      if (data.authenticated) {
+      if (data?.authenticated) {
         setUser({ email: data.email, role: data.role, method: data.method });
-         console.log("Autentificat prin:", data.method); // <- comentează/limitează logul
       } else {
         setUser(null);
       }

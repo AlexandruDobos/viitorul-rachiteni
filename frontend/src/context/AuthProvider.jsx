@@ -27,9 +27,7 @@ const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+  useEffect(() => { checkAuth(); }, [checkAuth]);
 
   return (
     <AuthContext.Provider value={{ user, loading, setUser, checkAuth }}>

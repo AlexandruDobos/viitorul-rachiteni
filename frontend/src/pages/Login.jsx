@@ -15,11 +15,8 @@ const Login = () => {
   const { checkAuth } = useContext(AuthContext);
 
   useEffect(() => {
-    if (status === 'success') {
-      alert('Cont confirmat cu succes!');
-    } else if (status === 'error') {
-      alert(`Eroare: ${decodeURIComponent(message || '')}`);
-    }
+    if (status === 'success') alert('Cont confirmat cu succes!');
+    else if (status === 'error') alert(`Eroare: ${decodeURIComponent(message || '')}`);
   }, [status, message]);
 
   const handleLogin = async (e) => {
@@ -37,11 +34,16 @@ const Login = () => {
       if (!res.ok) throw new Error('Autentificare eșuată. Verifică datele.');
       await res.json();
 
-      // recitește statusul auth => setează user în context
-      await checkAuth();
+      // protecție: apelează doar dacă e funcție; altfel fallback la reload
+      if (typeof checkAuth === 'function') {
+        await checkAuth();
+      } else {
+        window.location.replace('/'); // forțează AuthProvider să refacă statusul
+        return;
+      }
       navigate('/');
     } catch (error) {
-      setErr(error.message || 'Eroare la autentificare.');
+      setErr(error?.message || 'Eroare la autentificare.');
     } finally {
       setLoading(false);
     }
@@ -56,53 +58,35 @@ const Login = () => {
   return (
     <div className="flex justify-center">
       <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-gray-200">
-        {/* Header gradient */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-6 text-white">
           <h2 className="text-2xl font-extrabold tracking-tight">Login</h2>
           <p className="text-white/80 text-sm mt-1">Autentifică-te pentru a continua.</p>
         </div>
 
-        {/* Body */}
         <form onSubmit={handleLogin} className="px-6 py-6 space-y-4">
           {err && (
-            <div
-              className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
-              role="alert"
-              aria-live="polite"
-            >
+            <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert">
               {err}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
-              Email
-            </label>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
             <input
-              id="email"
-              type="email"
-              placeholder="adresa@exemplu.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="email" type="email" placeholder="adresa@exemplu.com"
+              value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              autoComplete="email"
-              required
+              autoComplete="email" required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Parolă
-            </label>
+            <label htmlFor="password" className="block text-sm font-medium mb-1">Parolă</label>
             <input
-              id="password"
-              type="password"
-              placeholder="Parola"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="password" type="password" placeholder="Parola"
+              value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-lg border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              autoComplete="current-password"
-              required
+              autoComplete="current-password" required
             />
           </div>
 
@@ -115,38 +99,22 @@ const Login = () => {
             </span>
           </div>
 
-          {/* Primary button (gradient) */}
           <button
-            type="submit"
-            disabled={loading}
+            type="submit" disabled={loading}
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 font-semibold text-white
                        bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 hover:brightness-110
                        disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-white border-dashed rounded-full animate-spin" />
-                Se conectează…
-              </>
-            ) : (
-              'Login'
-            )}
+            {loading ? (<><span className="w-4 h-4 border-2 border-white border-dashed rounded-full animate-spin" />Se conectează…</>) : 'Login'}
           </button>
 
-          {/* Divider */}
           <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-2 text-xs text-gray-500">sau</span>
-            </div>
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-200" /></div>
+            <div className="relative flex justify-center"><span className="bg-white px-2 text-xs text-gray-500">sau</span></div>
           </div>
 
-          {/* Google button */}
           <button
-            type="button"
-            onClick={handleGoogleLogin}
+            type="button" onClick={handleGoogleLogin}
             className="w-full inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white
                        px-4 py-2.5 text-sm font-medium hover:bg-gray-50"
           >
@@ -160,10 +128,7 @@ const Login = () => {
           </button>
 
           <p className="text-xs text-center text-gray-600">
-            Nu ai cont?{' '}
-            <Link to="/register" className="font-semibold text-blue-700 hover:underline">
-              Înregistrează-te
-            </Link>
+            Nu ai cont?{' '}<Link to="/register" className="font-semibold text-blue-700 hover:underline">Înregistrează-te</Link>
           </p>
         </form>
       </div>

@@ -160,4 +160,20 @@ public class AuthController {
         ));
     }
 
+    @PostMapping("/request-reset")
+    public ResponseEntity<String> requestReset(@RequestParam("email") String email) {
+        authService.createResetToken(email);
+        // nu divulgăm dacă emailul există sau nu
+        return ResponseEntity.ok("Dacă adresa există, ți-am trimis un email cu instrucțiuni de resetare.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequest req) {
+        String result = authService.resetPassword(req.token(), req.newPassword());
+        if ("ok".equalsIgnoreCase(result)) {
+            return ResponseEntity.ok("Parola a fost resetată cu succes.");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+    }
+
 }

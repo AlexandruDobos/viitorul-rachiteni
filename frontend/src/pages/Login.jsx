@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 import { BASE_URL } from '../utils/constants';
 
-/* ===== Modal minimalist, în paleta albastră ===== */
+/* ===== Modal cu poziționare adaptivă + animații ===== */
 const Modal = ({ open, type = 'success', title, children, onClose }) => {
   useEffect(() => {
     if (!open) return;
@@ -26,43 +26,72 @@ const Modal = ({ open, type = 'success', title, children, onClose }) => {
     );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <>
+      {/* keyframes locale pentru animații */}
+      <style>{`
+        @keyframes fadeSlide {
+          from { opacity: 0; transform: translateY(-8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pop {
+          from { opacity: 0; transform: scale(.96); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        .modal-anim { animation: fadeSlide .28s ease-out both; }
+        .btn-pop { animation: pop .25s ease-out both; }
+      `}</style>
+
       <div
-        role="dialog"
-        aria-modal="true"
-        className="w-full max-w-md rounded-2xl bg-white shadow-xl ring-1 ring-gray-200"
-        onClick={(e) => e.stopPropagation()}
+        className="
+          fixed inset-0 z-50 flex justify-center items-center
+          md:items-start md:pt-10
+          bg-black/40 backdrop-blur-sm
+        "
+        onClick={onClose}
       >
-        <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-5 py-4 text-white">
-          <div className="flex items-center gap-2">
-            <span className="opacity-90">{Icon}</span>
-            <h3 className="text-lg font-semibold">{title}</h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="modal-anim w-full max-w-md rounded-2xl bg-white shadow-xl ring-1 ring-gray-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-5 py-4 text-white">
+            <div className="flex items-center gap-2">
+              <span className="opacity-90">{Icon}</span>
+              <h3 className="text-lg font-semibold">{title}</h3>
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded-full p-1.5 hover:bg-white/10 focus:outline-none transition"
+              aria-label="Închide"
+              title="Închide"
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+                <path d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 1 0-1.4 1.4L10.6 12l-4.9 4.9a1 1 0 1 0 1.4 1.4L12 13.4l4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4z" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1.5 hover:bg-white/10 focus:outline-none"
-            aria-label="Închide"
-            title="Închide"
-          >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-              <path d="M18.3 5.7a1 1 0 0 0-1.4 0L12 10.6 7.1 5.7a1 1 0 1 0-1.4 1.4L10.6 12l-4.9 4.9a1 1 0 1 0 1.4 1.4L12 13.4l4.9 4.9a1 1 0 0 0 1.4-1.4L13.4 12l4.9-4.9a1 1 0 0 0 0-1.4z" />
-            </svg>
-          </button>
-        </div>
-        <div className="px-6 py-5 text-sm text-gray-700">{children}</div>
-        <div className="flex justify-end gap-2 px-6 pb-5">
-          <button
-            onClick={onClose}
-            className="rounded-lg bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-4 py-2 text-sm font-semibold text-white hover:brightness-110"
-          >
-            OK
-          </button>
+
+          {/* conținutul primește și el un mic fade */}
+          <div className="px-6 py-5 text-sm text-gray-700 modal-anim">{children}</div>
+
+          {/* buton centrat + animație de pop & hover */}
+          <div className="flex justify-center px-6 pb-5">
+            <button
+              onClick={onClose}
+              className="
+                btn-pop rounded-lg
+                bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500
+                px-6 py-2.5 text-sm font-semibold text-white
+                transition-transform hover:brightness-110 hover:scale-[1.02] active:scale-95
+              "
+            >
+              OK
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -18,7 +18,6 @@ public class UserRegisteredListener {
 
     private final JavaMailSender mailSender;
 
-
     @Value("${app.confirm-base-url}")
     private String confirmBaseUrl;
 
@@ -35,7 +34,7 @@ public class UserRegisteredListener {
             String html = """
                 <!doctype html>
                 <html><body style="font-family:Inter, Segoe UI, Helvetica, Arial, sans-serif;background:#f6f8fb;margin:0;padding:0;">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
+                  <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:24px 0;">
                     <tr><td align="center">
                       <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:32px;box-shadow:0 2px 8px rgba(0,0,0,.06)">
                         <tr><td align="center" style="font-size:22px;font-weight:700;color:#222">Confirmă-ți contul</td></tr>
@@ -63,9 +62,7 @@ public class UserRegisteredListener {
             MimeMessageHelper helper = new MimeMessageHelper(mime, "UTF-8");
             helper.setTo(event.getEmail());
             helper.setSubject("Confirmă-ți contul");
-            if (!from.isBlank()) {
-                helper.setFrom(from);
-            }
+            if (!from.isBlank()) helper.setFrom(from);
             helper.setText(html, true);
 
             mailSender.send(mime);

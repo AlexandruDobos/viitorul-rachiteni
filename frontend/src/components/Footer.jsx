@@ -19,6 +19,14 @@ const SocialIcon = ({ href, label, children }) => (
 export default function Footer() {
   const year = new Date().getFullYear();
 
+  // Google Maps (din linkul tău)
+  const MAP_LAT = 47.039275;
+  const MAP_LNG = 26.9022791;
+  const MAP_NAME = 'Stadion AS Viitorul Răchiteni';
+  const MAP_LINK =
+    'https://www.google.com/maps/place/Stadion+AS+Viitorul+Rachiteni/@47.0408353,26.8979189,15.04z/data=!4m6!3m5!1s0x40cab9007ab923ef:0xd9579ff8e5789606!8m2!3d47.039275!4d26.9022791!16s%2Fg%2F11ldxsbz9_?entry=ttu';
+  const MAP_EMBED_SRC = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=16&output=embed`;
+
   // link-urile din DB (se afișează condiționat)
   const [links, setLinks] = useState({
     facebookUrl: '',
@@ -29,14 +37,14 @@ export default function Footer() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await getSocialLinks(); // { facebookUrl, instagramUrl, youtubeUrl }
+        const data = await getSocialLinks();
         setLinks({
           facebookUrl: data?.facebookUrl || '',
           instagramUrl: data?.instagramUrl || '',
           youtubeUrl: data?.youtubeUrl || '',
         });
       } catch {
-        // lăsăm gol – nu afișăm nimic dacă nu putem citi setările
+        // silent
       }
     })();
   }, []);
@@ -47,7 +55,7 @@ export default function Footer() {
       <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
 
       <div className="mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-10 py-10">
-        {/* grid principal – centrat pe mobil, left pe desktop */}
+        {/* grid principal */}
         <div className="grid gap-8 lg:grid-cols-4 place-items-center lg:place-items-start text-center lg:text-left">
           {/* Brand */}
           <div className="col-span-1 w-full max-w-sm">
@@ -69,11 +77,10 @@ export default function Footer() {
             </div>
 
             <p className="mt-3 text-sm text-gray-600">
-              Comunitate, echipă, pasiune. Proiect de fotbal local susținut de
+              Echipă, comunitate, pasiune. Proiect de fotbal local susținut de
               voluntari și parteneri.
             </p>
 
-            {/* social – se afișează DOAR dacă există în DB */}
             {(links.facebookUrl || links.instagramUrl || links.youtubeUrl) && (
               <div className="mt-4 flex items-center justify-center lg:justify-start gap-3">
                 {links.facebookUrl && (
@@ -117,7 +124,7 @@ export default function Footer() {
           <div className="col-span-1 w-full max-w-sm">
             <h3 className="text-sm font-semibold text-gray-900">Susține clubul</h3>
             <p className="mt-3 text-sm text-gray-600">
-              Donează pentru echipament, logistică și proiectele de juniori.
+              Donează pentru echipament și logistică.
             </p>
             <Link
               to="/donations"
@@ -132,18 +139,42 @@ export default function Footer() {
             </Link>
           </div>
 
-          {/* Contact */}
+          {/* Contact + Hartă */}
           <div className="col-span-1 w-full max-w-sm">
             <h3 className="text-sm font-semibold text-gray-900">Contact</h3>
             <ul className="mt-3 space-y-2 text-sm text-gray-600">
-              <li>Email: <a className="hover:underline" href="mailto:contact@viitorul-rachiteni.ro">contact@viitorul-rachiteni.ro</a></li>
-              <li>Telefon: <a className="hover:underline" href="tel:+40700000000">+40 700 000 000</a></li>
+              <li>
+                Email:{' '}
+                <a className="hover:underline" href="mailto:viitorulrachiteni@gmail.com">
+                  viitorulrachiteni@gmail.com
+                </a>
+              </li>
               <li>Răchiteni, Iași</li>
             </ul>
+
+            {/* Hartă Google Maps (interactivă) */}
+            <div className="mt-4 rounded-xl overflow-hidden ring-1 ring-gray-200 shadow-sm">
+              <iframe
+                title={`Hartă Google – ${MAP_NAME}`}
+                src={MAP_EMBED_SRC}
+                loading="lazy"
+                allowFullScreen
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-56 md:h-64"
+              />
+            </div>
+            <a
+              href={MAP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-blue-700 hover:underline"
+            >
+              Deschide în Google Maps
+            </a>
           </div>
         </div>
 
-        {/* subfooter – mesaj personalizat */}
+        {/* subfooter */}
         <div className="mt-8 border-t pt-4 text-xs text-gray-500 flex flex-col items-center gap-3 text-center lg:flex-row lg:justify-between lg:text-left">
           <div>© {year} ACS Viitorul Răchiteni. Toate drepturile rezervate.</div>
 

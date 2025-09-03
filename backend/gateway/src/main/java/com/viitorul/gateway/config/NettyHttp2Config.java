@@ -1,4 +1,4 @@
-package config;
+package com.viitorul.gateway.config;
 
 import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory;
 import org.springframework.context.annotation.Bean;

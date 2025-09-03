@@ -43,35 +43,35 @@ public class UserRegisteredListener {
                 <body style="margin:0;padding:0;background:#f6f8fb;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;line-height:1.6;color:#222;">
                   <!-- preheader (ascuns) -->
                   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-                    Confirmă-ți contul la Viitorul Răchițeni
+                    Confirmă-ți contul la ACS Viitorul Răchiteni
                   </div>
 
                   <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
                     <tr>
                       <td align="center">
                         <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;box-shadow:0 2px 12px rgba(16,24,40,.08);overflow:hidden;">
-                          
-                          <!-- Header cu logo -->
+
+                          <!-- Header cu logo (mai mare) -->
                           <tr>
-                            <td align="center" style="background:#0b61ff;background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:28px 24px;">
-                              <img src="cid:logo" alt="ACS Viitorul Răchițeni" height="64" style="display:block;border:0;outline:none;">
+                            <td align="center" style="background:#0b61ff;background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:36px 24px;">
+                              <img src="cid:logo" alt="ACS Viitorul Răchiteni" height="96" style="display:block;border:0;outline:none;">
                             </td>
                           </tr>
 
                           <!-- Spacer mare -->
-                          <tr><td style="height:8px"></td></tr>
+                          <tr><td style="height:12px"></td></tr>
 
                           <!-- Titlu -->
                           <tr>
                             <td align="center" style="padding:0 32px">
-                              <h1 style="margin:0;font-size:22px;line-height:1.3;color:#1f2937;font-weight:800;">
+                              <h1 style="margin:0;font-size:24px;line-height:1.3;color:#1f2937;font-weight:800;">
                                 Confirmă-ți contul
                               </h1>
                             </td>
                           </tr>
 
                           <!-- Intro -->
-                          <tr><td style="height:16px"></td></tr>
+                          <tr><td style="height:18px"></td></tr>
                           <tr>
                             <td style="padding:0 32px;font-size:15px;color:#374151;">
                               Salut %s,
@@ -80,21 +80,23 @@ public class UserRegisteredListener {
                             </td>
                           </tr>
 
-                          <!-- Buton -->
-                          <tr><td style="height:24px"></td></tr>
+                          <!-- Spațiu înainte de buton (mai mult) -->
+                          <tr><td style="height:32px"></td></tr>
+
+                          <!-- Buton (mai „gras”) -->
                           <tr>
                             <td align="center" style="padding:0 32px">
                               <a href="%s"
-                                 style="display:inline-block;padding:14px 24px;border-radius:10px;
+                                 style="display:inline-block;padding:16px 28px;border-radius:12px;
                                         background:#111827;color:#ffffff;text-decoration:none;
-                                        font-weight:700;font-size:14px;">
+                                        font-weight:800;font-size:15px;box-shadow:0 6px 16px rgba(17,24,39,.15);">
                                 Confirmă contul
                               </a>
                             </td>
                           </tr>
 
-                          <!-- Spacer -->
-                          <tr><td style="height:20px"></td></tr>
+                          <!-- Spațiu după buton (mai mult) -->
+                          <tr><td style="height:32px"></td></tr>
 
                           <!-- Fallback link -->
                           <tr>
@@ -106,7 +108,7 @@ public class UserRegisteredListener {
                           </tr>
 
                           <!-- Info expirare -->
-                          <tr><td style="height:16px"></td></tr>
+                          <tr><td style="height:18px"></td></tr>
                           <tr>
                             <td style="padding:0 32px;font-size:12px;color:#6b7280;">
                               Linkul expiră în 30 de minute.
@@ -114,12 +116,12 @@ public class UserRegisteredListener {
                           </tr>
 
                           <!-- Footer -->
-                          <tr><td style="height:24px"></td></tr>
+                          <tr><td style="height:26px"></td></tr>
                           <tr>
-                            <td style="padding:0 32px 28px 32px;font-size:12px;color:#9ca3af;">
+                            <td style="padding:0 32px 30px 32px;font-size:12px;color:#9ca3af;">
                               Mulțumim,
                               <br>
-                              Echipa Viitorul Răchițeni
+                              Echipa <strong>ACS Viitorul Răchiteni</strong>
                             </td>
                           </tr>
 
@@ -131,7 +133,6 @@ public class UserRegisteredListener {
                 </html>
                 """.formatted(event.getName(), link, link, link);
 
-            // multipart=true pentru a putea atașa imagine inline (CID)
             MimeMessage mime = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
 
@@ -140,7 +141,7 @@ public class UserRegisteredListener {
             if (!from.isBlank()) helper.setFrom(from);
             helper.setText(html, true);
 
-            // atașează logo din classpath ca imagine inline
+            // logo inline (resursa: email-service/src/main/resources/mail/logo.png)
             helper.addInline("logo", new ClassPathResource("mail/logo.png"), "image/png");
 
             mailSender.send(mime);

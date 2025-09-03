@@ -86,7 +86,7 @@ public class UserAccountActivatedListener {
 
                           <!-- Buton -->
                           <tr>
-                            <td align="center" style="padding:0 32px">
+                            <td align="center" style="padding: 32px 32px 32px 32px">
                               <a href="%s"
                                  style="display:inline-block;padding:16px 28px;border-radius:12px;
                                         background:#111827;color:#ffffff;text-decoration:none;

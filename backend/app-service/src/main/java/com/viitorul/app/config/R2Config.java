@@ -20,14 +20,11 @@ public class R2Config {
 
     @Bean
     public S3Presigner s3Presigner() {
-        // endpoint S3-compatible pentru R2
         String endpoint = "https://" + props.getAccountId() + ".r2.cloudflarestorage.com";
-
         return S3Presigner.builder()
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(props.getAccessKeyId(), props.getSecretKey())))
-                // R2 acceptă "auto", dar SDK v2 cere un Region – US_EAST_1 e OK
-                .region(Region.of("auto"))
+                .region(Region.of("auto"))            // pentru R2 este corect "auto"
                 .endpointOverride(URI.create(endpoint))
                 .build();
     }

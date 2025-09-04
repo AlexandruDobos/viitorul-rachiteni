@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/uploads")
+@RequestMapping("/api/app/uploads")
 @RequiredArgsConstructor
 public class UploadController {
 

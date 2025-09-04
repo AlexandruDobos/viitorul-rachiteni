@@ -1,14 +1,14 @@
 // ../forms/AddAnnouncementForm.jsx
-import React, { useEffect, useState, useRef } from 'react';
-import PropTypes from 'prop-types';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-import { TextStyle } from '@tiptap/extension-text-style';
-import Color from '@tiptap/extension-color';
+import React, { useEffect, useState, useRef } from "react";
+import PropTypes from "prop-types";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import Placeholder from "@tiptap/extension-placeholder";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
 import {
   Bold,
   Italic,
@@ -30,16 +30,16 @@ import {
   Edit3,
   Trash2,
   UploadCloud,
-} from 'lucide-react';
+} from "lucide-react";
 
-import { BASE_URL } from '../utils/constants';
+import { BASE_URL } from "../utils/constants";
 
 // ---- utils
 function isoToInputLocal(iso) {
   try {
     if (!iso) return new Date().toISOString().slice(0, 16);
     const d = new Date(iso);
-    const pad = (n) => (n < 10 ? '0' + n : '' + n);
+    const pad = (n) => (n < 10 ? "0" + n : "" + n);
     const yyyy = d.getFullYear();
     const mm = pad(d.getMonth() + 1);
     const dd = pad(d.getDate());
@@ -56,7 +56,7 @@ function formatDateForList(iso) {
     const d = new Date(iso);
     return d.toLocaleString();
   } catch {
-    return iso || '';
+    return iso || "";
   }
 }
 
@@ -73,12 +73,12 @@ function formatDateForList(iso) {
  */
 
 function AddAnnouncementForm({ onSave }) {
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const [publishedAt, setPublishedAt] = useState(
     new Date().toISOString().slice(0, 16)
   );
-  const [coverUrl, setCoverUrl] = useState('');
-  const [textColor, setTextColor] = useState('#000000');
+  const [coverUrl, setCoverUrl] = useState("");
+  const [textColor, setTextColor] = useState("#000000");
   const [submitting, setSubmitting] = useState(false);
 
   const [announcements, setAnnouncements] = useState([]);
@@ -102,20 +102,22 @@ function AddAnnouncementForm({ onSave }) {
       Link.configure({
         autolink: true,
         openOnClick: true,
-        protocols: ['http', 'https', 'mailto', 'tel', 'sms'],
+        protocols: ["http", "https", "mailto", "tel", "sms"],
         linkOnPaste: true,
       }),
-      Image.configure({ HTMLAttributes: { class: 'max-w-full h-auto rounded-xl' } }),
+      Image.configure({
+        HTMLAttributes: { class: "max-w-full h-auto rounded-xl" },
+      }),
       Placeholder.configure({
-        placeholder: 'Scrie conținutul anunțului aici…',
+        placeholder: "Scrie conținutul anunțului aici…",
       }),
     ],
     content:
-      '<p><em>Sfat:</em> selectează textul și folosește bara de instrumente pentru bold, italic, subliniat, culoare, link, imagini etc.</p>',
+      "<p><em>Sfat:</em> selectează textul și folosește bara de instrumente pentru bold, italic, subliniat, culoare, link, imagini etc.</p>",
     editorProps: {
       attributes: {
         class:
-          'prose prose-slate max-w-none min-h-[260px] rounded-2xl border bg-white p-4 focus:outline-none',
+          "prose prose-slate max-w-none min-h-[260px] rounded-2xl border bg-white p-4 focus:outline-none",
       },
     },
   });
@@ -128,12 +130,12 @@ function AddAnnouncementForm({ onSave }) {
     try {
       setLoadingList(true);
       const res = await fetch(`${BASE_URL}/app/announcements`);
-      if (!res.ok) throw new Error('Eroare la listare');
+      if (!res.ok) throw new Error("Eroare la listare");
       const data = await res.json();
       setAnnouncements(data);
     } catch (e) {
       console.error(e);
-      alert('Nu s-au putut încărca anunțurile.');
+      alert("Nu s-au putut încărca anunțurile.");
     } finally {
       setLoadingList(false);
     }
@@ -150,78 +152,83 @@ function AddAnnouncementForm({ onSave }) {
    * Expected response: { uploadUrl: string, publicUrl: string }
    * If your endpoint differs, adjust here.
    */
-async function presignForR2(file, folder = 'announcements') {
-  const q = new URLSearchParams({
-    filename: file.name,
-    contentType: file.type || 'application/octet-stream',
-    folder, // opțional, default 'announcements'
-  });
+  async function presignForR2(file, folder = "announcements") {
+    const q = new URLSearchParams({
+      filename: file.name,
+      contentType: file.type || "application/octet-stream",
+      folder,
+    });
 
-  // ruta corectă conform backend-ului tău
-  const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
-    method: 'GET',
-    credentials: 'include',
-  });
-  if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
-  const data = await res.json();
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
+      method: "GET",
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error("Nu s-a putut obține URL-ul de încărcare.");
+    const data = await res.json();
 
-  // Backend-ul tău întoarce exact aceste chei
-  const uploadUrl = data.uploadUrl;
-  const publicUrl = data.publicUrl;
-  if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
-  return { uploadUrl, publicUrl };
-}
+    // acum backend-ul întoarce și headers
+    const uploadUrl = data.uploadUrl;
+    const publicUrl = data.publicUrl;
+    const headers = data.headers || {};
+    if (!uploadUrl || !publicUrl)
+      throw new Error("Răspuns invalid la presign.");
+    return { uploadUrl, publicUrl, headers };
+  }
 
-  /**
-   * PUT the file directly to R2 using the presigned URL.
-   */
-  async function putFileToR2(uploadUrl, file) {
+  async function putFileToR2(uploadUrl, file, signedHeaders) {
+    // Folosește EXACT header-ele semnate. NU adăuga/șterge nimic.
+    // Dacă vrei să vezi ce conțin: de obicei includ `content-type` + `host` și uneori altele.
     const put = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      method: "PUT",
+      headers: signedHeaders,
       body: file,
     });
-    if (!put.ok) throw new Error('Încărcarea către R2 a eșuat.');
+    if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");
   }
 
   // ---------------- Existing toolbar actions ----------------
   const addLink = () => {
     if (!editor) return;
-    const prev = editor.getAttributes('link')?.href || '';
+    const prev = editor.getAttributes("link")?.href || "";
     const url = window.prompt(
-      'Introdu URL-ul (poți folosi și o rută internă, ex: /anunturi/123)',
-      prev || 'https://'
+      "Introdu URL-ul (poți folosi și o rută internă, ex: /anunturi/123)",
+      prev || "https://"
     );
     if (url === null) return; // cancel
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
   // Keep original: insert by URL (works as before)
   const addImage = () => {
     if (!editor) return;
-    const url = window.prompt('Introdu URL-ul imaginii (temporar, fără upload)');
+    const url = window.prompt(
+      "Introdu URL-ul imaginii (temporar, fără upload)"
+    );
     if (!url) return;
-    editor.chain().focus().setImage({ src: url, alt: 'image' }).run();
+    editor.chain().focus().setImage({ src: url, alt: "image" }).run();
   };
 
   // New: upload image and insert in editor
   const handleInlineFile = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = ''; // reset input
+    e.target.value = ""; // reset input
     if (!file) return;
     try {
       setUploadingInline(true);
-      const { uploadUrl, publicUrl } = await presignForR2(file);
-      await putFileToR2(uploadUrl, file);
-      // insert at cursor
-      editor?.chain().focus().setImage({ src: publicUrl, alt: file.name }).run();
+      const { uploadUrl, publicUrl, headers } = await presignForR2(file);
+      await putFileToR2(uploadUrl, file, headers);
+      editor
+        ?.chain()
+        .focus()
+        .setImage({ src: publicUrl, alt: file.name })
+        .run();
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Încărcarea imaginii a eșuat.');
+      alert(err.message || "Încărcarea imaginii a eșuat.");
     } finally {
       setUploadingInline(false);
     }
@@ -232,12 +239,12 @@ async function presignForR2(file, folder = 'announcements') {
   };
 
   const resetForm = () => {
-    setTitle('');
-    setCoverUrl('');
+    setTitle("");
+    setCoverUrl("");
     setPublishedAt(new Date().toISOString().slice(0, 16));
-    setTextColor('#000000');
+    setTextColor("#000000");
     setEditId(null);
-    editor?.commands.setContent('');
+    editor?.commands.setContent("");
   };
 
   const handleSubmit = async (e) => {
@@ -253,7 +260,7 @@ async function presignForR2(file, folder = 'announcements') {
       contentText: editor.getText(),
     };
 
-    const method = editId ? 'PUT' : 'POST';
+    const method = editId ? "PUT" : "POST";
     const url = editId
       ? `${BASE_URL}/app/announcements/${editId}`
       : `${BASE_URL}/app/announcements`;
@@ -261,10 +268,10 @@ async function presignForR2(file, folder = 'announcements') {
     try {
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error('Eroare la salvare');
+      if (!res.ok) throw new Error("Eroare la salvare");
 
       const saved = await res.json().catch(() => null);
       if (onSave) onSave(saved || payload);
@@ -273,7 +280,7 @@ async function presignForR2(file, folder = 'announcements') {
       resetForm();
     } catch (err) {
       console.error(err);
-      alert('A apărut o eroare la salvare.');
+      alert("A apărut o eroare la salvare.");
     } finally {
       setSubmitting(false);
     }
@@ -281,24 +288,24 @@ async function presignForR2(file, folder = 'announcements') {
 
   const handleEdit = (a) => {
     setEditId(a.id);
-    setTitle(a.title || '');
-    setCoverUrl(a.coverUrl || '');
+    setTitle(a.title || "");
+    setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
-    if (editor) editor.commands.setContent(a.contentHtml || '');
+    if (editor) editor.commands.setContent(a.contentHtml || "");
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Sigur vrei să ștergi acest anunț?')) return;
+    if (!confirm("Sigur vrei să ștergi acest anunț?")) return;
     try {
       const res = await fetch(`${BASE_URL}/app/announcements/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      if (!res.ok) throw new Error('Eroare la ștergere');
+      if (!res.ok) throw new Error("Eroare la ștergere");
       await fetchAnnouncements();
       if (editId === id) resetForm();
     } catch (e) {
       console.error(e);
-      alert('Nu s-a putut șterge anunțul.');
+      alert("Nu s-a putut șterge anunțul.");
     }
   };
 
@@ -307,16 +314,16 @@ async function presignForR2(file, folder = 'announcements') {
 
   const handleCoverFile = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = ''; // reset input
+    e.target.value = ""; // reset input
     if (!file) return;
     try {
       setUploadingCover(true);
-      const { uploadUrl, publicUrl } = await presignForR2(file);
-      await putFileToR2(uploadUrl, file);
-      setCoverUrl(publicUrl); // bind to form
+      const { uploadUrl, publicUrl, headers } = await presignForR2(file);
+      await putFileToR2(uploadUrl, file, headers);
+      setCoverUrl(publicUrl);
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Încărcarea imaginii a eșuat.');
+      alert(err.message || "Încărcarea imaginii a eșuat.");
     } finally {
       setUploadingCover(false);
     }
@@ -341,12 +348,17 @@ async function presignForR2(file, folder = 'announcements') {
       />
 
       {/* FORMULAR */}
-      <form onSubmit={handleSubmit} className="bg-white shadow rounded p-6 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow rounded p-6 space-y-4"
+      >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
-            {editId ? 'Editează Anunț' : 'Adaugă Anunț'}
+            {editId ? "Editează Anunț" : "Adaugă Anunț"}
           </h2>
-          {editId && <span className="text-xs text-gray-500">ID: {editId}</span>}
+          {editId && (
+            <span className="text-xs text-gray-500">ID: {editId}</span>
+          )}
         </div>
 
         {/* Titlu */}
@@ -379,7 +391,9 @@ async function presignForR2(file, folder = 'announcements') {
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Poză de copertă (URL, opțional)</label>
+            <label className="text-sm font-medium">
+              Poză de copertă (URL, opțional)
+            </label>
             <div className="flex gap-2">
               <input
                 type="url"
@@ -409,7 +423,15 @@ async function presignForR2(file, folder = 'announcements') {
             </div>
             {coverUrl && (
               <div className="mt-1 text-xs text-gray-600 truncate">
-                Salvat: <a href={coverUrl} className="underline" target="_blank" rel="noreferrer">{coverUrl}</a>
+                Salvat:{" "}
+                <a
+                  href={coverUrl}
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {coverUrl}
+                </a>
               </div>
             )}
           </div>
@@ -418,21 +440,27 @@ async function presignForR2(file, folder = 'announcements') {
         {/* Toolbar */}
         <div className="rounded-2xl border bg-white p-2">
           <div className="flex flex-wrap items-center gap-2">
-            <ToolButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')}>
+            <ToolButton
+              onClick={() => editor?.chain().focus().toggleBold().run()}
+              active={editor?.isActive("bold")}
+            >
               <Bold className="h-4 w-4" />
             </ToolButton>
-            <ToolButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')}>
+            <ToolButton
+              onClick={() => editor?.chain().focus().toggleItalic().run()}
+              active={editor?.isActive("italic")}
+            >
               <Italic className="h-4 w-4" />
             </ToolButton>
             <ToolButton
               onClick={() => editor?.chain().focus().toggleUnderline().run()}
-              active={editor?.isActive('underline')}
+              active={editor?.isActive("underline")}
             >
               <UnderlineIcon className="h-4 w-4" />
             </ToolButton>
             <ToolButton
               onClick={() => editor?.chain().focus().toggleStrike().run()}
-              active={editor?.isActive('strike')}
+              active={editor?.isActive("strike")}
             >
               <Strikethrough className="h-4 w-4" />
             </ToolButton>
@@ -440,20 +468,26 @@ async function presignForR2(file, folder = 'announcements') {
             <Divider />
 
             <ToolButton
-              onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-              active={editor?.isActive('heading', { level: 1 })}
+              onClick={() =>
+                editor?.chain().focus().toggleHeading({ level: 1 }).run()
+              }
+              active={editor?.isActive("heading", { level: 1 })}
             >
               <Heading1 className="h-4 w-4" />
             </ToolButton>
             <ToolButton
-              onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-              active={editor?.isActive('heading', { level: 2 })}
+              onClick={() =>
+                editor?.chain().focus().toggleHeading({ level: 2 }).run()
+              }
+              active={editor?.isActive("heading", { level: 2 })}
             >
               <Heading2 className="h-4 w-4" />
             </ToolButton>
             <ToolButton
-              onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-              active={editor?.isActive('heading', { level: 3 })}
+              onClick={() =>
+                editor?.chain().focus().toggleHeading({ level: 3 }).run()
+              }
+              active={editor?.isActive("heading", { level: 3 })}
             >
               <Heading3 className="h-4 w-4" />
             </ToolButton>
@@ -462,26 +496,26 @@ async function presignForR2(file, folder = 'announcements') {
 
             <ToolButton
               onClick={() => editor?.chain().focus().toggleBulletList().run()}
-              active={editor?.isActive('bulletList')}
+              active={editor?.isActive("bulletList")}
             >
               <List className="h-4 w-4" />
             </ToolButton>
             <ToolButton
               onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-              active={editor?.isActive('orderedList')}
+              active={editor?.isActive("orderedList")}
             >
               <ListOrdered className="h-4 w-4" />
             </ToolButton>
             <ToolButton
               onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-              active={editor?.isActive('blockquote')}
+              active={editor?.isActive("blockquote")}
             >
               <Quote className="h-4 w-4" />
             </ToolButton>
 
             <Divider />
 
-            <ToolButton onClick={addLink} active={editor?.isActive('link')}>
+            <ToolButton onClick={addLink} active={editor?.isActive("link")}>
               <LinkIcon className="h-4 w-4" />
             </ToolButton>
 
@@ -521,10 +555,16 @@ async function presignForR2(file, folder = 'announcements') {
 
             <Divider />
 
-            <ToolButton disabled={!canUndo} onClick={() => editor?.chain().focus().undo().run()}>
+            <ToolButton
+              disabled={!canUndo}
+              onClick={() => editor?.chain().focus().undo().run()}
+            >
               <Undo className="h-4 w-4" />
             </ToolButton>
-            <ToolButton disabled={!canRedo} onClick={() => editor?.chain().focus().redo().run()}>
+            <ToolButton
+              disabled={!canRedo}
+              onClick={() => editor?.chain().focus().redo().run()}
+            >
               <Redo className="h-4 w-4" />
             </ToolButton>
 
@@ -544,7 +584,11 @@ async function presignForR2(file, folder = 'announcements') {
             disabled={submitting || !title.trim()}
             className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {submitting ? 'Se salvează…' : (editId ? 'Salvează modificările' : 'Adaugă')}
+            {submitting
+              ? "Se salvează…"
+              : editId
+              ? "Salvează modificările"
+              : "Adaugă"}
           </button>
           <button
             type="button"
@@ -560,7 +604,9 @@ async function presignForR2(file, folder = 'announcements') {
       <div className="bg-white shadow rounded p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
-          {loadingList && <span className="text-xs text-gray-500">Se încarcă…</span>}
+          {loadingList && (
+            <span className="text-xs text-gray-500">Se încarcă…</span>
+          )}
         </div>
 
         {announcements.length === 0 ? (
@@ -568,13 +614,18 @@ async function presignForR2(file, folder = 'announcements') {
         ) : (
           <ul className="space-y-2">
             {announcements.map((a) => (
-              <li key={a.id} className="flex items-center justify-between border p-2 rounded">
+              <li
+                key={a.id}
+                className="flex items-center justify-between border p-2 rounded"
+              >
                 <div className="flex items-center gap-3">
                   <img
-                    src={a.coverUrl || '/placeholder.png'}
+                    src={a.coverUrl || "/placeholder.png"}
                     alt={a.title}
                     className="w-12 h-12 rounded object-cover border"
-                    onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.png";
+                    }}
                   />
                   <div>
                     <div className="font-semibold">{a.title}</div>
@@ -624,7 +675,7 @@ function ToolButton({ children, onClick, active, disabled, title }) {
       disabled={disabled}
       title={title}
       className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-gray-700 transition ${
-        active ? 'bg-blue-50 border-blue-300' : 'bg-white hover:bg-gray-50'
+        active ? "bg-blue-50 border-blue-300" : "bg-white hover:bg-gray-50"
       } disabled:opacity-40`}
     >
       {children}

@@ -17,12 +17,12 @@ public class UploadController {
 
     private final R2Signer signer;
 
-    // GET /api/uploads/sign?folder=announcements&filename=poză.jpg&contentType=image/jpeg
+    // GET /api/app/uploads/sign?folder=announcements&filename=poza.jpg&contentType=image/jpeg
     @GetMapping("/sign")
     public ResponseEntity<Map<String, String>> signUpload(
-            @RequestParam String filename,
-            @RequestParam String contentType,
-            @RequestParam(defaultValue = "announcements") String folder
+            @RequestParam(name = "filename") String filename,
+            @RequestParam(name = "contentType") String contentType,
+            @RequestParam(name = "folder", defaultValue = "announcements") String folder
     ) {
         String safeName = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
         String key = folder + "/" + UUID.randomUUID() + "-" + safeName;

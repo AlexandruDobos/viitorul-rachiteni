@@ -158,7 +158,7 @@ async function presignForR2(file, folder = 'announcements') {
   });
 
   // ruta corectă conform backend-ului tău
-  const res = await fetch(`${BASE_URL}/uploads/sign?${q.toString()}`, {
+  const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
     method: 'GET',
     credentials: 'include',
   });

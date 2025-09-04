@@ -1,5 +1,5 @@
 // ../forms/AddAnnouncementForm.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -22,12 +22,14 @@ import {
   Quote,
   Link as LinkIcon,
   Image as ImageIcon,
+  ImagePlus,
   Undo,
   Redo,
   Eraser,
   PaintBucket,
   Edit3,
   Trash2,
+  UploadCloud,
 } from 'lucide-react';
 
 import { BASE_URL } from '../utils/constants';
@@ -36,7 +38,6 @@ import { BASE_URL } from '../utils/constants';
 function isoToInputLocal(iso) {
   try {
     if (!iso) return new Date().toISOString().slice(0, 16);
-    // convertă ISO (UTC sau cu offset) la local pentru <input type="datetime-local">
     const d = new Date(iso);
     const pad = (n) => (n < 10 ? '0' + n : '' + n);
     const yyyy = d.getFullYear();
@@ -60,7 +61,7 @@ function formatDateForList(iso) {
 }
 
 /**
- * Saved payload shape (for reference):
+ * Saved payload shape:
  * {
  *   id?: number,
  *   title: string,
@@ -74,7 +75,7 @@ function formatDateForList(iso) {
 function AddAnnouncementForm({ onSave }) {
   const [title, setTitle] = useState('');
   const [publishedAt, setPublishedAt] = useState(
-    new Date().toISOString().slice(0, 16) // yyyy-MM-ddTHH:mm
+    new Date().toISOString().slice(0, 16)
   );
   const [coverUrl, setCoverUrl] = useState('');
   const [textColor, setTextColor] = useState('#000000');
@@ -83,6 +84,14 @@ function AddAnnouncementForm({ onSave }) {
   const [announcements, setAnnouncements] = useState([]);
   const [editId, setEditId] = useState(null);
   const [loadingList, setLoadingList] = useState(false);
+
+  // upload states
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingInline, setUploadingInline] = useState(false);
+
+  // hidden file inputs
+  const coverFileRef = useRef(null);
+  const inlineFileRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
@@ -135,6 +144,47 @@ function AddAnnouncementForm({ onSave }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ---------------- R2 helpers ----------------
+  /**
+   * Calls backend to get a presigned PUT URL.
+   * Expected response: { uploadUrl: string, publicUrl: string }
+   * If your endpoint differs, adjust here.
+   */
+async function presignForR2(file, folder = 'announcements') {
+  const q = new URLSearchParams({
+    filename: file.name,
+    contentType: file.type || 'application/octet-stream',
+    folder, // opțional, default 'announcements'
+  });
+
+  // ruta corectă conform backend-ului tău
+  const res = await fetch(`${BASE_URL}/uploads/sign?${q.toString()}`, {
+    method: 'GET',
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
+  const data = await res.json();
+
+  // Backend-ul tău întoarce exact aceste chei
+  const uploadUrl = data.uploadUrl;
+  const publicUrl = data.publicUrl;
+  if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
+  return { uploadUrl, publicUrl };
+}
+
+  /**
+   * PUT the file directly to R2 using the presigned URL.
+   */
+  async function putFileToR2(uploadUrl, file) {
+    const put = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!put.ok) throw new Error('Încărcarea către R2 a eșuat.');
+  }
+
+  // ---------------- Existing toolbar actions ----------------
   const addLink = () => {
     if (!editor) return;
     const prev = editor.getAttributes('link')?.href || '';
@@ -150,11 +200,31 @@ function AddAnnouncementForm({ onSave }) {
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
+  // Keep original: insert by URL (works as before)
   const addImage = () => {
     if (!editor) return;
     const url = window.prompt('Introdu URL-ul imaginii (temporar, fără upload)');
     if (!url) return;
     editor.chain().focus().setImage({ src: url, alt: 'image' }).run();
+  };
+
+  // New: upload image and insert in editor
+  const handleInlineFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset input
+    if (!file) return;
+    try {
+      setUploadingInline(true);
+      const { uploadUrl, publicUrl } = await presignForR2(file);
+      await putFileToR2(uploadUrl, file);
+      // insert at cursor
+      editor?.chain().focus().setImage({ src: publicUrl, alt: file.name }).run();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Încărcarea imaginii a eșuat.');
+    } finally {
+      setUploadingInline(false);
+    }
   };
 
   const clearFormatting = () => {
@@ -214,7 +284,6 @@ function AddAnnouncementForm({ onSave }) {
     setTitle(a.title || '');
     setCoverUrl(a.coverUrl || '');
     setPublishedAt(isoToInputLocal(a.publishedAt));
-    // important: editorul primește HTML-ul salvat
     if (editor) editor.commands.setContent(a.contentHtml || '');
   };
 
@@ -226,7 +295,6 @@ function AddAnnouncementForm({ onSave }) {
       });
       if (!res.ok) throw new Error('Eroare la ștergere');
       await fetchAnnouncements();
-      // dacă ștergi chiar anunțul pe care îl editezi, resetează formularul
       if (editId === id) resetForm();
     } catch (e) {
       console.error(e);
@@ -234,17 +302,51 @@ function AddAnnouncementForm({ onSave }) {
     }
   };
 
+  // Cover upload
+  const onChooseCover = () => coverFileRef.current?.click();
+
+  const handleCoverFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset input
+    if (!file) return;
+    try {
+      setUploadingCover(true);
+      const { uploadUrl, publicUrl } = await presignForR2(file);
+      await putFileToR2(uploadUrl, file);
+      setCoverUrl(publicUrl); // bind to form
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Încărcarea imaginii a eșuat.');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* Hidden file inputs for uploads */}
+      <input
+        ref={coverFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleCoverFile}
+      />
+      <input
+        ref={inlineFileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleInlineFile}
+      />
+
       {/* FORMULAR */}
       <form onSubmit={handleSubmit} className="bg-white shadow rounded p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             {editId ? 'Editează Anunț' : 'Adaugă Anunț'}
           </h2>
-          {editId && (
-            <span className="text-xs text-gray-500">ID: {editId}</span>
-          )}
+          {editId && <span className="text-xs text-gray-500">ID: {editId}</span>}
         </div>
 
         {/* Titlu */}
@@ -275,15 +377,41 @@ function AddAnnouncementForm({ onSave }) {
               Format: zi/lună/an + oră:minut (se salvează intern ca ISO).
             </p>
           </div>
+
           <div className="grid gap-2">
             <label className="text-sm font-medium">Poză de copertă (URL, opțional)</label>
-            <input
-              type="url"
-              value={coverUrl}
-              onChange={(e) => setCoverUrl(e.target.value)}
-              placeholder="https://exemplu.ro/cover.jpg"
-              className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={coverUrl}
+                onChange={(e) => setCoverUrl(e.target.value)}
+                placeholder="https://exemplu.ro/cover.jpg"
+                className="w-full rounded-xl border bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={onChooseCover}
+                className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                title="Încarcă imagine în R2"
+              >
+                {uploadingCover ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-dashed" />
+                    Upload…
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="h-4 w-4" />
+                    Upload
+                  </>
+                )}
+              </button>
+            </div>
+            {coverUrl && (
+              <div className="mt-1 text-xs text-gray-600 truncate">
+                Salvat: <a href={coverUrl} className="underline" target="_blank" rel="noreferrer">{coverUrl}</a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -356,8 +484,23 @@ function AddAnnouncementForm({ onSave }) {
             <ToolButton onClick={addLink} active={editor?.isActive('link')}>
               <LinkIcon className="h-4 w-4" />
             </ToolButton>
-            <ToolButton onClick={addImage}>
+
+            {/* Keep: insert by URL */}
+            <ToolButton onClick={addImage} title="Inserează imagine din URL">
               <ImageIcon className="h-4 w-4" />
+            </ToolButton>
+
+            {/* New: upload image to R2 and insert */}
+            <ToolButton
+              onClick={() => inlineFileRef.current?.click()}
+              title="Încarcă imagine și inserează"
+              disabled={uploadingInline}
+            >
+              {uploadingInline ? (
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-dashed" />
+              ) : (
+                <ImagePlus className="h-4 w-4" />
+              )}
             </ToolButton>
 
             <Divider />

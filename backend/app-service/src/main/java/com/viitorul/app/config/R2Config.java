@@ -27,7 +27,7 @@ public class R2Config {
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(props.getAccessKeyId(), props.getSecretKey())))
                 // R2 acceptă "auto", dar SDK v2 cere un Region – US_EAST_1 e OK
-                .region(Region.US_EAST_1)
+                .region(Region.of("auto"))
                 .endpointOverride(URI.create(endpoint))
                 .build();
     }

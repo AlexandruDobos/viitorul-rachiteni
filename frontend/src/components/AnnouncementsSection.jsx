@@ -149,9 +149,9 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
                     title={a.title}
                   >
                     <div className="relative aspect-[16/10] bg-gray-100">
-                      {a.coverUrl ? (
+                      {${BASE_URL}/ ? (
                         <img
-                          src={a.coverUrl}
+                          src={${BASE_URL}/}
                           alt={a.title}
                           className="absolute inset-0 w-full h-full object-cover transform transition duration-300 group-hover:scale-105"
                           onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}

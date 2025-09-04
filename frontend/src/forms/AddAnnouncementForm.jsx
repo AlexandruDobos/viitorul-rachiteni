@@ -288,7 +288,7 @@ function AddAnnouncementForm({ onSave }) {
   const handleEdit = (a) => {
     setEditId(a.id);
     setTitle(a.title || "");
-    setCoverUrl(a.coverUrl || "");
+    setCoverUrl(a.coverUrl || ""); 
     setPublishedAt(isoToInputLocal(a.publishedAt));
     if (editor) editor.commands.setContent(a.contentHtml || "");
   };
@@ -618,14 +618,7 @@ function AddAnnouncementForm({ onSave }) {
                 className="flex items-center justify-between border p-2 rounded"
               >
                 <div className="flex items-center gap-3">
-                  <img
-                    src={a.coverUrl || "/placeholder.png"}
-                    alt={a.title}
-                    className="w-12 h-12 rounded object-cover border"
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.png";
-                    }}
-                  />
+                  <img src={a.coverUrl || "/placeholder.png"} alt={a.title} className="w-12 h-12 rounded object-cover border" onError={(e) => { e.currentTarget.src = "/placeholder.png"; }} />
                   <div>
                     <div className="font-semibold">{a.title}</div>
                     <div className="text-xs text-gray-600">

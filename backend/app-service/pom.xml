@@ -74,8 +74,29 @@
         </dependency>
     </dependencies>
 
+	<properties>
+		<!-- aliniază cu JDK-ul cu care rulezi în Docker/CI -->
+		<java.version>21</java.version>
+		<!-- opțional, variabila folosită de compiler -->
+		<maven.compiler.release>${java.version}</maven.compiler.release>
+	</properties>
+
 	<build>
 		<plugins>
+			<!-- Compilează cu numele parametrilor păstrate în bytecode -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<!-- Folosește 'release' în loc de source/target ca să eviți mismatch-uri -->
+					<release>${maven.compiler.release}</release>
+					<!-- echivalent cu -parameters -->
+					<parameters>true</parameters>
+				</configuration>
+			</plugin>
+
+			<!-- Spring Boot repackage -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -90,7 +111,6 @@
 					<mainClass>com.viitorul.app.AppServiceApplication</mainClass>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
 </project>

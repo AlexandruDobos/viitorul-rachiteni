@@ -1,14 +1,21 @@
+/* eslint-disable no-unused-vars */
 // ../forms/AddAnnouncementForm.jsx
 import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
-import { useEditor, EditorContent } from "@tiptap/react";
+import {
+  useEditor,
+  EditorContent,
+  NodeViewWrapper,
+  ReactNodeViewRenderer,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
+import BaseImage from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
+import { mergeAttributes } from "@tiptap/core";
 import {
   Bold,
   Italic,
@@ -34,7 +41,124 @@ import {
 
 import { BASE_URL } from "../utils/constants";
 
-// ---- utils
+/* -------------------- Image cu resize (drag handle) -------------------- */
+
+const ResizableImage = BaseImage.extend({
+  name: "image", // păstrăm același nume ca să rămână compatibil cu comanda setImage
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        renderHTML: (attrs) =>
+          attrs.width ? { style: `width:${attrs.width}px;` } : {},
+      },
+      height: {
+        default: null,
+        // pentru simplitate, nu forțăm height; lăsăm auto (păstrează proporțiile)
+      },
+    };
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ResizableImageView);
+  },
+});
+
+function ResizableImageView({ node, updateAttributes, selected }) {
+  const imgRef = useRef(null);
+  const wrapRef = useRef(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const start = useRef({ x: 0, width: 0 });
+
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!imgRef.current) return;
+    start.current = {
+      x: e.clientX,
+      width: imgRef.current.getBoundingClientRect().width,
+    };
+    setIsResizing(true);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
+
+  const onMouseMove = (e) => {
+    if (!isResizing || !imgRef.current) return;
+    const deltaX = e.clientX - start.current.x;
+    let newWidth = Math.round(start.current.width + deltaX);
+
+    // plafonare simplă: minim 50px, maxim 100% din containerul părinte
+    const parentWidth =
+      wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
+      window.innerWidth;
+    newWidth = Math.max(50, Math.min(newWidth, Math.floor(parentWidth)));
+
+    updateAttributes({ width: newWidth });
+  };
+
+  const onMouseUp = () => {
+    setIsResizing(false);
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  };
+
+  // stiluri: imagine fluidă, cu max-width 100%, colț de resize
+  const showHandle = selected || isResizing;
+
+  return (
+    <NodeViewWrapper
+      as="figure"
+      ref={wrapRef}
+      className={`relative inline-block my-3 ${
+        selected ? "ring-2 ring-blue-400 rounded-xl" : ""
+      }`}
+      contentEditable={false}
+      // împiedicăm selectarea textului în timpul resize-ului
+      style={{ userSelect: isResizing ? "none" : undefined }}
+    >
+      <img
+        ref={imgRef}
+        src={node.attrs.src}
+        alt={node.attrs.alt || "image"}
+        title={node.attrs.title}
+        className="h-auto rounded-xl border bg-white"
+        style={{
+          display: "block",
+          maxWidth: "100%",
+          width: node.attrs.width ? `${node.attrs.width}px` : undefined,
+        }}
+        onLoad={(e) => {
+          // dacă nu exista lățime, setăm lățimea inițială la lățimea reală (plafonată la container)
+          if (!node.attrs.width && e.currentTarget) {
+            const naturalW = e.currentTarget.naturalWidth || 0;
+            const parentWidth =
+              wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
+              naturalW;
+            const initial = Math.min(naturalW, parentWidth);
+            updateAttributes({ width: Math.max(50, Math.floor(initial)) });
+          }
+        }}
+      />
+      {/* handle de resize (colț dreapta-jos) */}
+      <div
+        role="button"
+        aria-label="Redimensionează imagine"
+        onMouseDown={onMouseDown}
+        className={`absolute -bottom-2 -right-2 h-4 w-4 rounded-full border bg-white shadow transition ${
+          showHandle ? "opacity-100 cursor-nwse-resize" : "opacity-0"
+        }`}
+      />
+      {/* opțional: un overlay mic pentru UX */}
+      {showHandle && (
+        <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-blue-300" />
+      )}
+    </NodeViewWrapper>
+  );
+}
+
+/* -------------------- utils existente -------------------- */
+
 function isoToInputLocal(iso) {
   try {
     if (!iso) return new Date().toISOString().slice(0, 16);
@@ -60,17 +184,7 @@ function formatDateForList(iso) {
   }
 }
 
-/**
- * Saved payload shape:
- * {
- *   id?: number,
- *   title: string,
- *   publishedAt: string (ISO),
- *   coverUrl: string|null,
- *   contentHtml: string,
- *   contentText: string
- * }
- */
+/* -------------------- componenta principală -------------------- */
 
 function AddAnnouncementForm({ onSave }) {
   const [title, setTitle] = useState("");
@@ -105,7 +219,8 @@ function AddAnnouncementForm({ onSave }) {
         protocols: ["http", "https", "mailto", "tel", "sms"],
         linkOnPaste: true,
       }),
-      Image.configure({
+      // înlocuim Image cu ResizableImage
+      ResizableImage.configure({
         HTMLAttributes: { class: "max-w-full h-auto rounded-xl" },
       }),
       Placeholder.configure({
@@ -118,6 +233,10 @@ function AddAnnouncementForm({ onSave }) {
       attributes: {
         class:
           "prose prose-slate max-w-none min-h-[260px] rounded-2xl border bg-white p-4 focus:outline-none",
+      },
+      // mic hack: când redimensionezi, cursorul să rămână „normal”
+      handleDOMEvents: {
+        mousedown: () => false,
       },
     },
   });
@@ -147,11 +266,6 @@ function AddAnnouncementForm({ onSave }) {
   }, []);
 
   // ---------------- R2 helpers ----------------
-  /**
-   * Calls backend to get a presigned PUT URL.
-   * Expected response: { uploadUrl: string, publicUrl: string }
-   * If your endpoint differs, adjust here.
-   */
   async function presignForR2(file, folder = "announcements") {
     const q = new URLSearchParams({
       filename: file.name,
@@ -166,24 +280,25 @@ function AddAnnouncementForm({ onSave }) {
     if (!res.ok) throw new Error("Nu s-a putut obține URL-ul de încărcare.");
     const data = await res.json();
 
-    // acum backend-ul întoarce și headers
     const uploadUrl = data.uploadUrl;
     const publicUrl = data.publicUrl;
     const headers = data.headers || {};
-    if (!uploadUrl || !publicUrl)
-      throw new Error("Răspuns invalid la presign.");
+    if (!uploadUrl || !publicUrl) throw new Error("Răspuns invalid la presign.");
     return { uploadUrl, publicUrl, headers };
   }
 
-async function putFileToR2(uploadUrl, file) {
-  const res = await fetch(uploadUrl, { method: "PUT", body: file });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`Încărcarea către R2 a eșuat (${res.status}). ${t.slice(0,200)}`);
+  async function putFileToR2(uploadUrl, file /*, _headersIgnored */) {
+    // trimitem doar body + Content-Type (dacă vrei, poți să-l adaugi aici)
+    const res = await fetch(uploadUrl, { method: "PUT", body: file });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(
+        `Încărcarea către R2 a eșuat (${res.status}). ${t.slice(0, 200)}`
+      );
+    }
   }
-}
 
-  // ---------------- Existing toolbar actions ----------------
+  // ---------------- Toolbar actions ----------------
   const addLink = () => {
     if (!editor) return;
     const prev = editor.getAttributes("link")?.href || "";
@@ -199,12 +314,10 @@ async function putFileToR2(uploadUrl, file) {
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
 
-  // Keep original: insert by URL (works as before)
+  // Keep: insert by URL (works as before)
   const addImage = () => {
     if (!editor) return;
-    const url = window.prompt(
-      "Introdu URL-ul imaginii (temporar, fără upload)"
-    );
+    const url = window.prompt("Introdu URL-ul imaginii (temporar, fără upload)");
     if (!url) return;
     editor.chain().focus().setImage({ src: url, alt: "image" }).run();
   };
@@ -218,11 +331,7 @@ async function putFileToR2(uploadUrl, file) {
       setUploadingInline(true);
       const { uploadUrl, publicUrl, headers } = await presignForR2(file);
       await putFileToR2(uploadUrl, file, headers);
-      editor
-        ?.chain()
-        .focus()
-        .setImage({ src: publicUrl, alt: file.name })
-        .run();
+      editor?.chain().focus().setImage({ src: publicUrl, alt: file.name }).run();
     } catch (err) {
       console.error(err);
       alert(err.message || "Încărcarea imaginii a eșuat.");
@@ -286,7 +395,7 @@ async function putFileToR2(uploadUrl, file) {
   const handleEdit = (a) => {
     setEditId(a.id);
     setTitle(a.title || "");
-    setCoverUrl(a.coverUrl || ""); 
+    setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
     if (editor) editor.commands.setContent(a.contentHtml || "");
   };
@@ -345,17 +454,12 @@ async function putFileToR2(uploadUrl, file) {
       />
 
       {/* FORMULAR */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow rounded p-6 space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="bg-white shadow rounded p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
             {editId ? "Editează Anunț" : "Adaugă Anunț"}
           </h2>
-          {editId && (
-            <span className="text-xs text-gray-500">ID: {editId}</span>
-          )}
+          {editId && <span className="text-xs text-gray-500">ID: {editId}</span>}
         </div>
 
         {/* Titlu */}
@@ -388,9 +492,7 @@ async function putFileToR2(uploadUrl, file) {
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">
-              Poză de copertă (URL, opțional)
-            </label>
+            <label className="text-sm font-medium">Poză de copertă (URL, opțional)</label>
             <div className="flex gap-2">
               <input
                 type="url"
@@ -421,12 +523,7 @@ async function putFileToR2(uploadUrl, file) {
             {coverUrl && (
               <div className="mt-1 text-xs text-gray-600 truncate">
                 Salvat:{" "}
-                <a
-                  href={coverUrl}
-                  className="underline"
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a href={coverUrl} className="underline" target="_blank" rel="noreferrer">
                   {coverUrl}
                 </a>
               </div>
@@ -465,25 +562,19 @@ async function putFileToR2(uploadUrl, file) {
             <Divider />
 
             <ToolButton
-              onClick={() =>
-                editor?.chain().focus().toggleHeading({ level: 1 }).run()
-              }
+              onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
               active={editor?.isActive("heading", { level: 1 })}
             >
               <Heading1 className="h-4 w-4" />
             </ToolButton>
             <ToolButton
-              onClick={() =>
-                editor?.chain().focus().toggleHeading({ level: 2 }).run()
-              }
+              onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
               active={editor?.isActive("heading", { level: 2 })}
             >
               <Heading2 className="h-4 w-4" />
             </ToolButton>
             <ToolButton
-              onClick={() =>
-                editor?.chain().focus().toggleHeading({ level: 3 }).run()
-              }
+              onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
               active={editor?.isActive("heading", { level: 3 })}
             >
               <Heading3 className="h-4 w-4" />
@@ -552,16 +643,10 @@ async function putFileToR2(uploadUrl, file) {
 
             <Divider />
 
-            <ToolButton
-              disabled={!canUndo}
-              onClick={() => editor?.chain().focus().undo().run()}
-            >
+            <ToolButton disabled={!canUndo} onClick={() => editor?.chain().focus().undo().run()}>
               <Undo className="h-4 w-4" />
             </ToolButton>
-            <ToolButton
-              disabled={!canRedo}
-              onClick={() => editor?.chain().focus().redo().run()}
-            >
+            <ToolButton disabled={!canRedo} onClick={() => editor?.chain().focus().redo().run()}>
               <Redo className="h-4 w-4" />
             </ToolButton>
 
@@ -581,11 +666,7 @@ async function putFileToR2(uploadUrl, file) {
             disabled={submitting || !title.trim()}
             className="inline-flex items-center justify-center rounded-2xl bg-blue-600 px-4 py-2 text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {submitting
-              ? "Se salvează…"
-              : editId
-              ? "Salvează modificările"
-              : "Adaugă"}
+            {submitting ? "Se salvează…" : editId ? "Salvează modificările" : "Adaugă"}
           </button>
           <button
             type="button"
@@ -601,9 +682,7 @@ async function putFileToR2(uploadUrl, file) {
       <div className="bg-white shadow rounded p-4">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
-          {loadingList && (
-            <span className="text-xs text-gray-500">Se încarcă…</span>
-          )}
+          {loadingList && <span className="text-xs text-gray-500">Se încarcă…</span>}
         </div>
 
         {announcements.length === 0 ? (
@@ -616,7 +695,14 @@ async function putFileToR2(uploadUrl, file) {
                 className="flex items-center justify-between border p-2 rounded"
               >
                 <div className="flex items-center gap-3">
-                  <img src={a.coverUrl || "/placeholder.png"} alt={a.title} className="w-12 h-12 rounded object-cover border" onError={(e) => { e.currentTarget.src = "/placeholder.png"; }} />
+                  <img
+                    src={a.coverUrl || "/placeholder.png"}
+                    alt={a.title}
+                    className="w-12 h-12 rounded object-cover border"
+                    onError={(e) => {
+                      e.currentTarget.src = "/placeholder.png";
+                    }}
+                  />
                   <div>
                     <div className="font-semibold">{a.title}</div>
                     <div className="text-xs text-gray-600">

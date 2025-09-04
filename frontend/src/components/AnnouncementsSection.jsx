@@ -18,10 +18,20 @@ function formatDate(iso) {
     return iso || '';
   }
 }
+
 function wordsExcerpt(text = '', maxWords = 24) {
   const words = (text || '').trim().split(/\s+/);
   if (words.length <= maxWords) return text || '';
   return words.slice(0, maxWords).join(' ') + '…';
+}
+
+/** Convertește o cale relativă în URL absolut pe baza BASE_URL */
+function toAbsoluteUrl(maybeUrl) {
+  if (!maybeUrl) return null;
+  if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
+  const base = (BASE_URL || '').replace(/\/$/, '');
+  const path = String(maybeUrl).replace(/^\//, '');
+  return `${base}/${path}`;
 }
 
 /** Animations */
@@ -140,46 +150,49 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
               animate="show"
               exit="exit"
             >
-              {items.map((a) => (
-                <motion.div key={a.id} variants={itemVariants} layout>
-                  {/* Card custom - clicabil pe tot */}
-                  <button
-                    onClick={() => setSelectedId(a.id)}
-                    className="group w-full text-left overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-md hover:-translate-y-0.5 transition"
-                    title={a.title}
-                  >
-                    <div className="relative aspect-[16/10] bg-gray-100">
-                      {${BASE_URL}/ ? (
-                        <img
-                          src={${BASE_URL}/}
-                          alt={a.title}
-                          className="absolute inset-0 w-full h-full object-cover transform transition duration-300 group-hover:scale-105"
-                          onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
-                      )}
+              {items.map((a) => {
+                const imgSrc = toAbsoluteUrl(a.coverUrl);
+                return (
+                  <motion.div key={a.id} variants={itemVariants} layout>
+                    {/* Card custom - clicabil pe tot */}
+                    <button
+                      onClick={() => setSelectedId(a.id)}
+                      className="group w-full text-left overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-md hover:-translate-y-0.5 transition"
+                      title={a.title}
+                    >
+                      <div className="relative aspect-[16/10] bg-gray-100">
+                        {imgSrc ? (
+                          <img
+                            src={imgSrc}
+                            alt={a.title}
+                            className="absolute inset-0 w-full h-full object-cover transform transition duration-300 group-hover:scale-105"
+                            onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                          />
+                        ) : (
+                          <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
+                        )}
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 p-3">
-                        <h3 className="text-white text-base md:text-lg font-semibold leading-snug line-clamp-2">
-                          {a.title}
-                        </h3>
-                        <p className="text-white/80 text-[11px] md:text-xs mt-1">
-                          {formatDate(a.publishedAt)}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                        <div className="absolute inset-x-0 bottom-0 p-3">
+                          <h3 className="text-white text-base md:text-lg font-semibold leading-snug line-clamp-2">
+                            {a.title}
+                          </h3>
+                          <p className="text-white/80 text-[11px] md:text-xs mt-1">
+                            {formatDate(a.publishedAt)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* descriere scurtă (opțional) */}
+                      <div className="p-3">
+                        <p className="text-xs text-gray-600 line-clamp-2">
+                          {wordsExcerpt(a.contentText, 26)}
                         </p>
                       </div>
-                    </div>
-
-                    {/* descriere scurtă (opțional) */}
-                    <div className="p-3">
-                      <p className="text-xs text-gray-600 line-clamp-2">
-                        {wordsExcerpt(a.contentText, 26)}
-                      </p>
-                    </div>
-                  </button>
-                </motion.div>
-              ))}
+                    </button>
+                  </motion.div>
+                );
+              })}
             </motion.div>
           </AnimatePresence>
 

@@ -175,13 +175,12 @@ function AddAnnouncementForm({ onSave }) {
     return { uploadUrl, publicUrl, headers };
   }
 
-async function putFileToR2(uploadUrl, file, signedHeaders) {
-  const put = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: signedHeaders,   // exact ce a dat backend-ul
-    body: file,
-  });
-  if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");
+async function putFileToR2(uploadUrl, file) {
+  const res = await fetch(uploadUrl, { method: "PUT", body: file });
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(`Încărcarea către R2 a eșuat (${res.status}). ${t.slice(0,200)}`);
+  }
 }
 
   // ---------------- Existing toolbar actions ----------------

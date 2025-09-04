@@ -15,6 +15,22 @@ const AddPlayerForm = () => {
   const [uploadingImg, setUploadingImg] = useState(false);
   const fileRef = useRef(null);
 
+  // preview control
+  const [preview, setPreview] = useState(null);      // local blob: URL
+  const [showImg, setShowImg] = useState(false);     // controls rendering of <img>
+
+  // keep showImg in sync with available source
+  useEffect(() => {
+    setShowImg(Boolean(preview || formData.profileImageUrl));
+  }, [preview, formData.profileImageUrl]);
+
+  // revoke blob URLs to avoid leaks
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   // ---- helpers pentru R2 (identice ca la anunțuri, dar cu folder=players)
   async function presignForR2(file, folder = 'players') {
     const q = new URLSearchParams({
@@ -79,6 +95,11 @@ const AddPlayerForm = () => {
       await fetchPlayers();
       setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: '' });
       setEditId(null);
+      // curăță preview-ul
+      if (preview) {
+        URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
     } else {
       alert('Eroare la salvare');
     }
@@ -92,6 +113,11 @@ const AddPlayerForm = () => {
       profileImageUrl: player.profileImageUrl || '',
     });
     setEditId(player.id);
+    // când edităm, nu avem fișier local -> fără preview local
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -111,15 +137,23 @@ const AddPlayerForm = () => {
     const file = e.target.files?.[0];
     e.target.value = ''; // reset input
     if (!file) return;
+
+    // arată imediat preview local
+    if (preview) URL.revokeObjectURL(preview);
+    const local = URL.createObjectURL(file);
+    setPreview(local);
+
     try {
       setUploadingImg(true);
       const { uploadUrl, publicUrl } = await presignForR2(file, 'players');
       await putFileToR2(uploadUrl, file);
-      // setăm URL-ul public în formular
+      // setăm URL-ul public în formular (se va salva în DB)
       setFormData((p) => ({ ...p, profileImageUrl: publicUrl }));
     } catch (err) {
       console.error(err);
       alert(err.message || 'Încărcarea imaginii a eșuat.');
+      // dacă a eșuat, ascundem preview-ul local
+      setPreview(null);
     } finally {
       setUploadingImg(false);
     }
@@ -218,16 +252,21 @@ const AddPlayerForm = () => {
             </div>
           )}
 
-          {/* preview mic */}
+          {/* Preview sigur: arătăm img doar dacă avem src valid; alt="" ca să nu apară text */}
           <div className="mt-2">
-            <img
-              src={formData.profileImageUrl || '/unknown-player.png'}
-              alt="preview"
-              className="w-16 h-16 rounded-full object-cover border"
-              onError={(e) => {
-                e.currentTarget.src = '/unknown-player.png';
-              }}
-            />
+            {showImg ? (
+              <img
+                src={preview || formData.profileImageUrl}
+                alt=""
+                className="w-16 h-16 rounded-full object-cover border"
+                onError={() => setShowImg(false)}
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full border grid place-items-center text-[11px] text-gray-500">
+                {/* placeholder simplu, fără imagine ruptă */}
+                —
+              </div>
+            )}
           </div>
         </div>
 
@@ -248,10 +287,11 @@ const AddPlayerForm = () => {
               <div className="flex items-center gap-3">
                 <img
                   src={player.profileImageUrl || '/unknown-player.png'}
-                  alt={player.name}
+                  alt={player.name || ''}
                   className="w-10 h-10 rounded-full object-cover border"
                   onError={(e) => {
-                    e.currentTarget.src = '/unknown-player.png';
+                    // ascunde dacă și fallback-ul e invalid
+                    e.currentTarget.style.display = 'none';
                   }}
                 />
                 <div>

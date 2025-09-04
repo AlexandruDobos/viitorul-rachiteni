@@ -12,6 +12,22 @@ const AddTeamForm = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileRef = useRef(null);
 
+  // control pentru preview sigur (fără icon rupt + text)
+  const [preview, setPreview] = useState(null);   // blob URL local
+  const [showImg, setShowImg] = useState(false);  // dacă randăm <img> sau placeholder
+
+  // sincronizează randarea imaginii în funcție de sursele disponibile
+  useEffect(() => {
+    setShowImg(Boolean(preview || logo));
+  }, [preview, logo]);
+
+  // curăță blob URL-urile ca să nu avem scurgeri de memorie
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const fetchTeams = async () => {
     try {
       const res = await fetch(`${BASE_URL}/app/teams`);
@@ -28,7 +44,7 @@ const AddTeamForm = () => {
     fetchTeams();
   }, []);
 
-  // ---- helpers pentru R2 (identice ca stil cu cele folosite în alte formulare)
+  // ---- helpers R2 (ca în celelalte formulare)
   async function presignForR2(file, folder = 'teams') {
     const q = new URLSearchParams({
       filename: file.name,
@@ -63,15 +79,22 @@ const AddTeamForm = () => {
     const file = e.target.files?.[0];
     e.target.value = ''; // reset input
     if (!file) return;
+
+    // arată instant preview local
+    if (preview) URL.revokeObjectURL(preview);
+    const local = URL.createObjectURL(file);
+    setPreview(local);
+
     try {
       setUploadingLogo(true);
       const { uploadUrl, publicUrl } = await presignForR2(file, 'teams');
       await putFileToR2(uploadUrl, file);
-      setLogo(publicUrl); // setăm URL-ul public în formular
+      setLogo(publicUrl); // URL-ul public (se salvează în DB)
       setMessage('✅ Logo încărcat cu succes.');
     } catch (err) {
       console.error(err);
       setMessage(err.message || '❌ Încărcarea logo-ului a eșuat.');
+      setPreview(null); // ascunde preview dacă a eșuat
     } finally {
       setUploadingLogo(false);
     }
@@ -94,6 +117,10 @@ const AddTeamForm = () => {
       setName('');
       setLogo('');
       setEditId(null);
+      if (preview) {
+        URL.revokeObjectURL(preview);
+        setPreview(null);
+      }
       fetchTeams();
     } catch (err) {
       setMessage('❌ Eroare la salvare echipă.');
@@ -103,9 +130,13 @@ const AddTeamForm = () => {
 
   const handleEdit = (team) => {
     setName(team.name);
-    setLogo(team.logo);
+    setLogo(team.logo || '');
     setEditId(team.id);
     setMessage('');
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -179,14 +210,20 @@ const AddTeamForm = () => {
             </button>
           </div>
 
-          {/* preview mic */}
+          {/* preview sigur */}
           <div className="mt-2 flex items-center gap-3">
-            <img
-              src={logo || '/unknown-team-logo.png'}
-              alt="Preview logo"
-              className="w-10 h-10 object-contain rounded border bg-white"
-              onError={(e) => { e.currentTarget.src = '/unknown-team-logo.png'; }}
-            />
+            {showImg ? (
+              <img
+                src={preview || logo}
+                alt=""                                        
+                className="w-10 h-10 object-contain rounded border bg-white"
+                onError={() => setShowImg(false)}            
+              />
+            ) : (
+              <div className="w-10 h-10 rounded border bg-white grid place-items-center text-[11px] text-gray-500">
+                —
+              </div>
+            )}
             {logo && (
               <a
                 href={logo}
@@ -217,9 +254,9 @@ const AddTeamForm = () => {
               <div className="flex items-center gap-2">
                 <img
                   src={team.logo || '/unknown-team-logo.png'}
-                  alt="Logo echipă"
+                  alt={team.name || ''}
                   className="w-6 h-6 object-contain rounded bg-white border"
-                  onError={(e) => { e.currentTarget.src = '/unknown-team-logo.png'; }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}  
                 />
                 <strong>{team.name}</strong>
               </div>

@@ -20,6 +20,20 @@ const AdsManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileRef = useRef(null);
 
+  // preview sigur (fără icon rupt + text)
+  const [preview, setPreview] = useState(null);   // blob URL local
+  const [showImg, setShowImg] = useState(false);  // dacă randăm <img> sau placeholder
+
+  useEffect(() => {
+    setShowImg(Boolean(preview || form.imageUrl));
+  }, [preview, form.imageUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
+
   const fetchAds = async () => {
     const res = await fetch(`${BASE_URL}/app/ads`);
     const data = await res.json();
@@ -64,6 +78,12 @@ const AdsManager = () => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+
+    // arătăm instant preview local
+    if (preview) URL.revokeObjectURL(preview);
+    const local = URL.createObjectURL(file);
+    setPreview(local);
+
     try {
       setUploadingImage(true);
       const { uploadUrl, publicUrl } = await presignForR2(file, 'ads');
@@ -75,6 +95,8 @@ const AdsManager = () => {
       console.error(err);
       setSuccessMessage(err.message || '❌ Încărcarea imaginii a eșuat.');
       setTimeout(() => setSuccessMessage(''), 4000);
+      // ascundem preview-ul dacă a eșuat
+      setPreview(null);
     } finally {
       setUploadingImage(false);
     }
@@ -107,6 +129,11 @@ const AdsManager = () => {
       endDate: '',
     });
 
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
+
     setSuccessMessage(form.id ? 'Reclamă actualizată cu succes!' : 'Reclamă adăugată cu succes!');
     setTimeout(() => setSuccessMessage(''), 3000);
     fetchAds();
@@ -123,6 +150,10 @@ const AdsManager = () => {
 
   const handleEdit = (ad) => {
     setForm({ ...ad });
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   const resetForm = () => {
@@ -136,6 +167,10 @@ const AdsManager = () => {
       startDate: '',
       endDate: '',
     });
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   return (
@@ -163,7 +198,7 @@ const AdsManager = () => {
           onChange={e => setForm({ ...form, title: e.target.value })}
         />
 
-        {/* Imagine: URL + buton Upload în R2 + preview */}
+        {/* Imagine: URL + buton Upload în R2 + preview sigur */}
         <div className="flex items-center gap-2">
           <input
             className="w-full border p-2"
@@ -181,14 +216,21 @@ const AdsManager = () => {
             {uploadingImage ? 'Upload…' : 'Upload'}
           </button>
         </div>
-        {form.imageUrl && (
-          <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-3">
+          {showImg ? (
             <img
-              src={form.imageUrl}
-              alt="Preview reclamă"
+              src={preview || form.imageUrl}
+              alt=""                                        
               className="w-16 h-16 object-contain rounded border bg-white"
-              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              onError={() => setShowImg(false)}           
             />
+          ) : (
+            <div className="w-16 h-16 grid place-items-center rounded border bg-white text-[11px] text-gray-500">
+              —
+            </div>
+          )}
+          {form.imageUrl && (
             <a
               href={form.imageUrl}
               className="text-xs underline text-gray-600 truncate"
@@ -198,8 +240,8 @@ const AdsManager = () => {
             >
               {form.imageUrl}
             </a>
-          </div>
-        )}
+          )}
+        </div>
 
         <input
           className="w-full border p-2"
@@ -261,11 +303,12 @@ const AdsManager = () => {
             className="flex justify-between items-center border p-2 rounded"
           >
             <div className="flex items-center gap-3">
+              {/* în listă: ascundem imaginea dacă e invalidă (evităm icon rupt) */}
               <img
-                src={ad.imageUrl || '/placeholder.png'}
-                alt={ad.title}
+                src={ad.imageUrl}
+                alt={ad.title || ''}
                 className="w-12 h-12 object-contain rounded border bg-white"
-                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
               <div>
                 <strong>{ad.title}</strong> — {ad.position} — Ordine: {ad.orderIndex}

@@ -262,7 +262,6 @@ function AddAnnouncementForm({ onSave }) {
 
   useEffect(() => {
     fetchAnnouncements();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---------------- R2 helpers ----------------

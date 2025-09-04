@@ -176,16 +176,12 @@ function AddAnnouncementForm({ onSave }) {
   }
 
   async function putFileToR2(uploadUrl, file, signedHeaders) {
-    const headers = {
-      ...(signedHeaders || {}),
-      "content-type": file.type || "application/octet-stream", // adăugat aici
-    };
-
     const put = await fetch(uploadUrl, {
       method: "PUT",
-      headers,
+      headers: signedHeaders || {}, // ⚡ fără Content-Type manual
       body: file,
     });
+
     if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");
   }
 

@@ -23,11 +23,10 @@ public class R2Signer {
     private final S3Presigner presigner;
 
     public Presigned putPresign(String key, String contentType, Duration ttl) {
-        // Construim cererea pentru obiect (inclusiv content-type ca metadata)
+        // NU punem .contentType(contentType) aici, ca să nu fie semnat
         PutObjectRequest put = PutObjectRequest.builder()
                 .bucket(props.getBucket())
                 .key(key)
-                .contentType(contentType) // va fi inclus în semnătură
                 .build();
 
         PutObjectPresignRequest req = PutObjectPresignRequest.builder()
@@ -35,17 +34,12 @@ public class R2Signer {
                 .signatureDuration(ttl)
                 .build();
 
-        // Obținem URL-ul presigned + header-ele care TREBUIE trimise la PUT
         PresignedPutObjectRequest presigned = presigner.presignPutObject(req);
-        URL url = presigned.url();
 
-        // Flatten pentru JSON: header -> valoare (dacă sunt multiple, le unim cu ,)
         Map<String, String> headers = new HashMap<>();
-        for (Map.Entry<String, List<String>> e : presigned.signedHeaders().entrySet()) {
-            headers.put(e.getKey(), String.join(",", e.getValue()));
-        }
+        presigned.signedHeaders().forEach((k, v) -> headers.put(k, String.join(",", v)));
 
-        return new Presigned(url, headers);
+        return new Presigned(presigned.url(), headers);
     }
 
     public String publicUrl(String key) {

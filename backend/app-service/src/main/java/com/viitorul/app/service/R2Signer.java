@@ -27,6 +27,7 @@ public class R2Signer {
         PutObjectRequest put = PutObjectRequest.builder()
                 .bucket(props.getBucket())
                 .key(key)
+                .contentType(contentType)   // adaugă asta!
                 .build();
 
         PutObjectPresignRequest req = PutObjectPresignRequest.builder()

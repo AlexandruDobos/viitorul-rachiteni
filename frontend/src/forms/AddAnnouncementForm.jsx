@@ -176,11 +176,14 @@ function AddAnnouncementForm({ onSave }) {
   }
 
   async function putFileToR2(uploadUrl, file, signedHeaders) {
-    // Folosește EXACT header-ele semnate. NU adăuga/șterge nimic.
-    // Dacă vrei să vezi ce conțin: de obicei includ `content-type` + `host` și uneori altele.
+    const headers = {
+      ...(signedHeaders || {}),
+      "content-type": file.type || "application/octet-stream", // adăugat aici
+    };
+
     const put = await fetch(uploadUrl, {
       method: "PUT",
-      headers: signedHeaders,
+      headers,
       body: file,
     });
     if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");

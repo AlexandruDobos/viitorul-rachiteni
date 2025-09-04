@@ -175,15 +175,14 @@ function AddAnnouncementForm({ onSave }) {
     return { uploadUrl, publicUrl, headers };
   }
 
-  async function putFileToR2(uploadUrl, file, signedHeaders) {
-    const put = await fetch(uploadUrl, {
-      method: "PUT",
-      headers: signedHeaders || {}, // ⚡ fără Content-Type manual
-      body: file,
-    });
-
-    if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");
-  }
+async function putFileToR2(uploadUrl, file, signedHeaders) {
+  const put = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: signedHeaders,   // exact ce a dat backend-ul
+    body: file,
+  });
+  if (!put.ok) throw new Error("Încărcarea către R2 a eșuat.");
+}
 
   // ---------------- Existing toolbar actions ----------------
   const addLink = () => {

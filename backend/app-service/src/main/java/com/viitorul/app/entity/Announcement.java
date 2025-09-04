@@ -23,7 +23,7 @@ public class Announcement {
     private OffsetDateTime publishedAt;
 
     @Column(columnDefinition = "TEXT")
-    private String coverUrl;
+    private String coverUrl; // pt poza
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String contentHtml;

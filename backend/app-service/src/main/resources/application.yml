@@ -7,3 +7,11 @@ spring:
 
 auth:
   base-url: ${AUTH_BASE_URL:http://auth-service:8081}
+
+r2:
+  accountId: ${R2_ACCOUNT_ID}
+  accessKeyId: ${R2_ACCESS_KEY_ID}
+  secretKey: ${R2_SECRET_KEY}
+  bucket: ${R2_BUCKET}
+  publicBaseUrl: ${R2_PUBLIC_BASE_URL}
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
 const AdsManager = () => {
@@ -16,6 +16,10 @@ const AdsManager = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [deletingId, setDeletingId] = useState(null);
 
+  // upload state + input ascuns
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileRef = useRef(null);
+
   const fetchAds = async () => {
     const res = await fetch(`${BASE_URL}/app/ads`);
     const data = await res.json();
@@ -25,6 +29,56 @@ const AdsManager = () => {
   useEffect(() => {
     fetchAds();
   }, []);
+
+  // ---- helpers pentru upload în R2 (folder "ads")
+  async function presignForR2(file, folder = 'ads') {
+    const q = new URLSearchParams({
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      folder,
+    });
+
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
+    const data = await res.json();
+    const uploadUrl = data.uploadUrl;
+    const publicUrl = data.publicUrl;
+    if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
+    return { uploadUrl, publicUrl };
+  }
+
+  async function putFileToR2(uploadUrl, file) {
+    const res = await fetch(uploadUrl, { method: 'PUT', body: file });
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`Încărcarea către R2 a eșuat (${res.status}). ${t.slice(0, 200)}`);
+    }
+  }
+
+  const onChooseImage = () => fileRef.current?.click();
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      setUploadingImage(true);
+      const { uploadUrl, publicUrl } = await presignForR2(file, 'ads');
+      await putFileToR2(uploadUrl, file);
+      setForm((prev) => ({ ...prev, imageUrl: publicUrl }));
+      setSuccessMessage('✅ Imagine încărcată cu succes.');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setSuccessMessage(err.message || '❌ Încărcarea imaginii a eșuat.');
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,6 +140,15 @@ const AdsManager = () => {
 
   return (
     <div>
+      {/* input ascuns pentru upload imagine */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <h2 className="text-xl font-semibold mb-4">Administrare Reclame</h2>
 
       {successMessage && (
@@ -99,12 +162,45 @@ const AdsManager = () => {
           value={form.title}
           onChange={e => setForm({ ...form, title: e.target.value })}
         />
-        <input
-          className="w-full border p-2"
-          placeholder="Link imagine"
-          value={form.imageUrl}
-          onChange={e => setForm({ ...form, imageUrl: e.target.value })}
-        />
+
+        {/* Imagine: URL + buton Upload în R2 + preview */}
+        <div className="flex items-center gap-2">
+          <input
+            className="w-full border p-2"
+            placeholder="Link imagine (sau încarcă)"
+            value={form.imageUrl}
+            onChange={e => setForm({ ...form, imageUrl: e.target.value })}
+          />
+          <button
+            type="button"
+            onClick={onChooseImage}
+            disabled={uploadingImage}
+            className="whitespace-nowrap border rounded px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+            title="Încarcă imagine în R2"
+          >
+            {uploadingImage ? 'Upload…' : 'Upload'}
+          </button>
+        </div>
+        {form.imageUrl && (
+          <div className="flex items-center gap-3">
+            <img
+              src={form.imageUrl}
+              alt="Preview reclamă"
+              className="w-16 h-16 object-contain rounded border bg-white"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+            <a
+              href={form.imageUrl}
+              className="text-xs underline text-gray-600 truncate"
+              target="_blank"
+              rel="noreferrer"
+              title={form.imageUrl}
+            >
+              {form.imageUrl}
+            </a>
+          </div>
+        )}
+
         <input
           className="w-full border p-2"
           placeholder="Link destinație"
@@ -164,10 +260,18 @@ const AdsManager = () => {
             key={ad.id}
             className="flex justify-between items-center border p-2 rounded"
           >
-            <div>
-              <strong>{ad.title}</strong> — {ad.position} — Ordine: {ad.orderIndex}
-              <br />
-              <small>{ad.startDate} → {ad.endDate}</small>
+            <div className="flex items-center gap-3">
+              <img
+                src={ad.imageUrl || '/placeholder.png'}
+                alt={ad.title}
+                className="w-12 h-12 object-contain rounded border bg-white"
+                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+              />
+              <div>
+                <strong>{ad.title}</strong> — {ad.position} — Ordine: {ad.orderIndex}
+                <br />
+                <small>{ad.startDate} → {ad.endDate}</small>
+              </div>
             </div>
             <div className="flex space-x-4">
               <button

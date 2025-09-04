@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
 const AddTeamForm = () => {
@@ -8,18 +8,78 @@ const AddTeamForm = () => {
   const [message, setMessage] = useState('');
   const [editId, setEditId] = useState(null);
 
+  // upload state + input ascuns pentru fișier
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const fileRef = useRef(null);
+
   const fetchTeams = async () => {
-    const res = await fetch(`${BASE_URL}/app/teams`);
-    const data = await res.json();
-    setTeams(data);
+    try {
+      const res = await fetch(`${BASE_URL}/app/teams`);
+      if (!res.ok) throw new Error('Eroare la listare echipe');
+      const data = await res.json();
+      setTeams(data);
+    } catch (e) {
+      console.error(e);
+      setMessage('❌ Eroare la încărcarea listelor de echipe.');
+    }
   };
 
   useEffect(() => {
     fetchTeams();
   }, []);
 
+  // ---- helpers pentru R2 (identice ca stil cu cele folosite în alte formulare)
+  async function presignForR2(file, folder = 'teams') {
+    const q = new URLSearchParams({
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      folder,
+    });
+
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
+    const data = await res.json();
+
+    const uploadUrl = data.uploadUrl;
+    const publicUrl = data.publicUrl;
+    if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
+    return { uploadUrl, publicUrl };
+  }
+
+  async function putFileToR2(uploadUrl, file) {
+    const res = await fetch(uploadUrl, { method: 'PUT', body: file });
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      throw new Error(`Încărcarea către R2 a eșuat (${res.status}). ${t.slice(0, 200)}`);
+    }
+  }
+
+  const onChooseLogo = () => fileRef.current?.click();
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // reset input
+    if (!file) return;
+    try {
+      setUploadingLogo(true);
+      const { uploadUrl, publicUrl } = await presignForR2(file, 'teams');
+      await putFileToR2(uploadUrl, file);
+      setLogo(publicUrl); // setăm URL-ul public în formular
+      setMessage('✅ Logo încărcat cu succes.');
+    } catch (err) {
+      console.error(err);
+      setMessage(err.message || '❌ Încărcarea logo-ului a eșuat.');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
     try {
       const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
@@ -45,6 +105,7 @@ const AddTeamForm = () => {
     setName(team.name);
     setLogo(team.logo);
     setEditId(team.id);
+    setMessage('');
   };
 
   const handleDelete = async (id) => {
@@ -53,7 +114,8 @@ const AddTeamForm = () => {
         const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         fetchTeams();
-      } catch {
+      } catch (e) {
+        console.error(e);
         alert('❌ Eroare la ștergere echipă.');
       }
     }
@@ -61,6 +123,15 @@ const AddTeamForm = () => {
 
   return (
     <div className="space-y-6">
+      {/* input ascuns pentru upload logo */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow">
         <h2 className="text-lg font-semibold mb-4 text-center">
           {editId ? 'Editează Echipă' : 'Adaugă Echipă'}
@@ -79,14 +150,55 @@ const AddTeamForm = () => {
           />
         </div>
 
+        {/* Logo: URL + buton de upload în R2 */}
         <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">URL Logo</label>
-          <input
-            type="text"
-            value={logo}
-            onChange={e => setLogo(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-          />
+          <label className="block text-sm font-medium mb-1">Logo</label>
+          <div className="flex gap-2">
+            <input
+              type="url"
+              placeholder="Link logo (sau încarcă)"
+              value={logo}
+              onChange={e => setLogo(e.target.value)}
+              className="w-full border px-3 py-2 rounded"
+            />
+            <button
+              type="button"
+              onClick={onChooseLogo}
+              disabled={uploadingLogo}
+              className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+              title="Încarcă logo în R2"
+            >
+              {uploadingLogo ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-dashed" />
+                  Upload…
+                </>
+              ) : (
+                <>Upload</>
+              )}
+            </button>
+          </div>
+
+          {/* preview mic */}
+          <div className="mt-2 flex items-center gap-3">
+            <img
+              src={logo || '/unknown-team-logo.png'}
+              alt="Preview logo"
+              className="w-10 h-10 object-contain rounded border bg-white"
+              onError={(e) => { e.currentTarget.src = '/unknown-team-logo.png'; }}
+            />
+            {logo && (
+              <a
+                href={logo}
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs underline text-gray-600 truncate"
+                title={logo}
+              >
+                {logo}
+              </a>
+            )}
+          </div>
         </div>
 
         <button
@@ -106,7 +218,8 @@ const AddTeamForm = () => {
                 <img
                   src={team.logo || '/unknown-team-logo.png'}
                   alt="Logo echipă"
-                  className="w-6 h-6 object-contain rounded"
+                  className="w-6 h-6 object-contain rounded bg-white border"
+                  onError={(e) => { e.currentTarget.src = '/unknown-team-logo.png'; }}
                 />
                 <strong>{team.name}</strong>
               </div>

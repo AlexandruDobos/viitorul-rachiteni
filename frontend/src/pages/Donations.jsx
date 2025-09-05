@@ -47,7 +47,7 @@ export default function Donations() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${BASE_URL}/api/donations/checkout`, {
+      const res = await fetch(`${BASE_URL}/donations/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

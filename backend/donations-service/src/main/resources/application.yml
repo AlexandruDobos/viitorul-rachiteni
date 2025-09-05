@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: donations-service
+
+# Cheile se iau 100% din variabile de mediu (nu le pune hardcodat)
+stripe:
+  secret-key: ${STRIPE_SECRET_KEY}
+  webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+donations:
+  success-url: https://www.viitorulrachiteni.ro/donations/success
+  cancel-url:  https://www.viitorulrachiteni.ro/donations/cancel
+  default-currency: ron
+  name: "Donație ACS Viitorul Răchiteni"

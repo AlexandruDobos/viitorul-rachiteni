@@ -1,60 +1,100 @@
-// src/pages/Donations.jsx (sau components/Donations.jsx)
+// src/pages/Donations.jsx
 import React, { useMemo, useState } from 'react';
-import logo from '../assets/logo.png'; // <- logo-ul tău
+import logo from '../assets/logo.png';
+import { BASE_URL } from '../utils/constants'; // backend base, ex: http://localhost:3000
 
-const REVOLUT_USERNAME = import.meta.env.VITE_REVOLUT_USERNAME || 'NUMELE_TAU';
+const CURRENCIES = [
+  { value: 'ron', label: 'RON' },
+  { value: 'eur', label: 'EUR' },
+];
 
-// Link simplu către Revolut.me
-function buildRevolutLink(username) {
-  return `https://revolut.me/${username}`;
-}
+const PRESETS = {
+  ron: [25, 50, 100],
+  eur: [5, 10, 20],
+};
 
-// Generator imagine QR din URL (serviciu public)
-function qrSrcFor(url, size = 240) {
-  const encoded = encodeURIComponent(url);
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encoded}`;
+// helper: normalizează inputul "50" / "50,5" -> 5050 (minor units)
+function parseToMinorUnits(amountStr) {
+  const n = Number(String(amountStr).replace(',', '.'));
+  if (Number.isNaN(n)) return null;
+  return Math.round(n * 100);
 }
 
 export default function Donations() {
-  const paymentUrl = useMemo(() => buildRevolutLink(REVOLUT_USERNAME), []);
-  const qrImage = useMemo(() => qrSrcFor(paymentUrl, 240), [paymentUrl]);
+  const [currency, setCurrency] = useState('ron');
+  const [amount, setAmount] = useState('50'); // default vizual
+  const [donorName, setDonorName] = useState('');
+  const [donorEmail, setDonorEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const [copied, setCopied] = useState(false);
+  const presets = useMemo(() => PRESETS[currency] || [], [currency]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(paymentUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // fallback simplu
-      // eslint-disable-next-line no-alert
-      prompt('Copiază manual linkul:', paymentUrl);
-    }
+  const onPreset = (v) => {
+    setAmount(String(v));
+    setError('');
   };
 
-  const notConfigured = REVOLUT_USERNAME === 'NUMELE_TAU';
+  const onDonate = async () => {
+    setError('');
+    const minor = parseToMinorUnits(amount);
+
+    if (minor === null || minor < 100) {
+      setError('Introdu o sumă validă (minim 1).');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/donations/checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: minor,
+          currency,
+          donorEmail: donorEmail || undefined,
+          donorName: donorName || undefined,
+          message: message || undefined,
+        }),
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || 'Eroare la crearea sesiunii de plată.');
+      }
+
+      const data = await res.json();
+      if (data?.url) {
+        window.location.href = data.url; // redirect la Stripe Checkout
+      } else {
+        throw new Error('Nu am primit URL-ul de plată.');
+      }
+    } catch (e) {
+      setError(e.message || 'A apărut o eroare.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="px-4">
       <div className="max-w-4xl mx-auto overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
         {/* Header cu gradient */}
         <div className="bg-gradient-to-r from-emerald-600 to-black px-6 py-6 text-white">
-          <h1 className="text-2xl md:text-3xl font-bold">Donează pentru echipă</h1>
-          <p className="text-white/80 text-sm mt-1">
-            Mulțumim pentru susținere! Scanează codul QR sau apasă butonul pentru a deschide pagina de plată.
-          </p>
-        </div>
-
-        {/* Avertisment dacă username-ul nu e setat în .env */}
-        {notConfigured && (
-          <div className="px-6 pt-4">
-            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2 text-sm text-amber-800">
-              Nu ai setat <code>VITE_REVOLUT_USERNAME</code>. Editează <code>.env</code> și adaugă numele tău Revolut
-              (ex: <code>VITE_REVOLUT_USERNAME=acsvr</code>), apoi repornește dev server-ul.
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Donează pentru echipă</h1>
+              <p className="text-white/80 text-sm mt-1">
+                Mulțumim pentru susținere! Completează suma și apasă „Donează cu Stripe”.
+              </p>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-xs bg-white/10 px-3 py-1 rounded-full">
+              <span role="img" aria-label="lock">🔒</span>
+              Plăți securizate prin Stripe
             </div>
           </div>
-        )}
+        </div>
 
         {/* Conținut: 2 coloane pe desktop */}
         <div className="p-6 grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -73,13 +113,12 @@ export default function Donations() {
                 </li>
                 <li className="flex gap-2">
                   <span className="text-gray-400">•</span>
-                  Dezvoltarea proiectelor echipei.
+                  Dezvoltarea proiectelor și a comunității.
                 </li>
               </ul>
 
               <div className="mt-6 border-t pt-4">
                 <div className="flex items-center gap-3">
-                  {/* ✅ logo-ul echipei */}
                   <img
                     src={logo}
                     alt="ACS Viitorul Răchiteni"
@@ -91,68 +130,147 @@ export default function Donations() {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-6 text-[11px] text-gray-500">
+                Nu stocăm datele tale de card. Procesarea plăților este efectuată de Stripe.
+                Apple Pay și Google Pay pot fi disponibile pe dispozitive compatibile.
+              </div>
             </div>
           </aside>
 
-          {/* Col dreapta – QR + acțiuni */}
+          {/* Col dreapta – Formular donație */}
           <section className="lg:col-span-3">
             <div className="rounded-xl ring-1 ring-gray-100 bg-white p-5">
-              <div className="grid place-items-center gap-4">
-                <img
-                  src={qrImage}
-                  alt="QR donație Revolut"
-                  width={240}
-                  height={240}
-                  className="rounded"
-                />
-
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <a
-                    href={paymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex justify-center items-center gap-2 px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    {/* icon send */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M15.854.146a.5.5 0 0 0-.52-.116l-15 6a.5.5 0 0 0 .034.95l6.223 1.555L8.146 14a.5.5 0 0 0 .948-.032l1.596-4.787 4.787-1.596a.5.5 0 0 0 .377-.439l.5-6a.5.5 0 0 0-.5-.5z" />
-                    </svg>
-                    Donează acum
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={copyLink}
-                    className="inline-flex justify-center items-center gap-2 px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
-                  >
-                    {/* icon copy */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M10 1.5A1.5 1.5 0 0 1 11.5 3v7A1.5 1.5 0 0 1 10 11.5H5A1.5 1.5 0 0 1 3.5 10V3A1.5 1.5 0 0 1 5 1.5h5z"/>
-                      <path d="M3 4a2 2 0 0 0-2 2v6.5A2.5 2.5 0 0 0 3.5 15h6a2 2 0 0 0 2-2V12H10v1a1 1 0 0 1-1 1h-6A1.5 1.5 0 0 1 1.5 12.5V6A1 1 0 0 1 2.5 5H3V4z"/>
-                    </svg>
-                    {copied ? 'Copiat!' : 'Copiază linkul'}
-                  </button>
-
-                  <a
-                    href={qrImage}
-                    download="donatie-viitorul-rachiteni-qr.png"
-                    className="inline-flex justify-center items-center gap-2 px-6 py-2 rounded-lg border border-gray-300 hover:bg-gray-50"
-                  >
-                    {/* icon download */}
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="currentColor" viewBox="0 0 16 16">
-                      <path d="M.5 9.9a.5.5 0 0 1 .5-.5h4V1.5a.5.5 0 0 1 1 0v7.9h4a.5.5 0 0 1 .35.85l-4 4a.5.5 0 0 1-.7 0l-4-4a.5.5 0 0 1-.15-.35z"/>
-                      <path d="M.5 15a.5.5 0 0 0 0 1h15a.5.5 0 0 0 0-1H.5z"/>
-                    </svg>
-                    Descarcă QR
-                  </a>
+              <div className="grid gap-4">
+                {/* Currency + preset amounts */}
+                <div className="grid gap-3">
+                  <label className="text-sm font-medium">Monedă</label>
+                  <div className="flex flex-wrap gap-2">
+                    {CURRENCIES.map((c) => (
+                      <button
+                        key={c.value}
+                        type="button"
+                        className={`px-3 py-1.5 rounded-full border text-sm ${
+                          currency === c.value
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'border-gray-300 hover:bg-gray-50'
+                        }`}
+                        onClick={() => {
+                          setCurrency(c.value);
+                          // setează niște sume implicite frumoase când schimbi moneda
+                          setAmount(String(PRESETS[c.value][1])); // mijlocul listei
+                          setError('');
+                        }}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <p className="text-xs text-gray-500 text-center">
-                  Scanează cu camera telefonului sau folosește butonul „Donează acum”.
-                </p>
+                <div className="grid gap-3">
+                  <label className="text-sm font-medium">Alege rapid o sumă</label>
+                  <div className="flex flex-wrap gap-2">
+                    {presets.map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50 text-sm"
+                        onClick={() => onPreset(v)}
+                        aria-label={`Donează ${v} ${currency.toUpperCase()}`}
+                      >
+                        {v} {currency.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-                <div className="text-[11px] text-gray-400 text-center">
-                  Plățile sunt procesate pe platforma Revolut. Nu stocăm date de plată.
+                {/* Amount input */}
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium">Sumă personalizată</label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder={`ex: ${currency === 'ron' ? '50' : '10'}`}
+                        className="w-full rounded-lg border-gray-300 focus:ring-emerald-600 focus:border-emerald-600"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">
+                        {currency.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500">Minim 1 {currency.toUpperCase()} (poți folosi virgulă pentru zecimale).</p>
+                </div>
+
+                {/* Donor details (optional) */}
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="grid gap-1.5">
+                    <label className="text-sm text-gray-600">Nume (opțional)</label>
+                    <input
+                      type="text"
+                      value={donorName}
+                      onChange={(e) => setDonorName(e.target.value)}
+                      className="rounded-lg border-gray-300 focus:ring-emerald-600 focus:border-emerald-600"
+                      placeholder="Prenume Nume"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <label className="text-sm text-gray-600">Email (opțional)</label>
+                    <input
+                      type="email"
+                      value={donorEmail}
+                      onChange={(e) => setDonorEmail(e.target.value)}
+                      className="rounded-lg border-gray-300 focus:ring-emerald-600 focus:border-emerald-600"
+                      placeholder="email@exemplu.com"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <label className="text-sm text-gray-600">Mesaj (opțional)</label>
+                  <textarea
+                    rows={3}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="rounded-lg border-gray-300 focus:ring-emerald-600 focus:border-emerald-600"
+                    placeholder="Un gând pentru echipă 😊"
+                  />
+                </div>
+
+                {/* Error */}
+                {error && (
+                  <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                {/* Donate button */}
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+                  <button
+                    type="button"
+                    onClick={onDonate}
+                    disabled={submitting}
+                    className={`inline-flex justify-center items-center gap-2 px-6 py-3 rounded-lg text-white 
+                      ${submitting ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}
+                    `}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2a5 5 0 00-5 5 5 5 0 001 3l-5 5a3 3 0 000 4l2 2a3 3 0 004 0l5-5a5 5 0 003 1 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
+                    </svg>
+                    {submitting ? 'Se deschide Stripe…' : 'Donează cu Stripe'}
+                  </button>
+
+                  <div className="text-xs text-gray-500">
+                    Vei fi redirecționat către pagina Stripe pentru a completa plata.
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-gray-400 text-center sm:text-left">
+                  Prin finalizare, ești de acord cu termenii și politica noastră de confidențialitate.
                 </div>
               </div>
             </div>

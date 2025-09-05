@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
+// Importă imaginea locală (Vite/Webpack va genera URL-ul corect în build)
+import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
 
 const AddPlayerForm = () => {
   const [formData, setFormData] = useState({
     name: '',
     position: '',
     shirtNumber: '',
-    profileImageUrl: '',
+    // implicit: poza anonimă locală
+    profileImageUrl: defaultAvatar,
   });
   const [players, setPlayers] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -17,7 +20,7 @@ const AddPlayerForm = () => {
 
   // preview control
   const [preview, setPreview] = useState(null);      // local blob: URL
-  const [showImg, setShowImg] = useState(false);     // controls rendering of <img>
+  const [showImg, setShowImg] = useState(true);      // randăm <img> by default
 
   // keep showImg in sync with available source
   useEffect(() => {
@@ -93,13 +96,14 @@ const AddPlayerForm = () => {
 
     if (res.ok) {
       await fetchPlayers();
-      setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: '' });
+      // resetare: păstrăm implicit avatarul anonim
+      setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar });
       setEditId(null);
-      // curăță preview-ul
       if (preview) {
         URL.revokeObjectURL(preview);
         setPreview(null);
       }
+      setShowImg(true);
     } else {
       alert('Eroare la salvare');
     }
@@ -110,14 +114,15 @@ const AddPlayerForm = () => {
       name: player.name || '',
       position: player.position || '',
       shirtNumber: player.shirtNumber || '',
-      profileImageUrl: player.profileImageUrl || '',
+      // dacă nu are imagine, folosim implicit avatarul anonim
+      profileImageUrl: player.profileImageUrl || defaultAvatar,
     });
     setEditId(player.id);
-    // când edităm, nu avem fișier local -> fără preview local
     if (preview) {
       URL.revokeObjectURL(preview);
       setPreview(null);
     }
+    setShowImg(true);
   };
 
   const handleDelete = async (id) => {
@@ -142,6 +147,7 @@ const AddPlayerForm = () => {
     if (preview) URL.revokeObjectURL(preview);
     const local = URL.createObjectURL(file);
     setPreview(local);
+    setShowImg(true);
 
     try {
       setUploadingImg(true);
@@ -152,8 +158,10 @@ const AddPlayerForm = () => {
     } catch (err) {
       console.error(err);
       alert(err.message || 'Încărcarea imaginii a eșuat.');
-      // dacă a eșuat, ascundem preview-ul local
+      // revenim la avatarul implicit
       setPreview(null);
+      setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
+      setShowImg(true);
     } finally {
       setUploadingImg(false);
     }
@@ -252,20 +260,26 @@ const AddPlayerForm = () => {
             </div>
           )}
 
-          {/* Preview sigur: arătăm img doar dacă avem src valid; alt="" ca să nu apară text */}
+          {/* Preview sigur */}
           <div className="mt-2">
             {showImg ? (
               <img
-                src={preview || formData.profileImageUrl}
+                src={preview || formData.profileImageUrl || defaultAvatar}
                 alt=""
                 className="w-16 h-16 rounded-full object-cover border"
-                onError={() => setShowImg(false)}
+                onError={() => {
+                  // dacă eșuează, folosim avatarul implicit
+                  setPreview(null);
+                  setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
+                  setShowImg(true);
+                }}
               />
             ) : (
-              <div className="w-16 h-16 rounded-full border grid place-items-center text-[11px] text-gray-500">
-                {/* placeholder simplu, fără imagine ruptă */}
-                —
-              </div>
+              <img
+                src={defaultAvatar}
+                alt=""
+                className="w-16 h-16 rounded-full object-cover border"
+              />
             )}
           </div>
         </div>
@@ -286,12 +300,11 @@ const AddPlayerForm = () => {
             >
               <div className="flex items-center gap-3">
                 <img
-                  src={player.profileImageUrl || '/unknown-player.png'}
+                  src={player.profileImageUrl || defaultAvatar}
                   alt={player.name || ''}
                   className="w-10 h-10 rounded-full object-cover border"
                   onError={(e) => {
-                    // ascunde dacă și fallback-ul e invalid
-                    e.currentTarget.style.display = 'none';
+                    e.currentTarget.src = defaultAvatar;
                   }}
                 />
                 <div>

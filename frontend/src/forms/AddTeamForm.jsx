@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
+// imagine implicită locală pentru echipă
+import defaultLogo from '../assets/unknown-team-logo.png';
 
 const AddTeamForm = () => {
   const [name, setName] = useState('');
-  const [logo, setLogo] = useState('');
+  // folosim implicit logo-ul local
+  const [logo, setLogo] = useState(defaultLogo);
   const [teams, setTeams] = useState([]);
   const [message, setMessage] = useState('');
   const [editId, setEditId] = useState(null);
@@ -14,11 +17,11 @@ const AddTeamForm = () => {
 
   // control pentru preview sigur (fără icon rupt + text)
   const [preview, setPreview] = useState(null);   // blob URL local
-  const [showImg, setShowImg] = useState(false);  // dacă randăm <img> sau placeholder
+  const [showImg, setShowImg] = useState(true);   // afișăm <img> by default
 
   // sincronizează randarea imaginii în funcție de sursele disponibile
   useEffect(() => {
-    setShowImg(Boolean(preview || logo));
+    setShowImg(Boolean(preview || logo || defaultLogo));
   }, [preview, logo]);
 
   // curăță blob URL-urile ca să nu avem scurgeri de memorie
@@ -95,6 +98,7 @@ const AddTeamForm = () => {
       console.error(err);
       setMessage(err.message || '❌ Încărcarea logo-ului a eșuat.');
       setPreview(null); // ascunde preview dacă a eșuat
+      setLogo(defaultLogo); // revenim la implicit
     } finally {
       setUploadingLogo(false);
     }
@@ -104,10 +108,13 @@ const AddTeamForm = () => {
     e.preventDefault();
     setMessage('');
     try {
+      // dacă câmpul e gol din greșeală, folosim tot implicitul
+      const payloadLogo = logo || defaultLogo;
+
       const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, logo }),
+        body: JSON.stringify({ name, logo: payloadLogo }),
       });
 
       if (!res.ok) throw new Error('Failed to save team');
@@ -115,12 +122,13 @@ const AddTeamForm = () => {
       const data = await res.json();
       setMessage(`✅ Echipa "${data.name}" a fost ${editId ? 'modificată' : 'adăugată'} cu succes.`);
       setName('');
-      setLogo('');
+      setLogo(defaultLogo); // după salvare, revine la implicit
       setEditId(null);
       if (preview) {
         URL.revokeObjectURL(preview);
         setPreview(null);
       }
+      setShowImg(true);
       fetchTeams();
     } catch (err) {
       setMessage('❌ Eroare la salvare echipă.');
@@ -130,13 +138,14 @@ const AddTeamForm = () => {
 
   const handleEdit = (team) => {
     setName(team.name);
-    setLogo(team.logo || '');
+    setLogo(team.logo || defaultLogo); // dacă nu are, folosim implicit
     setEditId(team.id);
     setMessage('');
     if (preview) {
       URL.revokeObjectURL(preview);
       setPreview(null);
     }
+    setShowImg(true);
   };
 
   const handleDelete = async (id) => {
@@ -189,7 +198,7 @@ const AddTeamForm = () => {
               type="url"
               placeholder="Link logo (sau încarcă)"
               value={logo}
-              onChange={e => setLogo(e.target.value)}
+              onChange={e => setLogo(e.target.value || defaultLogo)}
               className="w-full border px-3 py-2 rounded"
             />
             <button
@@ -214,17 +223,23 @@ const AddTeamForm = () => {
           <div className="mt-2 flex items-center gap-3">
             {showImg ? (
               <img
-                src={preview || logo}
-                alt=""                                        
+                src={preview || logo || defaultLogo}
+                alt=""
                 className="w-10 h-10 object-contain rounded border bg-white"
-                onError={() => setShowImg(false)}            
+                onError={(e) => {
+                  // dacă eșuează încărcarea, folosim implicitul
+                  e.currentTarget.src = defaultLogo;
+                  setShowImg(true);
+                }}
               />
             ) : (
-              <div className="w-10 h-10 rounded border bg-white grid place-items-center text-[11px] text-gray-500">
-                —
-              </div>
+              <img
+                src={defaultLogo}
+                alt=""
+                className="w-10 h-10 object-contain rounded border bg-white"
+              />
             )}
-            {logo && (
+            {logo && logo !== defaultLogo && (
               <a
                 href={logo}
                 target="_blank"
@@ -253,10 +268,10 @@ const AddTeamForm = () => {
             <li key={team.id} className="flex justify-between items-center border p-2 rounded">
               <div className="flex items-center gap-2">
                 <img
-                  src={team.logo || '/unknown-team-logo.png'}
+                  src={team.logo || defaultLogo}
                   alt={team.name || ''}
                   className="w-6 h-6 object-contain rounded bg-white border"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}  
+                  onError={(e) => { e.currentTarget.src = defaultLogo; }}
                 />
                 <strong>{team.name}</strong>
               </div>

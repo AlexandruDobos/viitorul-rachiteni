@@ -1,13 +1,20 @@
+// src/pages/AdsManager.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
 const DEVICE_OPTIONS = [
-  { value: 'desktop', label: 'Laptop' },
-  { value: 'mobile',  label: 'Telefon' },
+  { value: 'LAPTOP', label: 'Laptop' },
+  { value: 'MOBILE', label: 'Telefon' },
 ];
 
+function labelForDeviceType(v) {
+  return DEVICE_OPTIONS.find(d => d.value === v)?.label || v || '—';
+}
+
 const AdsManager = () => {
-  const [selectedDevice, setSelectedDevice] = useState('desktop');
+  // ▶️ Filtru device pentru listă (LAPTOP/MOBILE)
+  const [filterDevice, setFilterDevice] = useState('LAPTOP');
+
   const [ads, setAds] = useState([]);
   const [form, setForm] = useState({
     id: null,
@@ -15,11 +22,12 @@ const AdsManager = () => {
     imageUrl: '',
     link: '',
     position: 'left',
-    device: 'desktop',
     orderIndex: 1,
     startDate: '',
     endDate: '',
+    deviceType: 'LAPTOP', // 👈 nou
   });
+
   const [successMessage, setSuccessMessage] = useState('');
   const [deletingId, setDeletingId] = useState(null);
 
@@ -27,7 +35,7 @@ const AdsManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileRef = useRef(null);
 
-  // preview sigur
+  // preview sigur (fără icon rupt + text)
   const [preview, setPreview] = useState(null);
   const [showImg, setShowImg] = useState(false);
 
@@ -41,34 +49,38 @@ const AdsManager = () => {
     };
   }, [preview]);
 
+  // 🔎 încarcă reclamele filtrat după deviceType
   const fetchAds = async () => {
-    const res = await fetch(`${BASE_URL}/app/ads?device=${selectedDevice}`);
+    const q = new URLSearchParams({ device: filterDevice });
+    const res = await fetch(`${BASE_URL}/app/ads?${q.toString()}`);
     const data = await res.json();
     setAds(data);
   };
 
   useEffect(() => {
     fetchAds();
-    // resetăm device-ul din formular la tabul curent
-    setForm(f => ({ ...f, device: selectedDevice, id: null, orderIndex: 1 }));
+    // când schimb tabul de device, sincronizez și formularul
+    setForm(f => ({ ...f, deviceType: filterDevice, id: null, orderIndex: 1 }));
     if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDevice]);
+  }, [filterDevice]);
 
-  // ---- upload to R2
+  // ---- helpers pentru upload în R2 (folder "ads")
   async function presignForR2(file, folder = 'ads') {
     const q = new URLSearchParams({
       filename: file.name,
       contentType: file.type || 'application/octet-stream',
       folder,
     });
+
     const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
       method: 'GET',
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
-    const { uploadUrl, publicUrl } = data;
+    const uploadUrl = data.uploadUrl;
+    const publicUrl = data.publicUrl;
     if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
     return { uploadUrl, publicUrl };
   }
@@ -88,6 +100,7 @@ const AdsManager = () => {
     e.target.value = '';
     if (!file) return;
 
+    // arătăm instant preview local
     if (preview) URL.revokeObjectURL(preview);
     const local = URL.createObjectURL(file);
     setPreview(local);
@@ -103,6 +116,7 @@ const AdsManager = () => {
       console.error(err);
       setSuccessMessage(err.message || '❌ Încărcarea imaginii a eșuat.');
       setTimeout(() => setSuccessMessage(''), 4000);
+      // ascundem preview-ul dacă a eșuat
       setPreview(null);
     } finally {
       setUploadingImage(false);
@@ -118,8 +132,8 @@ const AdsManager = () => {
 
     const payload = {
       ...form,
-      device: form.device || selectedDevice,
       orderIndex: parseInt(form.orderIndex, 10) || 1,
+      deviceType: form.deviceType, // 👈 trimitem către backend
     };
 
     const res = await fetch(url, {
@@ -140,13 +154,16 @@ const AdsManager = () => {
       imageUrl: '',
       link: '',
       position: 'left',
-      device: selectedDevice,
       orderIndex: 1,
       startDate: '',
       endDate: '',
+      deviceType: filterDevice, // rămân în tabul curent
     });
 
-    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
 
     setSuccessMessage(form.id ? 'Reclamă actualizată cu succes!' : 'Reclamă adăugată cu succes!');
     setTimeout(() => setSuccessMessage(''), 3000);
@@ -165,9 +182,12 @@ const AdsManager = () => {
   const handleEdit = (ad) => {
     setForm({
       ...ad,
-      device: ad.device || selectedDevice,
+      deviceType: ad.deviceType || 'LAPTOP', // 👈 default
     });
-    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   const resetForm = () => {
@@ -177,12 +197,15 @@ const AdsManager = () => {
       imageUrl: '',
       link: '',
       position: 'left',
-      device: selectedDevice,
       orderIndex: 1,
       startDate: '',
       endDate: '',
+      deviceType: filterDevice,
     });
-    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
+    if (preview) {
+      URL.revokeObjectURL(preview);
+      setPreview(null);
+    }
   };
 
   return (
@@ -199,22 +222,22 @@ const AdsManager = () => {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Administrare Reclame</h2>
 
-        {/* tabs device */}
+        {/* ▶️ Tabs device (filtru) */}
         <div className="inline-flex rounded-lg border overflow-hidden">
-          {DEVICE_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setSelectedDevice(opt.value)}
-              className={`px-3 py-1.5 text-sm ${
-                selectedDevice === opt.value
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white hover:bg-gray-50 text-gray-700'
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setFilterDevice('LAPTOP')}
+            className={`px-3 py-1.5 text-sm ${filterDevice === 'LAPTOP' ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50 text-gray-700'}`}
+          >
+            Laptop
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterDevice('MOBILE')}
+            className={`px-3 py-1.5 text-sm ${filterDevice === 'MOBILE' ? 'bg-gray-900 text-white' : 'bg-white hover:bg-gray-50 text-gray-700'}`}
+          >
+            Telefon
+          </button>
         </div>
       </div>
 
@@ -230,7 +253,7 @@ const AdsManager = () => {
           onChange={e => setForm({ ...form, title: e.target.value })}
         />
 
-        {/* Imagine: URL + buton Upload + preview */}
+        {/* Imagine: URL + buton Upload în R2 + preview sigur */}
         <div className="flex items-center gap-2">
           <input
             className="w-full border p-2 rounded"
@@ -292,10 +315,11 @@ const AdsManager = () => {
             <option value="right">Dreapta</option>
           </select>
 
+          {/* 👇 deviceType select (pentru reclama din formular) */}
           <select
             className="w-full border p-2 rounded"
-            value={form.device}
-            onChange={e => setForm({ ...form, device: e.target.value })}
+            value={form.deviceType}
+            onChange={e => setForm({ ...form, deviceType: e.target.value })}
           >
             {DEVICE_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -328,11 +352,18 @@ const AdsManager = () => {
         </div>
 
         <div className="flex gap-4">
-          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
             {form.id ? 'Actualizează reclama' : 'Adaugă reclamă'}
           </button>
           {form.id && (
-            <button type="button" className="text-gray-600 underline" onClick={resetForm}>
+            <button
+              type="button"
+              className="text-gray-600 underline"
+              onClick={resetForm}
+            >
               Renunță la editare
             </button>
           )}
@@ -341,8 +372,12 @@ const AdsManager = () => {
 
       <ul className="space-y-2">
         {ads.map(ad => (
-          <li key={ad.id} className="flex justify-between items-center border p-2 rounded">
+          <li
+            key={ad.id}
+            className="flex justify-between items-center border p-2 rounded"
+          >
             <div className="flex items-center gap-3">
+              {/* în listă: ascundem imaginea dacă e invalidă (evităm icon rupt) */}
               <img
                 src={ad.imageUrl}
                 alt={ad.title || ''}
@@ -352,14 +387,19 @@ const AdsManager = () => {
               <div>
                 <strong>{ad.title}</strong>
                 {' — '}{ad.position}
-                {' — '}{ad.device}
+                {' — '}{labelForDeviceType(ad.deviceType)}
                 {' — '}Ordine: {ad.orderIndex}
                 <br />
                 <small>{ad.startDate} → {ad.endDate}</small>
               </div>
             </div>
             <div className="flex space-x-4">
-              <button className="text-blue-600" onClick={() => handleEdit(ad)}>Editează</button>
+              <button
+                className="text-blue-600"
+                onClick={() => handleEdit(ad)}
+              >
+                Editează
+              </button>
               <button
                 className="text-red-600"
                 onClick={() => handleDelete(ad.id)}

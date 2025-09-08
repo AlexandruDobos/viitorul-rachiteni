@@ -7,8 +7,18 @@ import java.time.LocalDate;
 
 @Data
 @Entity
-@Table(name = "ads")
+@Table(
+        name = "ads",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_ads_bucket_order",
+                        columnNames = {"position", "device_type", "order_index"}
+                )
+        }
+)
 public class Ad {
+    public enum DeviceType { LAPTOP, MOBILE }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,13 +31,14 @@ public class Ad {
     private String link;
 
     @Column(nullable = false)
-    private String position; // left, right
-
-    @Column(nullable = false)
-    private String device;   // desktop, mobile
+    private String position; // "left" / "right" (sau cum le folosești în UI)
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "device_type", nullable = false, length = 12)
+    private DeviceType deviceType = DeviceType.LAPTOP;
 
     private LocalDate startDate;
     private LocalDate endDate;

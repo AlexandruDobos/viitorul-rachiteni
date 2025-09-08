@@ -10,9 +10,9 @@ public class AdDTO {
     private String title;
     private String imageUrl;
     private String link;
-    private String position;   // left/right
-    private String device;     // desktop/mobile
-    private Integer orderIndex;
+    private String position;     // left / right
+    private Integer orderIndex;  // 1..N
+    private String deviceType;   // "LAPTOP" | "MOBILE" (case-insensitive acceptat în service)
     private LocalDate startDate;
     private LocalDate endDate;
 }

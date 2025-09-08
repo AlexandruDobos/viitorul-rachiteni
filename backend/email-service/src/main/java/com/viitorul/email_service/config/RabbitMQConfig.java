@@ -12,44 +12,42 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
 
-    // existente
-    public static final String REGISTER_QUEUE   = "user.registered.queue";
-    public static final String RESET_QUEUE      = "auth.reset.queue";
-    public static final String ACTIVATED_QUEUE  = "user.activated.queue";
-    public static final String AUTH_EXCHANGE    = "auth.exchange";
+    // --- Auth (existente) ---
+    public static final String REGISTER_QUEUE  = "user.registered.queue";
+    public static final String RESET_QUEUE     = "auth.reset.queue";
+    public static final String ACTIVATED_QUEUE = "user.activated.queue";
+    public static final String AUTH_EXCHANGE   = "auth.exchange";
 
-    // 🔵 noi pentru contact
-    public static final String APP_EXCHANGE         = "app.exchange";          // trebuie să fie identic cu app-service
-    public static final String CONTACT_QUEUE        = "contact.message.queue"; // idem
-    public static final String CONTACT_ROUTING_KEY  = "contact.message";       // idem
+    // --- App (global) ---
+    public static final String APP_EXCHANGE = "app.exchange";
 
-    @Bean
-    public Queue registerQueue() { return new Queue(REGISTER_QUEUE, true); }
+    // --- Contact (existente) ---
+    public static final String CONTACT_QUEUE       = "contact.message.queue";
+    public static final String CONTACT_ROUTING_KEY = "contact.message";
 
-    @Bean
-    public Queue passwordResetQueue() { return new Queue(RESET_QUEUE, true); }
+    // --- Donații (noi) ---
+    public static final String DONATION_QUEUE       = "donation.completed.queue";
+    public static final String DONATION_ROUTING_KEY = "donations.completed";
 
-    @Bean
-    public Queue activatedQueue() { return new Queue(ACTIVATED_QUEUE, true); }
-
+    // Exchanges
     @Bean
     public Exchange authExchange() {
         return ExchangeBuilder.topicExchange(AUTH_EXCHANGE).durable(true).build();
     }
 
-    // 🔵 Exchange-ul pentru evenimentele aplicației (contact)
     @Bean
     public Exchange appExchange() {
         return ExchangeBuilder.topicExchange(APP_EXCHANGE).durable(true).build();
     }
 
-    // 🔵 Coada pentru mesaje de contact
-    @Bean
-    public Queue contactQueue() {
-        return new Queue(CONTACT_QUEUE, true);
-    }
+    // Cozi
+    @Bean public Queue registerQueue()      { return new Queue(REGISTER_QUEUE, true); }
+    @Bean public Queue passwordResetQueue() { return new Queue(RESET_QUEUE, true); }
+    @Bean public Queue activatedQueue()     { return new Queue(ACTIVATED_QUEUE, true); }
+    @Bean public Queue contactQueue()       { return new Queue(CONTACT_QUEUE, true); }
+    @Bean public Queue donationQueue()      { return new Queue(DONATION_QUEUE, true); }
 
-    // 🔵 Binding contact.queue <- app.exchange [routing-key: contact.message]
+    // Bindings
     @Bean
     public Binding bindingContactQueue() {
         return BindingBuilder
@@ -60,20 +58,42 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding bindingDonationQueue() {
+        return BindingBuilder
+                .bind(donationQueue())
+                .to(appExchange())
+                .with(DONATION_ROUTING_KEY)
+                .noargs();
+    }
+
+    @Bean
     public Binding bindingActivatedQueue() {
-        return BindingBuilder.bind(activatedQueue()).to(authExchange()).with("auth.activated").noargs();
+        return BindingBuilder
+                .bind(activatedQueue())
+                .to(authExchange())
+                .with("auth.activated")
+                .noargs();
     }
 
     @Bean
     public Binding bindingRegisterQueue() {
-        return BindingBuilder.bind(registerQueue()).to(authExchange()).with("auth.registered").noargs();
+        return BindingBuilder
+                .bind(registerQueue())
+                .to(authExchange())
+                .with("auth.registered")
+                .noargs();
     }
 
     @Bean
     public Binding bindingPasswordResetQueue() {
-        return BindingBuilder.bind(passwordResetQueue()).to(authExchange()).with("auth.reset").noargs();
+        return BindingBuilder
+                .bind(passwordResetQueue())
+                .to(authExchange())
+                .with("auth.reset")
+                .noargs();
     }
 
+    // Converter + listener factory (identic cu ce folosești deja)
     @Bean
     public MessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();

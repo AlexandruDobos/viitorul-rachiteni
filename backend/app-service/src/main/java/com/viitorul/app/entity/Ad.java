@@ -17,7 +17,6 @@ import java.time.LocalDate;
         }
 )
 public class Ad {
-    public enum DeviceType { LAPTOP, MOBILE }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,7 +30,7 @@ public class Ad {
     private String link;
 
     @Column(nullable = false)
-    private String position; // "left" / "right" (sau cum le folosești în UI)
+    private String position; // "left" / "right"
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;

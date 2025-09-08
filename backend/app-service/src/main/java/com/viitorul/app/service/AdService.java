@@ -2,14 +2,14 @@ package com.viitorul.app.service;
 
 import com.viitorul.app.dto.AdDTO;
 import com.viitorul.app.entity.Ad;
-import com.viitorul.app.entity.Ad.DeviceType;
+import com.viitorul.app.entity.DeviceType;
 import com.viitorul.app.repository.AdRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,86 +18,99 @@ public class AdService {
 
     private final AdRepository adRepository;
 
-    // ==== LISTARE ====
-    public List<AdDTO> getAllAds(String device, String position) {
-        DeviceType dev = parseDevice(device); // poate fi null => toate
-        var list = adRepository.findAllSorted(position, dev);
-        return list.stream().map(this::toDto).collect(Collectors.toList());
+    public List<AdDTO> getAllAds(DeviceType deviceType) {
+        return adRepository.findAllByDeviceTypeOrderByPositionAscOrderIndexAsc(deviceType)
+                .stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
-    // ==== CREATE ====
     @Transactional
     public AdDTO addAd(AdDTO dto) {
-        DeviceType device = parseDevice(dto.getDeviceType());
-        if (device == null) device = DeviceType.LAPTOP;
+        DeviceType device = dto.getDeviceType() == null ? DeviceType.LAPTOP : dto.getDeviceType();
+        String pos = dto.getPosition();
 
-        String position = dto.getPosition();
-        int newIndex = safeIndex(dto.getOrderIndex());
+        int max = adRepository.maxIndexInBucket(pos, device);
+        int target = Math.max(1, Math.min(nullSafe(dto.getOrderIndex(), 1), max + 1));
 
-        int max = adRepository.maxOrderInBucket(position, device);
-        if (newIndex > max + 1) newIndex = max + 1;
+        // 1) fă loc
+        adRepository.shiftRightFrom(pos, device, target);
 
-        // facem loc în bucket
-        adRepository.makeRoomFrom(position, device, newIndex);
-
-        Ad ad = toEntity(dto);
+        // 2) salvează
+        Ad ad = mapToEntity(dto);
         ad.setDeviceType(device);
-        ad.setOrderIndex(newIndex);
+        ad.setOrderIndex(target);
 
-        Ad saved = adRepository.save(ad);
-        return toDto(saved);
+        return mapToDto(adRepository.save(ad));
     }
 
-    // ==== UPDATE (re-ordonare atomică) ====
     @Transactional
     public AdDTO updateAd(Long id, AdDTO dto) {
         Ad ad = adRepository.findById(id).orElseThrow(() -> new RuntimeException("Reclamă inexistentă"));
 
         String oldPos = ad.getPosition();
         DeviceType oldDev = ad.getDeviceType();
-        int oldIndex = ad.getOrderIndex();
+        int oldIdx = nullSafe(ad.getOrderIndex(), 1);
 
         String newPos = dto.getPosition();
-        DeviceType newDev = parseDevice(dto.getDeviceType());
-        if (newDev == null) newDev = DeviceType.LAPTOP;
+        DeviceType newDev = dto.getDeviceType() == null ? oldDev : dto.getDeviceType();
+        int reqIdx = nullSafe(dto.getOrderIndex(), oldIdx);
 
-        int requestedIndex = safeIndex(dto.getOrderIndex());
+        boolean bucketChanged = !Objects.equals(oldPos, newPos) || oldDev != newDev;
+        if (bucketChanged) {
+            // neutralizez în bucketul vechi ca să evit coliziuni de unicitate
+            ad.setOrderIndex(0);
+            adRepository.saveAndFlush(ad);
 
-        // normalizăm newIndex în bucketul țintă
-        int targetMax = adRepository.maxOrderInBucket(newPos, newDev);
-        int newIndex = Math.min(Math.max(requestedIndex, 1), targetMax + (isSameBucket(oldPos, oldDev, newPos, newDev) ? 0 : 1));
+            // fac loc în bucketul nou
+            int maxNew = adRepository.maxIndexInBucket(newPos, newDev);
+            int target = Math.max(1, Math.min(reqIdx, maxNew + 1));
+            adRepository.shiftRightFrom(newPos, newDev, target);
 
-        if (isSameBucket(oldPos, oldDev, newPos, newDev)) {
-            // aceeași găleată => shift între limite
-            if (newIndex < oldIndex) {
-                adRepository.bumpUpBetween(oldPos, oldDev, newIndex, oldIndex - 1, ad.getId());
-            } else if (newIndex > oldIndex) {
-                adRepository.bumpDownBetween(oldPos, oldDev, oldIndex + 1, newIndex, ad.getId());
-            }
-        } else {
-            // altă găleată => închidem gaura în vechiul bucket, facem loc în noul bucket
-            adRepository.compactAfter(oldPos, oldDev, oldIndex);
-            // recalculăm max după compactare în bucketul nou (nu se schimbă dar păstrăm claritatea)
-            int maxInNew = adRepository.maxOrderInBucket(newPos, newDev);
-            if (newIndex > maxInNew + 1) newIndex = maxInNew + 1;
-            adRepository.makeRoomFrom(newPos, newDev, newIndex);
+            // mut anunțul în noul bucket + indexul țintă
+            ad.setPosition(newPos);
+            ad.setDeviceType(newDev);
+            ad.setTitle(dto.getTitle());
+            ad.setImageUrl(dto.getImageUrl());
+            ad.setLink(dto.getLink());
+            ad.setStartDate(dto.getStartDate());
+            ad.setEndDate(dto.getEndDate());
+            ad.setOrderIndex(target);
+
+            // compactează bucketul vechi (după indexul eliberat)
+            adRepository.compactAfter(oldPos, oldDev, oldIdx);
+
+            return mapToDto(adRepository.save(ad));
         }
 
-        // update efectiv
+        // același bucket: re-ordonare fără să rup unicitatea
+        int max = adRepository.maxIndexInBucket(oldPos, oldDev);
+        int newIdx = Math.max(1, Math.min(reqIdx, Math.max(max, 1)));
+
+        if (newIdx != oldIdx) {
+            // 1) neutralizez anunțul mutat -> eliberează poziția „veche”
+            ad.setOrderIndex(0);
+            adRepository.saveAndFlush(ad);
+
+            // 2) deplasez ceilalți
+            if (newIdx < oldIdx) {
+                adRepository.bumpUpBetween(oldPos, oldDev, newIdx, oldIdx - 1, ad.getId());
+            } else {
+                adRepository.bumpDownBetween(oldPos, oldDev, oldIdx + 1, newIdx, ad.getId());
+            }
+
+            // 3) setez noul index pentru anunțul mutat
+            ad.setOrderIndex(newIdx);
+        }
+
+        // actualizez restul câmpurilor
         ad.setTitle(dto.getTitle());
         ad.setImageUrl(dto.getImageUrl());
         ad.setLink(dto.getLink());
-        ad.setPosition(newPos);
-        ad.setDeviceType(newDev);
-        ad.setOrderIndex(newIndex);
         ad.setStartDate(dto.getStartDate());
         ad.setEndDate(dto.getEndDate());
 
-        Ad saved = adRepository.save(ad);
-        return toDto(saved);
+        return mapToDto(adRepository.save(ad));
     }
 
-    // ==== DELETE (compactare) ====
     @Transactional
     public void deleteAd(Long id) {
         Ad ad = adRepository.findById(id).orElse(null);
@@ -105,30 +118,15 @@ public class AdService {
 
         String pos = ad.getPosition();
         DeviceType dev = ad.getDeviceType();
-        int idx = ad.getOrderIndex();
+        int idx = nullSafe(ad.getOrderIndex(), 1);
 
         adRepository.deleteById(id);
         adRepository.compactAfter(pos, dev, idx);
     }
 
-    // ==== Helpers ====
-    private boolean isSameBucket(String p1, DeviceType d1, String p2, DeviceType d2) {
-        return p1.equals(p2) && d1 == d2;
-    }
+    // ---- mapping
 
-    private int safeIndex(Integer i) {
-        return (i == null || i < 1) ? 1 : i;
-    }
-
-    private DeviceType parseDevice(String text) {
-        if (text == null || text.isBlank()) return null;
-        String s = text.trim().toUpperCase(Locale.ROOT);
-        if (s.equals("LAPTOP")) return DeviceType.LAPTOP;
-        if (s.equals("MOBILE") || s.equals("PHONE") || s.equals("MOBIL") || s.equals("TELEFON")) return DeviceType.MOBILE;
-        return null;
-    }
-
-    private AdDTO toDto(Ad ad) {
+    private AdDTO mapToDto(Ad ad) {
         AdDTO dto = new AdDTO();
         dto.setId(ad.getId());
         dto.setTitle(ad.getTitle());
@@ -136,23 +134,27 @@ public class AdService {
         dto.setLink(ad.getLink());
         dto.setPosition(ad.getPosition());
         dto.setOrderIndex(ad.getOrderIndex());
-        dto.setDeviceType(ad.getDeviceType().name());
         dto.setStartDate(ad.getStartDate());
         dto.setEndDate(ad.getEndDate());
+        dto.setDeviceType(ad.getDeviceType());
         return dto;
     }
 
-    private Ad toEntity(AdDTO dto) {
+    private Ad mapToEntity(AdDTO dto) {
         Ad ad = new Ad();
         ad.setId(dto.getId());
         ad.setTitle(dto.getTitle());
         ad.setImageUrl(dto.getImageUrl());
         ad.setLink(dto.getLink());
         ad.setPosition(dto.getPosition());
-        ad.setOrderIndex(safeIndex(dto.getOrderIndex()));
+        ad.setOrderIndex(dto.getOrderIndex());
         ad.setStartDate(dto.getStartDate());
         ad.setEndDate(dto.getEndDate());
-        ad.setDeviceType(parseDevice(dto.getDeviceType()) == null ? DeviceType.LAPTOP : parseDevice(dto.getDeviceType()));
+        ad.setDeviceType(dto.getDeviceType() == null ? DeviceType.LAPTOP : dto.getDeviceType());
         return ad;
+    }
+
+    private int nullSafe(Integer v, int def) {
+        return v == null ? def : v;
     }
 }

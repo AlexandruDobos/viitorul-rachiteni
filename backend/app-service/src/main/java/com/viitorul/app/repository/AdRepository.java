@@ -1,7 +1,7 @@
 package com.viitorul.app.repository;
 
 import com.viitorul.app.entity.Ad;
-import com.viitorul.app.entity.Ad.DeviceType;
+import com.viitorul.app.entity.DeviceType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
@@ -9,83 +9,52 @@ import java.util.List;
 
 public interface AdRepository extends JpaRepository<Ad, Long> {
 
-    // listări
-    List<Ad> findByPositionAndDeviceTypeOrderByOrderIndexAsc(String position, DeviceType deviceType);
+    List<Ad> findAllByDeviceTypeOrderByPositionAscOrderIndexAsc(DeviceType deviceType);
 
-    @Query("""
-      select a 
-      from Ad a 
-      where (:position is null or a.position = :position)
-        and (:deviceType is null or a.deviceType = :deviceType)
-      order by a.deviceType asc, a.position asc, a.orderIndex asc
-    """)
-    List<Ad> findAllSorted(@Param("position") String position,
-                           @Param("deviceType") DeviceType deviceType);
+    @Query("select coalesce(max(a.orderIndex), 0) " +
+            "from Ad a where a.position = :pos and a.deviceType = :device")
+    int maxIndexInBucket(@Param("pos") String pos, @Param("device") DeviceType device);
 
-    // max index în bucket (position+device)
-    @Query("""
-      select coalesce(max(a.orderIndex),0) 
-      from Ad a 
-      where a.position = :position and a.deviceType = :deviceType
-    """)
-    Integer maxOrderInBucket(@Param("position") String position,
-                             @Param("deviceType") DeviceType deviceType);
+    @Query("select count(a) from Ad a where a.position = :pos and a.deviceType = :device")
+    int countInBucket(@Param("pos") String pos, @Param("device") DeviceType device);
 
-    // când scoatem un element din bucket: închidem gaura (toate > oldIndex coboară cu 1)
+    // mutare în sus: ceilalți [new..old-1] +1 (EXCLUD anunțul mutat)
     @Modifying
-    @Query("""
-      update Ad a 
-      set a.orderIndex = a.orderIndex - 1
-      where a.position = :position 
-        and a.deviceType = :deviceType
-        and a.orderIndex > :oldIndex
-    """)
-    int compactAfter(@Param("position") String position,
-                     @Param("deviceType") DeviceType deviceType,
-                     @Param("oldIndex") int oldIndex);
+    @Query("update Ad a set a.orderIndex = a.orderIndex + 1 " +
+            "where a.position = :pos and a.deviceType = :device " +
+            "and a.orderIndex between :from and :to and a.id <> :excludeId")
+    int bumpUpBetween(@Param("pos") String pos,
+                      @Param("device") DeviceType device,
+                      @Param("from") int from,
+                      @Param("to") int to,
+                      @Param("excludeId") Long excludeId);
 
-    // când inserăm într-un bucket la newIndex: facem loc (toate >= newIndex urcă cu 1)
+    // mutare în jos: ceilalți [old+1..new] −1 (EXCLUD anunțul mutat)
     @Modifying
-    @Query("""
-      update Ad a 
-      set a.orderIndex = a.orderIndex + 1
-      where a.position = :position 
-        and a.deviceType = :deviceType
-        and a.orderIndex >= :newIndex
-    """)
-    int makeRoomFrom(@Param("position") String position,
-                     @Param("deviceType") DeviceType deviceType,
-                     @Param("newIndex") int newIndex);
+    @Query("update Ad a set a.orderIndex = a.orderIndex - 1 " +
+            "where a.position = :pos and a.deviceType = :device " +
+            "and a.orderIndex between :from and :to and a.id <> :excludeId")
+    int bumpDownBetween(@Param("pos") String pos,
+                        @Param("device") DeviceType device,
+                        @Param("from") int from,
+                        @Param("to") int to,
+                        @Param("excludeId") Long excludeId);
 
-    // mutare în același bucket: newIndex < oldIndex => [newIndex, oldIndex-1] urcă cu 1
+    // când inserezi într-un bucket: fă loc din dreapta
     @Modifying
-    @Query("""
-      update Ad a 
-      set a.orderIndex = a.orderIndex + 1
-      where a.position = :position 
-        and a.deviceType = :deviceType
-        and a.orderIndex between :start and :end
-        and a.id <> :id
-    """)
-    int bumpUpBetween(@Param("position") String position,
-                      @Param("deviceType") DeviceType deviceType,
-                      @Param("start") int start,
-                      @Param("end") int end,
-                      @Param("id") Long excludeId);
+    @Query("update Ad a set a.orderIndex = a.orderIndex + 1 " +
+            "where a.position = :pos and a.deviceType = :device " +
+            "and a.orderIndex >= :from")
+    int shiftRightFrom(@Param("pos") String pos,
+                       @Param("device") DeviceType device,
+                       @Param("from") int from);
 
-    // mutare în același bucket: newIndex > oldIndex => [oldIndex+1, newIndex] coboară cu 1
+    // când scoți dintr-un bucket: compactează după poziția eliberată
     @Modifying
-    @Query("""
-      update Ad a 
-      set a.orderIndex = a.orderIndex - 1
-      where a.position = :position 
-        and a.deviceType = :deviceType
-        and a.orderIndex between :start and :end
-        and a.id <> :id
-    """)
-    int bumpDownBetween(@Param("position") String position,
-                        @Param("deviceType") DeviceType deviceType,
-                        @Param("start") int start,
-                        @Param("end") int end,
-                        @Param("id") Long excludeId);
+    @Query("update Ad a set a.orderIndex = a.orderIndex - 1 " +
+            "where a.position = :pos and a.deviceType = :device " +
+            "and a.orderIndex > :from")
+    int compactAfter(@Param("pos") String pos,
+                     @Param("device") DeviceType device,
+                     @Param("from") int from);
 }

@@ -25,7 +25,8 @@ import Footer from './components/Footer';
 import RouteMetaManager from './components/RouteMetaManager';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import AnnouncementsSection from './components/AnnouncementsSection';
-
+import DonationsSuccess from './pages/DonationsSuccess';
+import DonationsCancel from './pages/DonationsCancel';
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
@@ -83,6 +84,8 @@ const App = () => {
                     <Route path="/results" element={<Results />} />
                     <Route path="/standings" element={<Standings />} />
                     <Route path="/donations" element={<Donations />} />
+                    <Route path="/donations/success" element={<DonationsSuccess />} />
+                    <Route path="/donations/cancel" element={<DonationsCancel />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/matches/:matchId" element={<MatchDetails />} />
                     <Route path="/players/:playerId" element={<PlayerDetails />} />

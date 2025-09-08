@@ -14,9 +14,10 @@ public class AdController {
     @Autowired
     private AdService adService;
 
+    // filtrare pe device: /api/app/ads?device=desktop|mobile
     @GetMapping
-    public List<AdDTO> getAll() {
-        return adService.getAllAds();
+    public List<AdDTO> getAll(@RequestParam(value = "device", required = false) String device) {
+        return adService.getAllAds(device);
     }
 
     @PostMapping
@@ -28,7 +29,6 @@ public class AdController {
     public AdDTO update(@PathVariable("id") Long id, @RequestBody AdDTO dto) {
         return adService.updateAd(id, dto);
     }
-
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable("id") Long id) {

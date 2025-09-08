@@ -118,24 +118,6 @@ export default function DonationsSuccess() {
     };
   }, [sessionId]);
 
-  const onShare = async () => {
-    const shareData = {
-      title: 'Am susținut ACS Viitorul Răchiteni',
-      text: 'Tocmai am donat pentru echipă. Hai și tu să ajuți!',
-      url: 'https://www.viitorulrachiteni.ro'
-    };
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(shareData.url);
-        alert('Link copiat! Mulțumim că dai vestea mai departe 🙌');
-      }
-    } catch {
-      // ignore
-    }
-  };
-
   return (
     <div className="relative px-4 py-10">
       {/* Confetti overlay */}
@@ -183,9 +165,7 @@ export default function DonationsSuccess() {
                 />
               </svg>
 
-              <style>
-                {`@keyframes dash { to { stroke-dashoffset: 0; } }`}
-              </style>
+              <style>{`@keyframes dash { to { stroke-dashoffset: 0; } }`}</style>
 
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
                 Mulțumim pentru donație! 🎉
@@ -235,7 +215,12 @@ export default function DonationsSuccess() {
 
                   <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                     <div className="text-xs uppercase tracking-wide text-gray-500">Email</div>
-                    <div className="mt-1 text-gray-900">{data?.customerEmail || '—'}</div>
+                    <div
+                      className="mt-1 text-gray-900 text-sm break-all"
+                      title={data?.customerEmail || ''}
+                    >
+                      {data?.customerEmail || '—'}
+                    </div>
                   </div>
                 </div>
 
@@ -273,25 +258,14 @@ export default function DonationsSuccess() {
                   </div>
                 </div>
 
-                {/* CTA-uri */}
-                <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                {/* CTA simplu (fără share) */}
+                <div className="mt-8">
                   <Link
                     to="/"
                     className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-sm"
                   >
                     Înapoi la site
                   </Link>
-
-                  <button
-                    type="button"
-                    onClick={onShare}
-                    className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 text-gray-800 font-medium"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M18 8a3 3 0 0 0-2.82 2H9.82A3 3 0 0 0 7 9a3 3 0 1 0 2.82 4h5.36A3 3 0 1 0 18 8z"/>
-                    </svg>
-                    Spune-le și prietenilor
-                  </button>
                 </div>
 
                 {/* Notă */}

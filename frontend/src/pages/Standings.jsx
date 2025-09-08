@@ -63,13 +63,6 @@ const RankBadge = ({ rank }) => {
       </span>
     );
   }
-  if (rank === 3) {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-300 to-amber-300 text-amber-900 shadow-sm">
-        <span aria-hidden>🥉</span> 3
-      </span>
-    );
-  }
   return (
     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
       {rank ?? '-'}
@@ -79,7 +72,6 @@ const RankBadge = ({ rank }) => {
 
 const Standings = () => {
   const [rows, setRows] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
@@ -92,7 +84,6 @@ const Standings = () => {
         if (!res.ok) throw new Error('Eroare la încărcarea clasamentului');
         const data = await res.json();
         setRows(Array.isArray(data?.rows) ? data.rows : []);
-        setLastUpdated(data?.lastUpdated ?? data?.last_updated ?? null);
       } catch (e) {
         setErr(e.message || 'Eroare');
         setRows([]);
@@ -113,16 +104,6 @@ const Standings = () => {
     [rows]
   );
 
-  const headerNote =
-    lastUpdated &&
-    new Date(lastUpdated).toLocaleString('ro-RO', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-
   return (
     <div className="px-4 max-w-5xl mx-auto">
       {/* ===== TITLU / HERO ===== */}
@@ -141,15 +122,6 @@ const Standings = () => {
             Clasament Ligă
           </span>
         </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="mt-2 text-xs text-gray-500"
-        >
-          {headerNote ? `Actualizat: ${headerNote}` : '—'}
-        </motion.p>
 
         <motion.div
           initial={{ scaleX: 0 }}
@@ -194,6 +166,9 @@ const Standings = () => {
                 <tbody className="divide-y">
                   {sorted.map((r, idx) => {
                     const mine = isMyTeam(r.teamName);
+                    const rankNum = Number(r.rank);
+                    const isTop2 = rankNum === 1 || rankNum === 2;
+
                     return (
                       <tr
                         key={`${r.teamName}-${idx}`}
@@ -206,45 +181,22 @@ const Standings = () => {
                         } hover:bg-emerald-50/60`}
                       >
                         <td className="px-3 py-2">
-                          <RankBadge rank={Number(r.rank)} />
+                          <RankBadge rank={rankNum} />
                         </td>
 
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-3">
-                            {/* avatar cerc simplu cu inițiale dacă nu există logo */}
-                            {r.teamLogo ? (
+                            {/* arată doar logo dacă există; fără avatar din litere */}
+                            {r.teamLogo && (
                               <img
                                 src={r.teamLogo}
                                 alt={r.teamName}
                                 className="w-7 h-7 rounded-full object-cover ring-1 ring-gray-200"
                               />
-                            ) : (
-                              <div className="w-7 h-7 rounded-full bg-gray-100 text-gray-600 grid place-items-center text-[10px] font-semibold ring-1 ring-gray-200">
-                                {String(r.teamName || '?')
-                                  .split(' ')
-                                  .map((w) => w[0])
-                                  .join('')
-                                  .slice(0, 3)
-                                  .toUpperCase()}
-                              </div>
                             )}
-
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`${
-                                  mine
-                                    ? 'font-semibold text-emerald-800'
-                                    : 'text-gray-800'
-                                }`}
-                              >
-                                {r.teamName}
-                              </span>
-                              {mine && (
-                                <Badge className="bg-emerald-600 text-white">
-                                  Echipa mea
-                                </Badge>
-                              )}
-                            </div>
+                            <span className={`${mine ? 'font-semibold text-emerald-800' : 'text-gray-800'}`}>
+                              {r.teamName}
+                            </span>
                           </div>
                         </td>
 
@@ -258,17 +210,13 @@ const Standings = () => {
                           {r.gd >= 0 ? `+${r.gd}` : r.gd}
                         </td>
                         <td className="px-3 py-2 text-right">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full font-semibold ${
-                              mine
-                                ? 'bg-emerald-600 text-white'
-                                : Number(r.rank) <= 3
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {r.points ?? 0}
-                          </span>
+                          {isTop2 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full font-semibold bg-gray-900 text-white">
+                              {r.points ?? 0}
+                            </span>
+                          ) : (
+                            <span className="text-gray-800">{r.points ?? 0}</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -281,38 +229,28 @@ const Standings = () => {
             <div className="md:hidden divide-y">
               {sorted.map((r, idx) => {
                 const mine = isMyTeam(r.teamName);
+                const rankNum = Number(r.rank);
+                const isTop2 = rankNum === 1 || rankNum === 2;
+
                 return (
                   <div
                     key={`${r.teamName}-m-${idx}`}
-                    className={`p-4 transition ${
-                      mine
-                        ? 'bg-emerald-50/80 ring-1 ring-emerald-400/50'
-                        : 'bg-white'
-                    }`}
+                    className={`p-4 transition ${mine ? 'bg-emerald-50/80 ring-1 ring-emerald-400/50' : 'bg-white'}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-2">
-                        <RankBadge rank={Number(r.rank)} />
-                        <div className="font-semibold text-gray-900 flex items-center gap-2">
+                        <RankBadge rank={rankNum} />
+                        <div className={`font-semibold ${mine ? 'text-emerald-800' : 'text-gray-900'}`}>
                           {r.teamName}
-                          {mine && (
-                            <Badge className="bg-emerald-600 text-white">
-                              Echipa mea
-                            </Badge>
-                          )}
                         </div>
                       </div>
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-sm font-semibold ${
-                          mine
-                            ? 'bg-emerald-600 text-white'
-                            : Number(r.rank) <= 3
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {r.points ?? 0} p
-                      </span>
+                      {isTop2 ? (
+                        <span className="px-2 py-0.5 rounded-full text-sm font-semibold bg-gray-900 text-white">
+                          {r.points ?? 0} p
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-800">{r.points ?? 0} p</span>
+                      )}
                     </div>
 
                     <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-gray-600">
@@ -329,8 +267,7 @@ const Standings = () => {
                       <div>
                         <div className="text-gray-500">GM-GP (DG)</div>
                         <div className="font-medium">
-                          {(r.goalsFor ?? 0)}-{(r.goalsAgainst ?? 0)} (
-                          {r.gd >= 0 ? `+${r.gd}` : r.gd})
+                          {(r.goalsFor ?? 0)}-{(r.goalsAgainst ?? 0)} ({r.gd >= 0 ? `+${r.gd}` : r.gd})
                         </div>
                       </div>
                     </div>
@@ -341,8 +278,6 @@ const Standings = () => {
           </>
         )}
       </div>
-
-      {/* Am scos mențiunea despre sursa Linkului conform cerinței */}
     </div>
   );
 };

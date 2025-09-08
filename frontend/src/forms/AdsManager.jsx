@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
+const DEVICE_OPTIONS = [
+  { value: 'desktop', label: 'Laptop' },
+  { value: 'mobile',  label: 'Telefon' },
+];
+
 const AdsManager = () => {
+  const [selectedDevice, setSelectedDevice] = useState('desktop');
   const [ads, setAds] = useState([]);
   const [form, setForm] = useState({
     id: null,
@@ -9,6 +15,7 @@ const AdsManager = () => {
     imageUrl: '',
     link: '',
     position: 'left',
+    device: 'desktop',
     orderIndex: 1,
     startDate: '',
     endDate: '',
@@ -20,9 +27,9 @@ const AdsManager = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileRef = useRef(null);
 
-  // preview sigur (fără icon rupt + text)
-  const [preview, setPreview] = useState(null);   // blob URL local
-  const [showImg, setShowImg] = useState(false);  // dacă randăm <img> sau placeholder
+  // preview sigur
+  const [preview, setPreview] = useState(null);
+  const [showImg, setShowImg] = useState(false);
 
   useEffect(() => {
     setShowImg(Boolean(preview || form.imageUrl));
@@ -35,31 +42,33 @@ const AdsManager = () => {
   }, [preview]);
 
   const fetchAds = async () => {
-    const res = await fetch(`${BASE_URL}/app/ads`);
+    const res = await fetch(`${BASE_URL}/app/ads?device=${selectedDevice}`);
     const data = await res.json();
     setAds(data);
   };
 
   useEffect(() => {
     fetchAds();
-  }, []);
+    // resetăm device-ul din formular la tabul curent
+    setForm(f => ({ ...f, device: selectedDevice, id: null, orderIndex: 1 }));
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDevice]);
 
-  // ---- helpers pentru upload în R2 (folder "ads")
+  // ---- upload to R2
   async function presignForR2(file, folder = 'ads') {
     const q = new URLSearchParams({
       filename: file.name,
       contentType: file.type || 'application/octet-stream',
       folder,
     });
-
     const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
       method: 'GET',
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
-    const uploadUrl = data.uploadUrl;
-    const publicUrl = data.publicUrl;
+    const { uploadUrl, publicUrl } = data;
     if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
     return { uploadUrl, publicUrl };
   }
@@ -79,7 +88,6 @@ const AdsManager = () => {
     e.target.value = '';
     if (!file) return;
 
-    // arătăm instant preview local
     if (preview) URL.revokeObjectURL(preview);
     const local = URL.createObjectURL(file);
     setPreview(local);
@@ -95,7 +103,6 @@ const AdsManager = () => {
       console.error(err);
       setSuccessMessage(err.message || '❌ Încărcarea imaginii a eșuat.');
       setTimeout(() => setSuccessMessage(''), 4000);
-      // ascundem preview-ul dacă a eșuat
       setPreview(null);
     } finally {
       setUploadingImage(false);
@@ -109,14 +116,23 @@ const AdsManager = () => {
       ? `${BASE_URL}/app/ads/${form.id}`
       : `${BASE_URL}/app/ads`;
 
-    await fetch(url, {
+    const payload = {
+      ...form,
+      device: form.device || selectedDevice,
+      orderIndex: parseInt(form.orderIndex, 10) || 1,
+    };
+
+    const res = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...form,
-        orderIndex: parseInt(form.orderIndex, 10),
-      }),
+      body: JSON.stringify(payload),
     });
+
+    if (!res.ok) {
+      const t = await res.text().catch(() => '');
+      alert(t || 'Eroare la salvare.');
+      return;
+    }
 
     setForm({
       id: null,
@@ -124,15 +140,13 @@ const AdsManager = () => {
       imageUrl: '',
       link: '',
       position: 'left',
+      device: selectedDevice,
       orderIndex: 1,
       startDate: '',
       endDate: '',
     });
 
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
 
     setSuccessMessage(form.id ? 'Reclamă actualizată cu succes!' : 'Reclamă adăugată cu succes!');
     setTimeout(() => setSuccessMessage(''), 3000);
@@ -149,11 +163,11 @@ const AdsManager = () => {
   };
 
   const handleEdit = (ad) => {
-    setForm({ ...ad });
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    setForm({
+      ...ad,
+      device: ad.device || selectedDevice,
+    });
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
   };
 
   const resetForm = () => {
@@ -163,14 +177,12 @@ const AdsManager = () => {
       imageUrl: '',
       link: '',
       position: 'left',
+      device: selectedDevice,
       orderIndex: 1,
       startDate: '',
       endDate: '',
     });
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
   };
 
   return (
@@ -184,7 +196,27 @@ const AdsManager = () => {
         onChange={handleFileChange}
       />
 
-      <h2 className="text-xl font-semibold mb-4">Administrare Reclame</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Administrare Reclame</h2>
+
+        {/* tabs device */}
+        <div className="inline-flex rounded-lg border overflow-hidden">
+          {DEVICE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setSelectedDevice(opt.value)}
+              className={`px-3 py-1.5 text-sm ${
+                selectedDevice === opt.value
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white hover:bg-gray-50 text-gray-700'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {successMessage && (
         <div className="mb-4 text-green-600 font-medium">{successMessage}</div>
@@ -192,16 +224,16 @@ const AdsManager = () => {
 
       <form onSubmit={handleSubmit} className="space-y-2 mb-6">
         <input
-          className="w-full border p-2"
+          className="w-full border p-2 rounded"
           placeholder="Titlu"
           value={form.title}
           onChange={e => setForm({ ...form, title: e.target.value })}
         />
 
-        {/* Imagine: URL + buton Upload în R2 + preview sigur */}
+        {/* Imagine: URL + buton Upload + preview */}
         <div className="flex items-center gap-2">
           <input
-            className="w-full border p-2"
+            className="w-full border p-2 rounded"
             placeholder="Link imagine (sau încarcă)"
             value={form.imageUrl}
             onChange={e => setForm({ ...form, imageUrl: e.target.value })}
@@ -221,9 +253,9 @@ const AdsManager = () => {
           {showImg ? (
             <img
               src={preview || form.imageUrl}
-              alt=""                                        
+              alt=""
               className="w-16 h-16 object-contain rounded border bg-white"
-              onError={() => setShowImg(false)}           
+              onError={() => setShowImg(false)}
             />
           ) : (
             <div className="w-16 h-16 grid place-items-center rounded border bg-white text-[11px] text-gray-500">
@@ -244,52 +276,63 @@ const AdsManager = () => {
         </div>
 
         <input
-          className="w-full border p-2"
+          className="w-full border p-2 rounded"
           placeholder="Link destinație"
           value={form.link}
           onChange={e => setForm({ ...form, link: e.target.value })}
         />
-        <select
-          className="w-full border p-2"
-          value={form.position}
-          onChange={e => setForm({ ...form, position: e.target.value })}
-        >
-          <option value="left">Stânga</option>
-          <option value="right">Dreapta</option>
-        </select>
-        <input
-          className="w-full border p-2"
-          type="number"
-          placeholder="Ordine afișare (1, 2, 3...)"
-          value={form.orderIndex}
-          onChange={e => setForm({ ...form, orderIndex: parseInt(e.target.value) || 1 })}
-        />
-        <input
-          className="w-full border p-2"
-          type="date"
-          value={form.startDate}
-          onChange={e => setForm({ ...form, startDate: e.target.value })}
-        />
-        <input
-          className="w-full border p-2"
-          type="date"
-          value={form.endDate}
-          onChange={e => setForm({ ...form, endDate: e.target.value })}
-        />
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <select
+            className="w-full border p-2 rounded"
+            value={form.position}
+            onChange={e => setForm({ ...form, position: e.target.value })}
+          >
+            <option value="left">Stânga</option>
+            <option value="right">Dreapta</option>
+          </select>
+
+          <select
+            className="w-full border p-2 rounded"
+            value={form.device}
+            onChange={e => setForm({ ...form, device: e.target.value })}
+          >
+            {DEVICE_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+
+          <input
+            className="w-full border p-2 rounded"
+            type="number"
+            min={1}
+            placeholder="Ordine afișare (1, 2, 3...)"
+            value={form.orderIndex}
+            onChange={e => setForm({ ...form, orderIndex: parseInt(e.target.value) || 1 })}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input
+            className="w-full border p-2 rounded"
+            type="date"
+            value={form.startDate}
+            onChange={e => setForm({ ...form, startDate: e.target.value })}
+          />
+          <input
+            className="w-full border p-2 rounded"
+            type="date"
+            value={form.endDate}
+            onChange={e => setForm({ ...form, endDate: e.target.value })}
+          />
+        </div>
 
         <div className="flex gap-4">
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
+          <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
             {form.id ? 'Actualizează reclama' : 'Adaugă reclamă'}
           </button>
           {form.id && (
-            <button
-              type="button"
-              className="text-gray-600 underline"
-              onClick={resetForm}
-            >
+            <button type="button" className="text-gray-600 underline" onClick={resetForm}>
               Renunță la editare
             </button>
           )}
@@ -298,12 +341,8 @@ const AdsManager = () => {
 
       <ul className="space-y-2">
         {ads.map(ad => (
-          <li
-            key={ad.id}
-            className="flex justify-between items-center border p-2 rounded"
-          >
+          <li key={ad.id} className="flex justify-between items-center border p-2 rounded">
             <div className="flex items-center gap-3">
-              {/* în listă: ascundem imaginea dacă e invalidă (evităm icon rupt) */}
               <img
                 src={ad.imageUrl}
                 alt={ad.title || ''}
@@ -311,18 +350,16 @@ const AdsManager = () => {
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
               <div>
-                <strong>{ad.title}</strong> — {ad.position} — Ordine: {ad.orderIndex}
+                <strong>{ad.title}</strong>
+                {' — '}{ad.position}
+                {' — '}{ad.device}
+                {' — '}Ordine: {ad.orderIndex}
                 <br />
                 <small>{ad.startDate} → {ad.endDate}</small>
               </div>
             </div>
             <div className="flex space-x-4">
-              <button
-                className="text-blue-600"
-                onClick={() => handleEdit(ad)}
-              >
-                Editează
-              </button>
+              <button className="text-blue-600" onClick={() => handleEdit(ad)}>Editează</button>
               <button
                 className="text-red-600"
                 onClick={() => handleDelete(ad.id)}

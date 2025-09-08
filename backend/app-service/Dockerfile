@@ -1,29 +1,26 @@
-# --- Stage 1: build doar app-service (+ deps locale) ---
+# --- Stage 1: build doar modulele necesare ---
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /build
 
-# Copiem DOAR ce trebuie pentru a construi app-service:
-# - pom-ul root (parent)
-# - modulul common (dacă e dependency)
-# - modulul app-service (codul nostru)
+# Copiem doar ce ne trebuie pentru app-service
 COPY pom.xml ./pom.xml
 COPY common ./common
 COPY app-service ./app-service
 
-# (opțional) prefetează dep-urile pentru arborele app-service
-RUN mvn -q -f app-service/pom.xml -DskipTests -am dependency:go-offline
+# 1) Build & install 'common' in repo local (~/.m2)
+RUN mvn -q -f common/pom.xml -DskipTests clean install
 
-# Build efectiv al modulului
-RUN mvn -q -f app-service/pom.xml -DskipTests -am package
+# 2) Apoi build pentru app-service (va rezolva common din ~/.m2)
+RUN mvn -q -f app-service/pom.xml -DskipTests clean package
 
-# --- Stage 2: runtime cu Playwright (browsere + deps gata instalate) ---
+# --- Stage 2: runtime cu Playwright (browsere + deps) ---
 FROM mcr.microsoft.com/playwright/java:v1.47.0-jammy
 WORKDIR /app
 
-# Copiem JAR-ul rezultat al app-service
+# Copiem JAR-ul
 COPY --from=build /build/app-service/target/*.jar app.jar
 
-# Rulează ca user non-root; headless merge fără X
+# rulăm ca user non-root (pwuser este în imaginea Playwright)
 USER pwuser
 ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
 EXPOSE 8082

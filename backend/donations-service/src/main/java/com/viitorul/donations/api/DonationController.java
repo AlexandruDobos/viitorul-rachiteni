@@ -4,7 +4,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
 import com.viitorul.donations.config.DonationsProperties;
 import com.viitorul.donations.dto.CreateDonationRequest;
-import com.viitorul.donations.service.DonationService;  // 👈 ADĂUGAT
+import com.viitorul.donations.service.DonationService;  // 👈 păstrat
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +19,9 @@ import java.util.Map;
 public class DonationController {
 
     private final DonationsProperties props;
-    private final DonationService donationService; // 👈 ADĂUGAT
+    private final DonationService donationService;
 
-    // minime ...
+    // minime în minor-units (2.00 RON = 200, 0.50 EUR = 50)
     private static final Map<String, Long> MIN_MINOR_BY_CURRENCY = Map.of(
             "ron", 200L,
             "eur", 50L,
@@ -30,7 +30,7 @@ public class DonationController {
 
     public DonationController(DonationsProperties props, DonationService donationService) {
         this.props = props;
-        this.donationService = donationService; // 👈 ADĂUGAT
+        this.donationService = donationService;
     }
 
     @PostMapping("/checkout")
@@ -77,7 +77,7 @@ public class DonationController {
 
         Session session = Session.create(builder.build());
 
-        // 👇 salvează evenimentul creat (intended amount) pentru evidență
+        // salvează rândul CREATED pentru evidență (idempotent)
         donationService.recordCreatedSession(
                 session,
                 req.getAmount(),
@@ -90,9 +90,23 @@ public class DonationController {
         return ResponseEntity.ok(Map.of("id", session.getId(), "url", session.getUrl()));
     }
 
+    // ✅ varianta cu PATH param — numele e specificat explicit
     @GetMapping("/session/{id}")
-    public ResponseEntity<Map<String, Object>> getSession(@PathVariable String id) throws Exception {
+    public ResponseEntity<Map<String, Object>> getSessionByPath(@PathVariable("id") String id) throws Exception {
         Session s = Session.retrieve(id);
+        Map<String, Object> out = new HashMap<>();
+        out.put("id", s.getId());
+        out.put("amountTotal", s.getAmountTotal());
+        out.put("currency", s.getCurrency());
+        out.put("paymentStatus", s.getPaymentStatus());
+        out.put("customerEmail", s.getCustomerEmail());
+        return ResponseEntity.ok(out);
+    }
+
+    // ✅ varianta cu QUERY param — se potrivește cu ?session_id=... din Stripe success URL
+    @GetMapping("/session")
+    public ResponseEntity<Map<String, Object>> getSessionByQuery(@RequestParam("session_id") String sessionId) throws Exception {
+        Session s = Session.retrieve(sessionId);
         Map<String, Object> out = new HashMap<>();
         out.put("id", s.getId());
         out.put("amountTotal", s.getAmountTotal());

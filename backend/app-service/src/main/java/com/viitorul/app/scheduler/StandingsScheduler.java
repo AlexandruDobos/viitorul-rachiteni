@@ -14,16 +14,10 @@ public class StandingsScheduler {
 
     private final StandingsService standingsService;
 
-    // Duminica la 15:00 (ora României)
-    @Scheduled(cron = "0 0 15 ? * SUN", zone = "Europe/Bucharest")
-    public void runSunday15() {
-        runIfEnabled("15:00");
-    }
-
-    // Duminica la 20:00 (ora României)
-    @Scheduled(cron = "0 0 20 ? * SUN", zone = "Europe/Bucharest")
-    public void runSunday20() {
-        runIfEnabled("20:00");
+    // Duminica la 17:00 (ora României)
+    @Scheduled(cron = "0 0 17 ? * SUN", zone = "Europe/Bucharest")
+    public void runSunday17() {
+        runIfEnabled("17:00");
     }
 
     private void runIfEnabled(String label) {

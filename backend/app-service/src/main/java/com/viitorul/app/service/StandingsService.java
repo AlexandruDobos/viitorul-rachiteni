@@ -1,5 +1,6 @@
 package com.viitorul.app.service;
 
+import com.viitorul.app.browser.HeadlessPageFetcher;
 import com.viitorul.app.dto.*;
 import com.viitorul.app.entity.StandingsConfig;
 import com.viitorul.app.entity.StandingsRow;
@@ -17,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -29,6 +27,7 @@ public class StandingsService {
 
     private final StandingsRowRepository rowRepository;
     private final StandingsConfigRepository configRepository;
+    private final HeadlessPageFetcher pageFetcher; // <- nou
 
     private static final ZoneId ZONE_RO = ZoneId.of("Europe/Bucharest");
     private static final String UA =
@@ -62,16 +61,13 @@ public class StandingsService {
     public StandingsResponseDTO saveManual(StandingsSaveRequestDTO req) {
         var snapshot = OffsetDateTime.now(ZONE_RO);
 
-        // 1) actualizează config
         var config = getOrCreateConfig();
         config.setSourceUrl(req.getSourceUrl());
         config.setUpdatedAt(snapshot);
         configRepository.save(config);
 
-        // 2) OVERWRITE: șterge clasamentul curent
         rowRepository.deleteAllInBatch();
 
-        // 3) inserează rândurile noi (toate)
         var entities = req.getRows().stream().map(r -> StandingsRow.builder()
                 .rank(r.getRank())
                 .teamName(r.getTeamName())
@@ -97,9 +93,24 @@ public class StandingsService {
                 .build();
     }
 
+    /**
+     * Public API folosit de controller și scheduler.
+     * 1) încearcă Playwright (browser full) – cel mai “uman”.
+     * 2) dacă eșuează, face fallback la fetch JSoup cu headere/cookies.
+     */
     @Transactional
     public StandingsResponseDTO scrapeAndSave(String url) throws IOException {
-        var rows = scrape(url);
+        Document doc;
+        try {
+            log.info("[Standings] Playwright fetch {}", url);
+            String html = pageFetcher.fetchRenderedHtml(url);
+            doc = Jsoup.parse(html, "https://www.frf-ajf.ro/");
+        } catch (Exception e) {
+            log.warn("[Standings] Playwright a eșuat ({}). Fallback la JSoup.", e.toString());
+            doc = getDocumentViaJsoup(url); // poate arunca IOException
+        }
+
+        var rows = extractRows(doc);
         var snapshot = OffsetDateTime.now(ZONE_RO);
 
         var config = getOrCreateConfig();
@@ -107,24 +118,9 @@ public class StandingsService {
         config.setUpdatedAt(snapshot);
         configRepository.save(config);
 
-        // OVERWRITE: șterge clasamentul curent
         rowRepository.deleteAllInBatch();
 
-        var entities = rows.stream().map(r -> StandingsRow.builder()
-                .rank(r.getRank())
-                .teamName(r.getTeamName())
-                .teamUrl(r.getTeamUrl())
-                .played(r.getPlayed())
-                .wins(r.getWins())
-                .draws(r.getDraws())
-                .losses(r.getLosses())
-                .goalsFor(r.getGoalsFor())
-                .goalsAgainst(r.getGoalsAgainst())
-                .points(r.getPoints())
-                .snapshotAt(snapshot)
-                .build()
-        ).toList();
-
+        var entities = rowsToEntities(rows, snapshot);
         rowRepository.saveAll(entities);
 
         return StandingsResponseDTO.builder()
@@ -147,16 +143,33 @@ public class StandingsService {
         return getOrCreateConfig().isScheduleEnabled();
     }
 
-    // ——— Scraper JSoup (cu warm-up cookies + headere browser-like pentru a evita 403) ———
-    private List<StandingsRowDTO> scrape(String url) throws IOException {
-        // 1) WARMUP – ia cookies de pe domeniu
+    // ===================== Helpers =====================
+
+    private List<StandingsRow> rowsToEntities(List<StandingsRowDTO> rows, OffsetDateTime snapshot) {
+        return rows.stream().map(r -> StandingsRow.builder()
+                .rank(r.getRank())
+                .teamName(r.getTeamName())
+                .teamUrl(r.getTeamUrl())
+                .played(r.getPlayed())
+                .wins(r.getWins())
+                .draws(r.getDraws())
+                .losses(r.getLosses())
+                .goalsFor(r.getGoalsFor())
+                .goalsAgainst(r.getGoalsAgainst())
+                .points(r.getPoints())
+                .snapshotAt(snapshot)
+                .build()
+        ).toList();
+    }
+
+    private Document getDocumentViaJsoup(String url) throws IOException {
+        // 1) Warm-up (cookies)
         Map<String, String> cookies = Collections.emptyMap();
         try {
             var warm = Jsoup.connect("https://www.frf-ajf.ro/")
                     .userAgent(UA)
                     .referrer("https://www.google.com/")
-                    .header("Accept",
-                            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
                     .header("Accept-Language", "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7")
                     .timeout(TIMEOUT_MS)
                     .followRedirects(true)
@@ -168,13 +181,12 @@ public class StandingsService {
             log.warn("Warmup cookies failed: {}", e.toString());
         }
 
-        // 2) CEREREA REALĂ
         var res = Jsoup.connect(url)
                 .userAgent(UA)
-                .referrer("https://www.google.com/")
-                .header("Accept",
-                        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+                .referrer("https://www.frf-ajf.ro/")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
                 .header("Accept-Language", "ro-RO,ro;q=0.9,en-US;q=0.8,en;q=0.7")
+                .header("Upgrade-Insecure-Requests", "1")
                 .timeout(TIMEOUT_MS)
                 .followRedirects(true)
                 .ignoreHttpErrors(true)
@@ -185,17 +197,21 @@ public class StandingsService {
         if (res.statusCode() != 200) {
             throw new IOException("HTTP " + res.statusCode() + " from " + url);
         }
+        return res.parse();
+    }
 
-        Document doc = res.parse();
-
+    /**
+     * Extrage rândurile de clasament din Document.
+     */
+    private List<StandingsRowDTO> extractRows(Document doc) {
         Element container = doc.selectFirst("div.col-md-9");
         if (container == null) container = doc;
 
         Element table = container.selectFirst("table.table.table-hover.table-bordered");
-        if (table == null) throw new IOException("Nu am găsit tabelul de clasament");
+        if (table == null) throw new IllegalStateException("Nu am găsit tabelul de clasament");
 
         List<StandingsRowDTO> out = new ArrayList<>();
-        Elements trs = table.select("tbody > tr");
+        Elements trs = table.select("tbody > tr, > tr");
 
         for (Element tr : trs) {
             Elements tds = tr.select("td");
@@ -203,7 +219,7 @@ public class StandingsService {
 
             // 0:# 1:Echipa 2:M 3:V 4:E 5:I 6:GM 7:GP 8:P
             String rankText = tds.get(0).text().trim();
-            Integer rank = parseStrictInt(rankText);    // doar cifre
+            Integer rank = parseStrictInt(rankText);
             if (rank == null) continue;
 
             Element teamCell = tds.get(1);
@@ -238,14 +254,12 @@ public class StandingsService {
         return out;
     }
 
-    // acceptă doar cifre 100% (ex: "12"); pentru "#", "—" etc. returnează null
     private static Integer parseStrictInt(String s) {
         String t = s == null ? "" : s.trim();
         if (!t.matches("\\d+")) return null;
         try { return Integer.valueOf(t); } catch (Exception e) { return null; }
     }
 
-    // acceptă și texte cu spații; dacă nu se poate, returnează null
     private static Integer parseLenientInt(String s) {
         try { return Integer.valueOf(s.trim()); } catch (Exception e) { return null; }
     }

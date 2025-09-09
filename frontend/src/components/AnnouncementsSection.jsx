@@ -25,7 +25,6 @@ function wordsExcerpt(text = '', maxWords = 24) {
   return words.slice(0, maxWords).join(' ') + '…';
 }
 
-/** Convertește o cale relativă în URL absolut pe baza BASE_URL */
 function toAbsoluteUrl(maybeUrl) {
   if (!maybeUrl) return null;
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
@@ -58,13 +57,13 @@ const detailVariants = {
 
 /** Skeleton */
 const SkeletonCard = () => (
-  <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200">
+  <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
-      <div className="relative bg-gray-200 aspect-[16/10]" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded" />
-        <div className="h-3 bg-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 rounded w-1/2" />
+      <div className="relative bg-gray-200 aspect-[16/9]" />
+      <div className="p-5 space-y-4">
+        <div className="h-5 bg-gray-200 rounded" />
+        <div className="h-4 bg-gray-200 rounded w-3/4" />
+        <div className="h-4 bg-gray-200 rounded w-1/2" />
       </div>
     </div>
   </div>
@@ -111,7 +110,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [page, totalPages]);
 
-  // === Detaliu articol ===
   if (selectedId) {
     return (
       <AnimatePresence mode="wait">
@@ -123,15 +121,15 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-8">
       {/* Header secțiune */}
       <div className="flex items-end justify-between">
-        <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>
       </div>
 
       {/* Loading / Error / Empty */}
       {state.loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {Array.from({ length: EFFECTIVE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : state.error ? (
@@ -144,7 +142,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
           <AnimatePresence mode="wait">
             <motion.div
               key={`page-${page}`}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
               variants={gridVariants}
               initial="hidden"
               animate="show"
@@ -154,13 +152,12 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
                 const imgSrc = toAbsoluteUrl(a.coverUrl);
                 return (
                   <motion.div key={a.id} variants={itemVariants} layout>
-                    {/* Card custom - clicabil pe tot */}
                     <button
                       onClick={() => setSelectedId(a.id)}
-                      className="group w-full text-left overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-md hover:-translate-y-0.5 transition"
+                      className="group w-full text-left overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-lg hover:-translate-y-1 transition"
                       title={a.title}
                     >
-                      <div className="relative aspect-[16/10] bg-gray-100">
+                      <div className="relative aspect-[16/9] bg-gray-100">
                         {imgSrc ? (
                           <img
                             src={imgSrc}
@@ -173,20 +170,19 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
                         )}
 
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                        <div className="absolute inset-x-0 bottom-0 p-3">
-                          <h3 className="text-white text-base md:text-lg font-semibold leading-snug line-clamp-2">
+                        <div className="absolute inset-x-0 bottom-0 p-4">
+                          <h3 className="text-white text-lg md:text-xl font-semibold leading-snug line-clamp-2">
                             {a.title}
                           </h3>
-                          <p className="text-white/80 text-[11px] md:text-xs mt-1">
+                          <p className="text-white/80 text-xs md:text-sm mt-1">
                             {formatDate(a.publishedAt)}
                           </p>
                         </div>
                       </div>
 
-                      {/* descriere scurtă (opțional) */}
-                      <div className="p-3">
-                        <p className="text-xs text-gray-600 line-clamp-2">
-                          {wordsExcerpt(a.contentText, 26)}
+                      <div className="p-4">
+                        <p className="text-sm md:text-base text-gray-600 line-clamp-3">
+                          {wordsExcerpt(a.contentText, 30)}
                         </p>
                       </div>
                     </button>
@@ -200,7 +196,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
           {totalPages > 1 && (
             <AnimatePresence>
               <motion.div
-                className="flex items-center justify-center gap-2 pt-2"
+                className="flex items-center justify-center gap-2 pt-4"
                 variants={pagerVariants}
                 initial="hidden"
                 animate="show"

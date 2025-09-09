@@ -93,14 +93,21 @@ const Results = () => {
     const viitorulHome = home.includes('rachiteni');
     const viitorulAway = away.includes('rachiteni');
 
-    if (!viitorulHome && !viitorulAway) return 'bg-gray-100 text-gray-800';
+    if (!viitorulHome && !viitorulAway) {
+      return 'bg-gray-100 text-gray-800';
+    }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     let outcome = 'draw';
-    if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) outcome = 'win';
-    else if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) outcome = 'loss';
+    if (viitorulHome) {
+      if (hg > ag) outcome = 'win';
+      else if (hg < ag) outcome = 'loss';
+    } else if (viitorulAway) {
+      if (ag > hg) outcome = 'win';
+      else if (ag < hg) outcome = 'loss';
+    }
 
     switch (outcome) {
       case 'win':
@@ -108,7 +115,7 @@ const Results = () => {
       case 'loss':
         return 'bg-red-600/90 text-white';
       case 'draw':
-        return 'bg-yellow-500/90 text-black';
+        return 'bg-yellow-400/90 text-black';
       default:
         return 'bg-gray-100 text-gray-800';
     }

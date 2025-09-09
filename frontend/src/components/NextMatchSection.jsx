@@ -34,9 +34,12 @@ function TeamBlock({ name, logo, align = "center" }) {
     .map((w) => w[0]?.toUpperCase() ?? "")
     .join("");
 
+  const alignClass =
+    align === "left" ? "text-left" : align === "right" ? "text-right" : "text-center";
+
   return (
     <motion.div
-      className={`text-${align} grid place-items-center gap-3`}
+      className={`${alignClass} grid place-items-center gap-3`}
       whileHover={{ scale: 1.04 }}
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
     >
@@ -158,14 +161,15 @@ export default function NextMatchSection() {
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10"
+        className="
+          relative mx-auto max-w-5xl overflow-hidden rounded-3xl
+          border border-white/10
+          bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600
+        "
       >
-        {/* stratul albastru permanent */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600" />
-
-        {/* gradient animat care face ZOOM in/out subtil */}
+        {/* overlay animat care face ZOOM in/out subtil – rămâne peste fundalul albastru */}
         <motion.div
-          className="absolute inset-[-10%] -z-10"
+          className="absolute inset-[-10%] z-0"
           style={{
             background:
               "radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.12), transparent 60%)",
@@ -175,7 +179,8 @@ export default function NextMatchSection() {
           aria-hidden
         />
 
-        <div className="relative rounded-3xl p-6 md:p-8">
+        {/* conținutul este deasupra overlay-ului */}
+        <div className="relative z-10 rounded-3xl p-6 md:p-8">
           {/* Header */}
           <div className="px-2 text-center">
             <motion.h2

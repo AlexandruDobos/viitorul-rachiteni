@@ -8,16 +8,15 @@ import { BASE_URL } from '../utils/constants';
 import AuthContext from '../context/AuthContext';
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);        // desktop dropdown "ECHIPĂ"
+  const [menuOpen, setMenuOpen] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [echipaOpen, setEchipaOpen] = useState(false);    // mobile dropdown "ECHIPĂ"
+  const [echipaOpen, setEchipaOpen] = useState(false);
 
   const { user, loading, setUser, checkAuth } = useContext(AuthContext);
   const leftMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // close desktop dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (leftMenuRef.current && !leftMenuRef.current.contains(e.target)) setMenuOpen(false);
@@ -26,7 +25,6 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // close mobile panel when resizing to desktop
   useEffect(() => {
     const onResize = () => {
       if (window.innerWidth >= 768) {
@@ -38,7 +36,6 @@ const Navbar = () => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // re-check auth + close menus on route change
   useEffect(() => {
     checkAuth?.();
     setMenuOpen(false);
@@ -46,7 +43,6 @@ const Navbar = () => {
     setEchipaOpen(false);
   }, [location, checkAuth]);
 
-  // lock scroll when mobile menu open
   useEffect(() => {
     document.body.style.overflow = showMobileMenu ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -82,7 +78,6 @@ const Navbar = () => {
 
   const isAuthenticated = !!user;
 
-  // === Animations ===
   const navItemVariants = {
     hidden: { opacity: 0, y: -6 },
     show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
@@ -107,13 +102,13 @@ const Navbar = () => {
       <div className="backdrop-blur bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-sky-500/10 border-b border-white/50 shadow-sm">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10">
           {/* DESKTOP BAR */}
-          <div className="hidden md:flex items-center justify-between py-3">
+          <div className="hidden md:flex items-center justify-between py-2">
             {/* LEFT: LOGO */}
-            <Link to="/" aria-label="Mergi la pagina principală" className="relative">
+            <Link to="/" aria-label="Mergi la pagina principală" className="relative flex items-center">
               <motion.img
                 src={logo}
                 alt="ACS Viitorul Răchiteni"
-                className="h-14 md:h-20 w-auto object-contain drop-shadow"
+                className="h-20 md:h-24 w-auto object-contain drop-shadow"
                 whileHover={{ rotate: [0, -8, 8, -6, 6, -3, 3, 0] }}
                 transition={{ duration: 0.8, ease: 'easeInOut' }}
                 whileTap={{ scale: 0.96 }}
@@ -123,13 +118,13 @@ const Navbar = () => {
             {/* RIGHT: NAV */}
             <motion.nav
               ref={leftMenuRef}
-              className="flex items-center gap-7 font-semibold text-[13px] tracking-wide uppercase text-gray-700"
+              className="flex items-center gap-8 font-semibold text-sm md:text-base tracking-wide uppercase text-gray-700"
               variants={navListVariants}
               initial="hidden"
               animate="show"
             >
               {/* ECHIPĂ dropdown */}
-              <motion.div variants={navItemVariants} className="relative">
+              <motion.div variants={navItemVariants} className="relative flex items-center">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
@@ -162,21 +157,21 @@ const Navbar = () => {
                 </AnimatePresence>
               </motion.div>
 
-              <motion.div variants={navItemVariants}>
+              <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/donations" className="group relative pb-1 hover:text-gray-900">
                   Donații
                   <Underline active={isActive('/donations')} />
                 </Link>
               </motion.div>
 
-              <motion.div variants={navItemVariants}>
+              <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
                   Contact
                   <Underline active={isActive('/contact')} />
                 </Link>
               </motion.div>
 
-              <motion.div variants={navItemVariants}>
+              <motion.div variants={navItemVariants} className="flex items-center">
                 {isAuthenticated ? (
                   <button onClick={handleLogout} className="group relative pb-1 text-gray-700 hover:text-red-600">
                     LOGOUT
@@ -198,7 +193,7 @@ const Navbar = () => {
               <motion.img
                 src={logo}
                 alt="ACS Viitorul Răchiteni"
-                className="h-12 w-auto object-contain"
+                className="h-16 w-auto object-contain"
                 whileHover={{ rotate: [0, -8, 8, -6, 6, -3, 3, 0] }}
                 transition={{ duration: 0.8, ease: 'easeInOut' }}
                 whileTap={{ scale: 0.96 }}

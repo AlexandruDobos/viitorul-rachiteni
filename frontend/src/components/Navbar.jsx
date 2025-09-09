@@ -97,7 +97,7 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50">
+    <header className="fixed top-0 left-0 right-0 z-50 font-[Poppins,sans-serif]">
       {/* glassy gradient bar */}
       <div className="backdrop-blur bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-sky-500/10 border-b border-white/50 shadow-sm">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10">
@@ -140,11 +140,11 @@ const Navbar = () => {
                 <AnimatePresence>
                   {menuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 6, scale: 1 }}
-                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -4, scale: 0.98 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute left-0 mt-2 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
+                      className="absolute top-full mt-2 left-0 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
                     >
                       <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide">
                         <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
@@ -225,7 +225,7 @@ const Navbar = () => {
               exit={{ opacity: 0 }}
             />
             <motion.aside
-              className="fixed top-0 right-0 h-full w-2/3 sm:w-1/2 bg-white z-50 p-4 shadow-xl"
+              className="fixed top-0 right-0 h-full w-2/3 sm:w-1/2 bg-white z-50 p-4 shadow-xl font-[Poppins,sans-serif]"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}

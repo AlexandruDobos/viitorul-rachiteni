@@ -27,9 +27,9 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import DonationsSuccess from './pages/DonationsSuccess';
 import DonationsCancel from './pages/DonationsCancel';
-import NextMatchSection from './components/NextMatchSection';
 
-import { motion } from 'framer-motion';
+// >>> NOU: import NextMatchSection
+import NextMatchSection from './components/NextMatchSection';
 
 const App = () => {
   return (
@@ -37,29 +37,12 @@ const App = () => {
       <AuthProvider>
         <Router>
           <RouteMetaManager />
-          <div className="relative min-h-screen flex flex-col overflow-hidden">
-            {/* FUNDAL animat */}
-            <div className="fixed inset-0 -z-10">
-              {/* Gradient static */}
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-100 via-blue-50 to-emerald-100" />
-
-              {/* Cercuri animate subtile */}
-              <motion.div
-                className="absolute w-80 h-80 bg-blue-300/20 rounded-full blur-3xl top-20 left-10"
-                animate={{ y: [0, -25, 0], x: [0, 20, 0] }}
-                transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-              />
-              <motion.div
-                className="absolute w-96 h-96 bg-emerald-300/20 rounded-full blur-3xl bottom-20 right-10"
-                animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-                transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            </div>
-
+          <div className="min-h-screen flex flex-col bg-white">
             <Navbar />
 
             {/* mai mult spațiu sub navbarul cu logo mare */}
             <div className="pt-20 lg:pt-28 flex-grow">
+              {/* 1 coloană pe mobil+tabletă; 3 coloane abia de la lg (≥1024px) */}
               <div
                 className="
                   mx-auto max-w-[1800px]
@@ -72,13 +55,13 @@ const App = () => {
                 {/* Sidebar stânga – doar ≥lg */}
                 <aside className="hidden lg:block lg:pr-4">
                   <div className="lg:sticky lg:top-28 space-y-4">
-                    <div className="px-1 text-[11px] font-medium text-gray-600">Parteneri</div>
+                    <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
                     <AdsDisplay position="left" />
                   </div>
                 </aside>
 
-                {/* Conținut central */}
-                <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-200/50 lg:px-6 bg-white/70 backdrop-blur-sm rounded-xl lg:rounded-none shadow-sm">
+                {/* Conținut central – separator doar când există side-bar-uri */}
+                <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6">
                   {/* Ads pe mobil/tabletă (sub lg) */}
                   <div className="lg:hidden mb-5 space-y-3">
                     <AdsDisplay position="left" />
@@ -91,6 +74,7 @@ const App = () => {
                         <>
                           <HeroTitle />
                           <AnnouncementsSection limit={6} />
+                          {/* >>> NOU: Secțiunea „Următorul meci” */}
                           <NextMatchSection />
                           <PlayersCarousel />
                         </>
@@ -130,7 +114,7 @@ const App = () => {
                 {/* Sidebar dreapta – doar ≥lg */}
                 <aside className="hidden lg:block lg:pl-4">
                   <div className="lg:sticky lg:top-28 space-y-4">
-                    <div className="px-1 text-[11px] font-medium text-gray-600">Parteneri</div>
+                    <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
                     <AdsDisplay position="right" />
                   </div>
                 </aside>

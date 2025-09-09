@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../utils/constants";
 
-const FADE_MS = 700;        // fade pe compact
-const INTERVAL_MS = 3500;   // interval carousel compact
+const FADE_MS = 700;
+const INTERVAL_MS = 3500;
 
 const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const initialCompact =
@@ -14,7 +14,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const [isCompact, setIsCompact] = useState(initialCompact);
   const [deviceType, setDeviceType] = useState(initialDevice);
 
-  // injectăm keyframes pentru animații
+  // inject keyframes
   useEffect(() => {
     const id = "ads-anim-keyframes";
     if (!document.getElementById(id)) {
@@ -23,28 +23,33 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
       style.innerHTML = `
         @media (prefers-reduced-motion: no-preference) {
           @keyframes ads-fade-in {
-            from { opacity: 0; transform: translateY(6px); }
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
           }
           @keyframes ads-kenburns-strong {
-            0%   { transform: scale(1) translate(0, 0); }
-            50%  { transform: scale(1.08) translate(-1%, -1%); }
-            100% { transform: scale(1) translate(0, 0); }
+            0%   { transform: scale(1) }
+            50%  { transform: scale(1.12) }
+            100% { transform: scale(1) }
           }
           @keyframes ads-flash {
             0%, 100% { opacity: 1; }
-            45% { opacity: 0.5; }
-            55% { opacity: 1; }
+            50% { opacity: 0.5; }
           }
-          @keyframes ads-glow {
-            0%, 100% { box-shadow: 0 0 6px rgba(255,255,0,0.4); }
-            50% { box-shadow: 0 0 20px rgba(255,255,0,0.9); }
+          @keyframes ads-bounce {
+            0%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+            60% { transform: translateY(4px); }
+          }
+          @keyframes ads-mobile-zoom {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
           }
         }`;
       document.head.appendChild(style);
     }
   }, []);
 
+  // resize
   useEffect(() => {
     const onResize = () => {
       const compact = window.innerWidth < compactUntil;
@@ -56,6 +61,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     return () => window.removeEventListener("resize", onResize);
   }, [compactUntil]);
 
+  // fetch ads
   useEffect(() => {
     const fetchAds = async () => {
       try {
@@ -87,6 +93,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     fetchAds();
   }, [position, deviceType]);
 
+  // preload
   useEffect(() => {
     ads.forEach((ad) => {
       const img = new Image();
@@ -94,6 +101,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     });
   }, [ads]);
 
+  // carousel
   useEffect(() => {
     if (!isCompact || ads.length <= 1) return;
     const id = setInterval(() => {
@@ -110,10 +118,10 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     );
   }
 
-  // Compact (<1024px): carousel
+  // Compact (mobil/tabletă)
   if (isCompact) {
     return (
-      <div className="relative w-full h-28 sm:h-32 md:h-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="relative w-full h-28 sm:h-32 md:h-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
         {ads.map((ad, i) => {
           const active = i === currentIndex;
           return (
@@ -128,6 +136,11 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
                   : "opacity-0 pointer-events-none"
               }`}
               title={ad.title || "Sponsor"}
+              style={{
+                animation: active
+                  ? "ads-mobile-zoom 0.7s ease-out"
+                  : "none",
+              }}
             >
               <div className="absolute inset-0 flex items-center justify-center p-1.5">
                 <img
@@ -138,7 +151,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
                   decoding="async"
                 />
               </div>
-              <span className="absolute z-10 top-2 left-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600/90 text-white ring-1 ring-indigo-400/50 shadow-sm">
+              <span className="absolute z-10 top-2 left-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600/90 text-white ring-1 ring-indigo-400/50 shadow-sm animate-pulse">
                 SPONSOR
               </span>
             </a>
@@ -148,7 +161,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     );
   }
 
-  // Desktop (≥1024px): listă cu animații puternice
+  // Desktop (≥1024px): efecte multiple pe rând
   return (
     <div className="flex flex-col gap-3">
       {ads.map((ad, idx) => (
@@ -157,15 +170,15 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
           href={ad.link || "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="group block rounded-xl overflow-hidden border border-gray-300 bg-white shadow-md hover:shadow-2xl transition-transform"
+          className="group block rounded-xl overflow-hidden border border-indigo-300 bg-white shadow-lg hover:shadow-2xl transition-transform"
           style={{
-            animation: `ads-fade-in 300ms ease-out both, ads-glow 2s ease-in-out infinite`,
+            animation: `ads-fade-in 400ms ease-out both`,
             animationDelay: `${idx * 100}ms`,
           }}
           title={ad.title || "Sponsor"}
         >
           <div className="relative">
-            <span className="absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-pink-600/90 text-white ring-1 ring-pink-400/50 shadow-sm animate-pulse">
+            <span className="absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600/90 text-white ring-1 ring-indigo-400/50 shadow-sm animate-pulse">
               AD
             </span>
 
@@ -174,13 +187,17 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
               alt={ad.title || "publicitate"}
               className="w-full h-auto will-change-transform transition-transform duration-700 ease-in-out group-hover:scale-105"
               style={{
-                animation: "ads-kenburns-strong 10s ease-in-out infinite, ads-flash 6s linear infinite",
+                animation: `
+                  ads-kenburns-strong 8s ease-in-out infinite,
+                  ads-flash 6s linear infinite,
+                  ads-bounce 10s ease-in-out infinite
+                `,
               }}
               loading="lazy"
               decoding="async"
             />
 
-            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-black" />
+            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-indigo-900" />
           </div>
         </a>
       ))}

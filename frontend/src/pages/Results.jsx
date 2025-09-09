@@ -86,39 +86,27 @@ const Results = () => {
 
   const formatTime = (t) => (t ? String(t).slice(0, 5) : '-');
 
-  /** determină culoarea fundalului în funcție de rezultat */
-  const resultColor = (match) => {
+  /** determină paleta + eticheta în funcție de rezultat */
+  const resultOutcome = (match) => {
     const home = match.homeTeamName?.toLowerCase() || '';
     const away = match.awayTeamName?.toLowerCase() || '';
     const viitorulHome = home.includes('rachiteni');
     const viitorulAway = away.includes('rachiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return 'bg-gray-100 text-gray-800';
+      return { color: 'bg-gray-100 text-gray-800', label: 'N/A' };
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
-    let outcome = 'draw';
-    if (viitorulHome) {
-      if (hg > ag) outcome = 'win';
-      else if (hg < ag) outcome = 'loss';
-    } else if (viitorulAway) {
-      if (ag > hg) outcome = 'win';
-      else if (ag < hg) outcome = 'loss';
+    if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
+      return { color: 'bg-green-600 text-white', label: 'Victorie' };
     }
-
-    switch (outcome) {
-      case 'win':
-        return 'bg-green-600/90 text-white';
-      case 'loss':
-        return 'bg-red-600/90 text-white';
-      case 'draw':
-        return 'bg-yellow-400/90 text-black';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
+      return { color: 'bg-red-600 text-white', label: 'Înfrângere' };
     }
+    return { color: 'bg-yellow-400 text-black', label: 'Egal' };
   };
 
   return (
@@ -204,21 +192,30 @@ const Results = () => {
             const compName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
             const seasonLabel = seasonLabelOf(match);
 
+            const { color, label } = resultOutcome(match);
+
             return (
               <motion.div
                 key={match.id}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                className={`rounded-3xl shadow-xl overflow-hidden ${resultColor(match)}`}
+                className={`relative rounded-3xl shadow-xl overflow-hidden ${color}`}
               >
+                {/* Badge rezultat */}
+                <div className="absolute top-3 right-3">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-black/20">
+                    {label}
+                  </span>
+                </div>
+
                 {/* Header titlu vs */}
-                <div className="px-5 pt-4 text-center text-base sm:text-lg md:text-xl font-bold">
+                <div className="px-5 pt-6 text-center text-base sm:text-lg md:text-xl font-bold">
                   {homeName} <span className="text-black/80">vs</span> {awayName}
                 </div>
 
                 {/* Logos + scor final */}
-                <div className="px-5 py-5 flex items-center justify-center gap-10 sm:gap-14">
+                <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-14">
                   <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
                   <div className="text-4xl sm:text-5xl font-extrabold">
                     {match.homeGoals} <span className="mx-1">-</span> {match.awayGoals}
@@ -227,13 +224,13 @@ const Results = () => {
                 </div>
 
                 {/* Badges competiție/sezon */}
-                <div className="px-5 pb-1 flex justify-center gap-2 flex-wrap">
-                  {compName && <Badge className="bg-white/20 text-xs sm:text-sm">Competiție: {compName}</Badge>}
-                  {seasonLabel && <Badge className="bg-white/20 text-xs sm:text-sm">Sezon: {seasonLabel}</Badge>}
+                <div className="px-5 pb-2 flex justify-center gap-2 flex-wrap">
+                  {compName && <Badge className="bg-white/30 text-xs sm:text-sm">Competiție: {compName}</Badge>}
+                  {seasonLabel && <Badge className="bg-white/30 text-xs sm:text-sm">Sezon: {seasonLabel}</Badge>}
                 </div>
 
                 {/* Dată / locație */}
-                <div className="px-5 pb-3 text-xs sm:text-sm text-center opacity-90">
+                <div className="px-5 pb-4 text-xs sm:text-sm text-center opacity-90">
                   <div>{formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}</div>
                   {match.location && <div className="mt-1">📍 {match.location}</div>}
                 </div>

@@ -37,16 +37,18 @@ function TeamBlock({ name, logo, align = "center" }) {
   return (
     <motion.div
       className={`text-${align} grid place-items-center gap-3`}
-      whileHover={{ scale: 1.03 }}
+      whileHover={{ scale: 1.04 }}
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
     >
       <div className="relative">
+        {/* glow subtil în jurul logo-ului */}
         <motion.div
           className="absolute inset-0 rounded-full blur-xl"
-          style={{ background:
-            "radial-gradient(60% 60% at 50% 50%, rgba(59,130,246,0.35), transparent)"
+          style={{
+            background:
+              "radial-gradient(60% 60% at 50% 50%, rgba(255,255,255,0.25), transparent)",
           }}
-          animate={{ opacity: [0.2, 0.4, 0.25, 0.35, 0.2] }}
+          animate={{ opacity: [0.15, 0.35, 0.2] }}
           transition={{ duration: 6, repeat: Infinity }}
           aria-hidden
         />
@@ -54,19 +56,19 @@ function TeamBlock({ name, logo, align = "center" }) {
           <motion.img
             src={logo}
             alt={name}
-            className="relative z-[1] mx-auto h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 object-contain drop-shadow-sm"
+            className="relative z-[1] mx-auto h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 object-contain drop-shadow"
             initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.45, ease: "easeOut" }}
           />
         ) : (
-          <div className="relative z-[1] grid h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 place-items-center rounded-full bg-gray-100 text-gray-600 text-2xl font-bold ring-1 ring-gray-200">
+          <div className="relative z-[1] grid h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 place-items-center rounded-full bg-white/20 text-white text-2xl font-bold ring-1 ring-white/20">
             {initials || "?"}
           </div>
         )}
       </div>
       <motion.div
-        className="font-extrabold text-gray-900 text-lg md:text-xl text-center leading-tight"
+        className="font-extrabold text-white text-lg md:text-xl text-center leading-tight drop-shadow"
         initial={{ y: 6, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.1, duration: 0.35, ease: "easeOut" }}
@@ -85,10 +87,10 @@ function TimePill({ value, label }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <div className="min-w-[64px] rounded-2xl bg-white px-3 py-2 text-2xl md:text-3xl font-extrabold text-gray-900 shadow ring-1 ring-gray-200">
+      <div className="min-w-[64px] rounded-2xl bg-white px-3 py-2 text-2xl md:text-3xl font-extrabold text-gray-900 shadow ring-1 ring-black/5">
         {value}
       </div>
-      <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
+      <div className="text-[10px] uppercase tracking-wide text-blue-100">{label}</div>
     </motion.div>
   );
 }
@@ -96,7 +98,7 @@ function TimePill({ value, label }) {
 function Colon() {
   return (
     <motion.div
-      className="text-xl md:text-3xl font-extrabold text-gray-400"
+      className="text-xl md:text-3xl font-extrabold text-blue-100/80"
       initial={{ scale: 0.9, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.35 }}
@@ -151,44 +153,28 @@ export default function NextMatchSection() {
 
   return (
     <section className="my-8">
-      {/* CARD cu „breathe” + border glow */}
+      {/* CARD cu fundal ALBASTRU permanent + zoom in/out (fără rotație) */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
-        animate={{
-          opacity: 1,
-          y: 0,
-          scale: 1,
-        }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-gray-100 bg-white"
+        className="relative mx-auto max-w-5xl overflow-hidden rounded-3xl border border-white/10"
       >
-        {/* Glow dinamic în fundal */}
+        {/* stratul albastru permanent */}
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600" />
+
+        {/* gradient animat care face ZOOM in/out subtil */}
         <motion.div
-          className="pointer-events-none absolute -top-24 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full blur-3xl"
+          className="absolute inset-[-10%] -z-10"
           style={{
             background:
-              "radial-gradient(60% 60% at 50% 50%, rgba(99,102,241,0.35), transparent)",
+              "radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.12), transparent 60%)",
           }}
-          animate={{ y: [0, 10, 0], opacity: [0.25, 0.35, 0.25] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+          animate={{ scale: [1, 1.05, 1] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           aria-hidden
         />
-        {/* Border animated shimmer */}
-        <motion.div
-          className="absolute inset-0 rounded-3xl"
-          style={{
-            background:
-              "conic-gradient(from 0deg, rgba(59,130,246,0.28), rgba(99,102,241,0.28), rgba(56,189,248,0.28), rgba(59,130,246,0.28))",
-            mask:
-              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-            WebkitMask:
-              "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-            padding: "1px",
-          }}
-          animate={{ rotate: [0, 360] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          aria-hidden
-        />
+
         <div className="relative rounded-3xl p-6 md:p-8">
           {/* Header */}
           <div className="px-2 text-center">
@@ -196,17 +182,15 @@ export default function NextMatchSection() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05, duration: 0.35 }}
-              className="text-xl md:text-2xl font-extrabold tracking-tight"
+              className="text-xl md:text-2xl font-extrabold tracking-tight text-white drop-shadow"
             >
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
-                URMĂTORUL MECI
-              </span>
+              URMĂTORUL MECI
             </motion.h2>
             <motion.div
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.15, duration: 0.45, ease: "easeOut" }}
-              className="origin-center mx-auto mt-2 h-1 w-28 md:w-40 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500"
+              className="origin-center mx-auto mt-2 h-1 w-28 md:w-40 rounded-full bg-white/70"
             />
           </div>
 
@@ -224,7 +208,7 @@ export default function NextMatchSection() {
                 VS
               </motion.div>
               <motion.div
-                className="mt-3 text-sm text-gray-600"
+                className="mt-3 text-sm text-blue-100"
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.35 }}
@@ -246,12 +230,12 @@ export default function NextMatchSection() {
             className="mt-6 md:mt-8"
           >
             {done ? (
-              <div className="text-center text-lg font-semibold text-emerald-700">
+              <div className="text-center text-lg font-semibold text-emerald-200">
                 Meciul este pe cale să înceapă!
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                <div className="text-[11px] uppercase tracking-wide text-blue-100">
                   Începe în
                 </div>
                 <div className="mt-2 flex items-center justify-center gap-2 md:gap-4">
@@ -271,7 +255,7 @@ export default function NextMatchSection() {
           <div className="mt-6 text-center">
             <Link
               to={`/matches/${match.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-5 py-2.5 text-white font-semibold shadow hover:brightness-110 transition"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/95 px-5 py-2.5 text-gray-900 font-semibold shadow hover:bg-white transition"
             >
               Detalii meci
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">

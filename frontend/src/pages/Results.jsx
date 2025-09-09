@@ -86,27 +86,27 @@ const Results = () => {
 
   const formatTime = (t) => (t ? String(t).slice(0, 5) : '-');
 
-  /** determină doar culoarea fundalului */
-  const resultColor = (match) => {
+  /** returnează stilul de fundal și buton */
+  const resultStyle = (match) => {
     const home = match.homeTeamName?.toLowerCase() || '';
     const away = match.awayTeamName?.toLowerCase() || '';
     const viitorulHome = home.includes('răchiteni');
     const viitorulAway = away.includes('răchiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return 'bg-gray-100 text-gray-800';
+      return { bg: 'from-gray-50 to-gray-100', border: 'border-gray-300', button: 'bg-gray-600 hover:bg-gray-700' };
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
-      return 'bg-green-600 text-white';
+      return { bg: 'from-green-50 to-green-100', border: 'border-green-300', button: 'bg-green-600 hover:bg-green-700' };
     }
     if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
-      return 'bg-red-600 text-white';
+      return { bg: 'from-red-50 to-red-100', border: 'border-red-300', button: 'bg-red-600 hover:bg-red-700' };
     }
-    return 'bg-yellow-400 text-black';
+    return { bg: 'from-yellow-50 to-yellow-100', border: 'border-yellow-300', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
   };
 
   return (
@@ -192,7 +192,7 @@ const Results = () => {
             const compName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
             const seasonLabel = seasonLabelOf(match);
 
-            const color = resultColor(match);
+            const { bg, border, button } = resultStyle(match);
 
             return (
               <motion.div
@@ -200,42 +200,51 @@ const Results = () => {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.35 }}
-                className={`relative rounded-3xl shadow-xl overflow-hidden ${color}`}
+                className={`relative rounded-3xl shadow-md overflow-hidden border ${border}`}
               >
-                {/* Header titlu vs */}
-                <div className="px-5 pt-6 text-center text-base sm:text-lg md:text-xl font-bold">
-                  {homeName} <span className="text-black/80">vs</span> {awayName}
-                </div>
+                {/* Fundal animat steag */}
+                <div
+                  className={`absolute inset-0 bg-gradient-to-r ${bg} animate-pulse opacity-70`}
+                  aria-hidden="true"
+                />
 
-                {/* Logos + scor final */}
-                <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-14">
-                  <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
-                  <div className="text-4xl sm:text-5xl font-extrabold">
-                    {match.homeGoals} <span className="mx-1">-</span> {match.awayGoals}
+                {/* Conținut */}
+                <div className="relative">
+                  {/* Header titlu vs */}
+                  <div className="px-5 pt-6 text-center text-base sm:text-lg md:text-xl font-bold">
+                    {homeName} <span className="text-gray-700">vs</span> {awayName}
                   </div>
-                  <img src={awayLogo} alt={awayName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
-                </div>
 
-                {/* Badges competiție/sezon */}
-                <div className="px-5 pb-2 flex justify-center gap-2 flex-wrap">
-                  {compName && <Badge className="bg-white/30 text-xs sm:text-sm">Competiție: {compName}</Badge>}
-                  {seasonLabel && <Badge className="bg-white/30 text-xs sm:text-sm">Sezon: {seasonLabel}</Badge>}
-                </div>
+                  {/* Logos + scor final */}
+                  <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-14">
+                    <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
+                    <div className="text-4xl sm:text-5xl font-extrabold">
+                      {match.homeGoals} <span className="mx-1">-</span> {match.awayGoals}
+                    </div>
+                    <img src={awayLogo} alt={awayName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
+                  </div>
 
-                {/* Dată / locație */}
-                <div className="px-5 pb-4 text-xs sm:text-sm text-center opacity-90">
-                  <div>{formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}</div>
-                  {match.location && <div className="mt-1">📍 {match.location}</div>}
-                </div>
+                  {/* Badges competiție/sezon */}
+                  <div className="px-5 pb-2 flex justify-center gap-2 flex-wrap">
+                    {compName && <Badge className="bg-gray-200/60 text-xs sm:text-sm">Competiție: {compName}</Badge>}
+                    {seasonLabel && <Badge className="bg-gray-200/60 text-xs sm:text-sm">Sezon: {seasonLabel}</Badge>}
+                  </div>
 
-                {/* CTA */}
-                <div className="px-5 pb-6">
-                  <button
-                    onClick={() => navigate(`/matches/${match.id}`)}
-                    className="w-full py-3 rounded-xl font-semibold bg-black/80 text-white hover:bg-black transition"
-                  >
-                    Detalii meci
-                  </button>
+                  {/* Dată / locație */}
+                  <div className="px-5 pb-4 text-xs sm:text-sm text-center text-gray-700">
+                    <div>{formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}</div>
+                    {match.location && <div className="mt-1">📍 {match.location}</div>}
+                  </div>
+
+                  {/* CTA */}
+                  <div className="px-5 pb-6">
+                    <button
+                      onClick={() => navigate(`/matches/${match.id}`)}
+                      className={`w-full py-3 rounded-xl font-semibold text-white transition ${button}`}
+                    >
+                      Detalii meci
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             );

@@ -44,17 +44,6 @@ function TeamBlock({ name, logo, align = "center" }) {
       transition={{ type: "spring", stiffness: 260, damping: 18 }}
     >
       <div className="relative">
-        {/* glow subtil în jurul logo-ului */}
-        <motion.div
-          className="absolute inset-0 rounded-full blur-xl"
-          style={{
-            background:
-              "radial-gradient(60% 60% at 50% 50%, rgba(255,255,255,0.25), transparent)",
-          }}
-          animate={{ opacity: [0.15, 0.35, 0.2] }}
-          transition={{ duration: 6, repeat: Infinity }}
-          aria-hidden
-        />
         {logo ? (
           <motion.img
             src={logo}
@@ -156,7 +145,7 @@ export default function NextMatchSection() {
 
   return (
     <section className="my-8">
-      {/* CARD cu fundal ALBASTRU permanent + zoom in/out (fără rotație) */}
+      {/* CARD cu fundal ALBASTRU permanent */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -167,19 +156,7 @@ export default function NextMatchSection() {
           bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600
         "
       >
-        {/* overlay animat care face ZOOM in/out subtil – rămâne peste fundalul albastru */}
-        <motion.div
-          className="absolute inset-[-10%] z-0"
-          style={{
-            background:
-              "radial-gradient(50% 50% at 50% 50%, rgba(255,255,255,0.12), transparent 60%)",
-          }}
-          animate={{ scale: [1, 1.05, 1] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          aria-hidden
-        />
-
-        {/* conținutul este deasupra overlay-ului */}
+        {/* conținutul este deasupra fundalului albastru */}
         <div className="relative z-10 rounded-3xl p-6 md:p-8">
           {/* Header */}
           <div className="px-2 text-center">

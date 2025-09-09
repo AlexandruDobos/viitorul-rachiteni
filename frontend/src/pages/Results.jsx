@@ -86,27 +86,27 @@ const Results = () => {
 
   const formatTime = (t) => (t ? String(t).slice(0, 5) : '-');
 
-  /** determină paleta + eticheta în funcție de rezultat */
-  const resultOutcome = (match) => {
+  /** determină doar culoarea fundalului */
+  const resultColor = (match) => {
     const home = match.homeTeamName?.toLowerCase() || '';
     const away = match.awayTeamName?.toLowerCase() || '';
-    const viitorulHome = home.includes('rachiteni');
-    const viitorulAway = away.includes('rachiteni');
+    const viitorulHome = home.includes('răchiteni');
+    const viitorulAway = away.includes('răchiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return { color: 'bg-gray-100 text-gray-800', label: 'N/A' };
+      return 'bg-gray-100 text-gray-800';
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
-      return { color: 'bg-green-600 text-white', label: 'Victorie' };
+      return 'bg-green-600 text-white';
     }
     if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
-      return { color: 'bg-red-600 text-white', label: 'Înfrângere' };
+      return 'bg-red-600 text-white';
     }
-    return { color: 'bg-yellow-400 text-black', label: 'Egal' };
+    return 'bg-yellow-400 text-black';
   };
 
   return (
@@ -167,7 +167,7 @@ const Results = () => {
             <div className="text-xs font-semibold text-gray-600 px-1 mb-1">Sezon</div>
             <div className="px-1 py-1">
               <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-500 px-3.5 py-1.5 text-sm">
-                Nedisponibil
+                Indisponibil
               </span>
             </div>
           </div>
@@ -192,7 +192,7 @@ const Results = () => {
             const compName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
             const seasonLabel = seasonLabelOf(match);
 
-            const { color, label } = resultOutcome(match);
+            const color = resultColor(match);
 
             return (
               <motion.div
@@ -202,13 +202,6 @@ const Results = () => {
                 transition={{ duration: 0.35 }}
                 className={`relative rounded-3xl shadow-xl overflow-hidden ${color}`}
               >
-                {/* Badge rezultat */}
-                <div className="absolute top-3 right-3">
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-black/20">
-                    {label}
-                  </span>
-                </div>
-
                 {/* Header titlu vs */}
                 <div className="px-5 pt-6 text-center text-base sm:text-lg md:text-xl font-bold">
                   {homeName} <span className="text-black/80">vs</span> {awayName}

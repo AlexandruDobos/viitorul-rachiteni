@@ -39,7 +39,7 @@ public class PlayerController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePlayer(@PathVariable("id") gLong id) {
+    public ResponseEntity<Void> deletePlayer(@PathVariable("id") Long id) {
         playerService.deletePlayer(id);
         return ResponseEntity.noContent().build(); // 204
     }

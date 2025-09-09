@@ -66,7 +66,7 @@ function PlayerCard({ p }) {
 
 /* carusel pe pagini: tel=1, tablet=2, laptop+=4 per cadru */
 export default function PlayersCarousel({
-  title = "Jucători ACS Viitorul Răchiteni",
+  title = "JUCĂTORI",
   autoPlayMs = 3500,
 }) {
   const [players, setPlayers] = useState([]);

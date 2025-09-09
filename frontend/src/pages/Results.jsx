@@ -94,19 +94,19 @@ const Results = () => {
     const viitorulAway = away.includes('răchiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return { from: '#e5e7eb', to: '#f3f4f6', border: 'border-gray-400', button: 'bg-gray-600 hover:bg-gray-700' };
+      return { from: '#9ca3af', to: '#e5e7eb', border: 'border-gray-500', button: 'bg-gray-600 hover:bg-gray-700' };
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
-      return { from: '#86efac', to: '#bbf7d0', border: 'border-green-400', button: 'bg-green-600 hover:bg-green-700' };
+      return { from: '#15803d', to: '#86efac', border: 'border-green-600', button: 'bg-green-600 hover:bg-green-700' };
     }
     if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
-      return { from: '#fca5a5', to: '#fecaca', border: 'border-red-400', button: 'bg-red-600 hover:bg-red-700' };
+      return { from: '#b91c1c', to: '#fca5a5', border: 'border-red-600', button: 'bg-red-600 hover:bg-red-700' };
     }
-    return { from: '#fde68a', to: '#fef9c3', border: 'border-yellow-400', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
+    return { from: '#ca8a04', to: '#fde68a', border: 'border-yellow-600', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
   };
 
   return (
@@ -208,7 +208,7 @@ const Results = () => {
                   style={{
                     background: `linear-gradient(120deg, ${from}, ${to})`,
                     backgroundSize: '200% 200%',
-                    animation: 'waveGradient 6s ease-in-out infinite',
+                    animation: 'waveGradient 3s ease-in-out infinite',
                   }}
                   aria-hidden="true"
                 />

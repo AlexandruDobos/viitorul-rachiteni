@@ -1,6 +1,7 @@
 // src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -23,12 +24,9 @@ import MatchDetails from './components/MatchDetails';
 import PlayersCarousel from './components/PlayersCarousel';
 import Footer from './components/Footer';
 import RouteMetaManager from './components/RouteMetaManager';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import DonationsSuccess from './pages/DonationsSuccess';
 import DonationsCancel from './pages/DonationsCancel';
-
-// >>> NOU: import NextMatchSection
 import NextMatchSection from './components/NextMatchSection';
 
 const App = () => {
@@ -37,12 +35,21 @@ const App = () => {
       <AuthProvider>
         <Router>
           <RouteMetaManager />
-          <div className="min-h-screen flex flex-col bg-white">
+          <div className="relative min-h-screen flex flex-col bg-transparent">
+            {/* FUNDAL animat */}
+            <div className="fixed inset-0 -z-10 overflow-hidden">
+              {/* gradient animat */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-indigo-900 to-sky-900 animate-gradient" />
+
+              {/* cercuri translucide animate */}
+              <div className="absolute w-72 h-72 bg-white/10 rounded-full blur-3xl animate-float1 top-20 left-10" />
+              <div className="absolute w-96 h-96 bg-blue-400/10 rounded-full blur-3xl animate-float2 bottom-20 right-10" />
+            </div>
+
             <Navbar />
 
-            {/* mai mult spațiu sub navbarul cu logo mare */}
+            {/* spațiu sub navbar */}
             <div className="pt-20 lg:pt-28 flex-grow">
-              {/* 1 coloană pe mobil+tabletă; 3 coloane abia de la lg (≥1024px) */}
               <div
                 className="
                   mx-auto max-w-[1800px]
@@ -52,21 +59,14 @@ const App = () => {
                   px-4 sm:px-6 lg:px-10
                 "
               >
-                {/* Sidebar stânga – doar ≥lg */}
                 <aside className="hidden lg:block lg:pr-4">
                   <div className="lg:sticky lg:top-28 space-y-4">
-                    <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
+                    <div className="px-1 text-[11px] font-medium text-gray-300">Parteneri</div>
                     <AdsDisplay position="left" />
                   </div>
                 </aside>
 
-                {/* Conținut central – separator doar când există side-bar-uri */}
-                <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6">
-                  {/* Ads pe mobil/tabletă (sub lg) */}
-                  <div className="lg:hidden mb-5 space-y-3">
-                    <AdsDisplay position="left" />
-                  </div>
-
+                <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100/20 lg:px-6">
                   <Routes>
                     <Route
                       path="/"
@@ -74,7 +74,6 @@ const App = () => {
                         <>
                           <HeroTitle />
                           <AnnouncementsSection limit={6} />
-                          {/* >>> NOU: Secțiunea „Următorul meci” */}
                           <NextMatchSection />
                           <PlayersCarousel />
                         </>
@@ -104,22 +103,17 @@ const App = () => {
                       }
                     />
                   </Routes>
-
-                  {/* Ads jos pe mobil/tabletă */}
-                  <div className="lg:hidden mt-6 space-y-3">
-                    <AdsDisplay position="right" />
-                  </div>
                 </main>
 
-                {/* Sidebar dreapta – doar ≥lg */}
                 <aside className="hidden lg:block lg:pl-4">
                   <div className="lg:sticky lg:top-28 space-y-4">
-                    <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
+                    <div className="px-1 text-[11px] font-medium text-gray-300">Parteneri</div>
                     <AdsDisplay position="right" />
                   </div>
                 </aside>
               </div>
             </div>
+
             <Footer />
           </div>
         </Router>

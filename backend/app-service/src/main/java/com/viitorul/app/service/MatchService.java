@@ -6,12 +6,10 @@ import com.viitorul.app.entity.*;
 import com.viitorul.app.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +21,7 @@ public class MatchService {
     private final MatchPlayerStatRepository statRepository;
     private final CompetitionRepository competitionRepository;
     private final CompetitionSeasonRepository seasonRepository;
+
     public MatchDTO addMatch(MatchDTO dto) {
         Team homeTeam = teamRepository.findById(dto.getHomeTeamId()).orElseThrow();
         Team awayTeam = teamRepository.findById(dto.getAwayTeamId()).orElseThrow();
@@ -66,10 +65,19 @@ public class MatchService {
 
         return MatchDTO.toDto(matchRepository.save(match));
     }
+
     public List<MatchDTO> getUpcomingMatches() {
         return matchRepository.findUpcomingMatches().stream()
                 .map(MatchDTO::toDto)
                 .toList();
+    }
+
+    /** ULTIMUL ADĂUGAT: următorul meci (primul din lista „upcoming”). */
+    public MatchDTO getNextMatch() {
+        return matchRepository.findUpcomingMatches().stream()
+                .findFirst()
+                .map(MatchDTO::toDto)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No upcoming matches"));
     }
 
     public MatchDTO getMatchById(Long id) {
@@ -126,6 +134,7 @@ public class MatchService {
 
         return MatchDTO.toDto(matchRepository.save(match));
     }
+
     public MatchPlayerStatDTO addOrUpdatePlayerStat(Long matchId, MatchPlayerStatDTO dto) {
         Match match = matchRepository.findById(matchId).orElseThrow(() -> new RuntimeException("Match not found"));
         Player player = playerRepository.findById(dto.getPlayerId()).orElseThrow(() -> new RuntimeException("Player not found"));
@@ -156,6 +165,7 @@ public class MatchService {
                 .map(MatchPlayerStatDTO::toDto)
                 .toList();
     }
+
     public List<MatchPlayerStatDTO> getStatsForMatch(Long matchId) {
         return statRepository.findByMatch_Id(matchId).stream()
                 .map(MatchPlayerStatDTO::toDto)
@@ -183,19 +193,17 @@ public class MatchService {
             match.setAwayTeam(away);
         }
 
-        // PATCH competition/season: poți seta la null trimițând null
+        // PATCH competition/season
         if (dto.getCompetitionId() != null) {
             Competition comp = competitionRepository.findById(dto.getCompetitionId())
                     .orElseThrow(() -> new RuntimeException("Competition not found"));
             match.setCompetition(comp);
 
-            // dacă sezonul existent nu aparține noii competiții, îl resetăm
             if (match.getSeason() != null &&
                     !match.getSeason().getCompetition().getId().equals(comp.getId())) {
                 match.setSeason(null);
             }
-        } else if (dto.getCompetitionId() == null && dto.getSeasonId() != null) {
-            // dacă vine doar sezonul, îl validăm față de competiția curentă (dacă există)
+        } else if (dto.getSeasonId() != null) {
             CompetitionSeason season = seasonRepository.findById(dto.getSeasonId())
                     .orElseThrow(() -> new RuntimeException("Season not found"));
             if (match.getCompetition() != null &&
@@ -214,11 +222,13 @@ public class MatchService {
 
         return MatchDTO.toDto(matchRepository.save(match));
     }
+
     public List<MatchPlayerStatDTO> addOrUpdatePlayerStatsBatch(Long matchId, List<MatchPlayerStatDTO> dtos) {
         return dtos.stream()
                 .map(dto -> addOrUpdatePlayerStat(matchId, dto))
                 .toList();
     }
+
     public void softDeleteMatch(Long id) {
         Match match = matchRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Match not found"));

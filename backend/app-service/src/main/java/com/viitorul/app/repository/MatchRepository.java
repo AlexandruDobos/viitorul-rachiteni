@@ -7,6 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 
 public interface MatchRepository extends JpaRepository<Match, Long> {
-    @Query("SELECT m FROM Match m WHERE m.homeGoals IS NULL OR m.awayGoals IS NULL ORDER BY m.date ASC")
+
+    @Query("""
+        SELECT m FROM Match m
+        WHERE m.active = true
+          AND (m.homeGoals IS NULL OR m.awayGoals IS NULL)
+          AND m.date >= CURRENT_DATE
+        ORDER BY m.date ASC, m.kickoffTime ASC
+        """)
     List<Match> findUpcomingMatches();
 }

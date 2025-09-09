@@ -29,6 +29,12 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getAllMatches());
     }
 
+    /** NOU: un singur meci – următorul programat */
+    @GetMapping("/next")
+    public ResponseEntity<MatchDTO> getNextMatch() {
+        return ResponseEntity.ok(matchService.getNextMatch());
+    }
+
     @GetMapping("/upcoming")
     public ResponseEntity<List<MatchDTO>> getUpcomingMatches() {
         return ResponseEntity.ok(matchService.getUpcomingMatches());
@@ -39,20 +45,16 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getMatchById(id));
     }
 
-
-    // Stats pentru un jucător (opțional, nu e folosit de front-ul dat)
     @GetMapping("/player/{id}/stats")
     public ResponseEntity<List<MatchPlayerStatDTO>> getStatsForPlayer(@PathVariable("id") Long id) {
         return ResponseEntity.ok(matchService.getStatsForPlayer(id));
     }
 
-    // Stats pentru un meci (GET) -> folosit de MatchStatsEditor.jsx
     @GetMapping("/player-stats/{matchId}")
     public ResponseEntity<List<MatchPlayerStatDTO>> getMatchStats(@PathVariable("matchId") Long matchId) {
         return ResponseEntity.ok(matchService.getStatsForMatch(matchId));
     }
 
-    // Upsert stats pentru un jucător într-un meci (POST) -> folosit de MatchStatsEditor.jsx
     @PostMapping("/{matchId}/stats")
     public ResponseEntity<MatchPlayerStatDTO> addOrUpdatePlayerStat(
             @PathVariable("matchId") Long matchId,
@@ -61,7 +63,6 @@ public class MatchController {
         return ResponseEntity.ok(matchService.addOrUpdatePlayerStat(matchId, dto));
     }
 
-    // Upsert în batch (opțional)
     @PostMapping("/{matchId}/stats/batch")
     public ResponseEntity<List<MatchPlayerStatDTO>> addOrUpdatePlayerStatsBatch(
             @PathVariable("matchId") Long matchId,

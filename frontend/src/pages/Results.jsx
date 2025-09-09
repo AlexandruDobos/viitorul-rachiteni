@@ -94,19 +94,19 @@ const Results = () => {
     const viitorulAway = away.includes('răchiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return { bg: 'from-gray-50 to-gray-100', border: 'border-gray-300', button: 'bg-gray-600 hover:bg-gray-700' };
+      return { from: 'from-gray-200', to: 'to-gray-100', border: 'border-gray-400', button: 'bg-gray-600 hover:bg-gray-700' };
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
-      return { bg: 'from-green-50 to-green-100', border: 'border-green-300', button: 'bg-green-600 hover:bg-green-700' };
+      return { from: 'from-green-300', to: 'to-green-100', border: 'border-green-400', button: 'bg-green-600 hover:bg-green-700' };
     }
     if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
-      return { bg: 'from-red-50 to-red-100', border: 'border-red-300', button: 'bg-red-600 hover:bg-red-700' };
+      return { from: 'from-red-300', to: 'to-red-100', border: 'border-red-400', button: 'bg-red-600 hover:bg-red-700' };
     }
-    return { bg: 'from-yellow-50 to-yellow-100', border: 'border-yellow-300', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
+    return { from: 'from-yellow-300', to: 'to-yellow-100', border: 'border-yellow-400', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
   };
 
   return (
@@ -192,7 +192,7 @@ const Results = () => {
             const compName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
             const seasonLabel = seasonLabelOf(match);
 
-            const { bg, border, button } = resultStyle(match);
+            const { from, to, border, button } = resultStyle(match);
 
             return (
               <motion.div
@@ -202,11 +202,25 @@ const Results = () => {
                 transition={{ duration: 0.35 }}
                 className={`relative rounded-3xl shadow-md overflow-hidden border ${border}`}
               >
-                {/* Fundal animat steag */}
+                {/* Fundal animat mai vizibil */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-r ${bg} animate-pulse opacity-70`}
+                  className={`absolute inset-0 bg-gradient-to-r ${from} ${to} opacity-80`}
+                  style={{
+                    animation: 'waveAnim 3s ease-in-out infinite',
+                  }}
                   aria-hidden="true"
                 />
+
+                {/* KEYFRAMES inline */}
+                <style>
+                  {`
+                    @keyframes waveAnim {
+                      0% { transform: translateX(0); opacity: 0.7; }
+                      50% { transform: translateX(-10px); opacity: 1; }
+                      100% { transform: translateX(0); opacity: 0.7; }
+                    }
+                  `}
+                </style>
 
                 {/* Conținut */}
                 <div className="relative">
@@ -216,12 +230,12 @@ const Results = () => {
                   </div>
 
                   {/* Logos + scor final */}
-                  <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-14">
-                    <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
+                  <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-16">
+                    <img src={homeLogo} alt={homeName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow" />
                     <div className="text-4xl sm:text-5xl font-extrabold">
                       {match.homeGoals} <span className="mx-1">-</span> {match.awayGoals}
                     </div>
-                    <img src={awayLogo} alt={awayName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
+                    <img src={awayLogo} alt={awayName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow" />
                   </div>
 
                   {/* Badges competiție/sezon */}

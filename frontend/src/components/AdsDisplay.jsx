@@ -139,9 +139,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
               }`}
               title={ad.title || "Sponsor"}
               style={{
-                animation: active
-                  ? "ads-mobile-zoom 0.7s ease-out"
-                  : "none",
+                animation: active ? "ads-mobile-zoom 0.7s ease-out" : "none",
               }}
             >
               <div className="absolute inset-0 flex items-center justify-center p-1.5">
@@ -153,9 +151,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
                   decoding="async"
                 />
               </div>
-              <span className="absolute z-10 top-2 left-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600/90 text-white ring-1 ring-indigo-400/50 shadow-sm animate-pulse">
-                SPONSOR
-              </span>
             </a>
           );
         })}
@@ -180,10 +175,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
           title={ad.title || "Sponsor"}
         >
           <div className="relative">
-            <span className="absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-600/90 text-white ring-1 ring-indigo-400/50 shadow-sm animate-pulse">
-              AD
-            </span>
-
             <img
               src={ad.imageUrl}
               alt={ad.title || "publicitate"}

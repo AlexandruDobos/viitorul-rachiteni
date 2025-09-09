@@ -63,7 +63,7 @@ const App = () => {
                 {/* Conținut central – separator doar când există side-bar-uri */}
                 <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6">
                   {/* Ads pe mobil/tabletă (sub lg) */}
-                  <div className="lg:hidden mb-5 space-y-3">
+                  <div className="lg:hidden mb-5 space-y-3 mt-8">
                     <AdsDisplay position="left" />
                   </div>
 

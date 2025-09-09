@@ -60,5 +60,20 @@ public class PlayerService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
     }
 
+    public PlayerDTO updatePlayer(Long id, PlayerDTO dto) {
+        Player p = playerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found"));
+        p.setName(dto.getName());
+        p.setPosition(dto.getPosition());
+        p.setShirtNumber(dto.getShirtNumber());
+        p.setProfileImageUrl(dto.getProfileImageUrl());
+        return PlayerDTO.toDto(playerRepository.save(p));
+    }
 
+    public void deletePlayer(Long id) {
+        if (!playerRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found");
+        }
+        playerRepository.deleteById(id);
+    }
 }

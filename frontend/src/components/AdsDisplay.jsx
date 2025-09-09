@@ -195,6 +195,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
               }}
               loading="lazy"
               decoding="async"
+              
             />
 
             <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-indigo-900" />

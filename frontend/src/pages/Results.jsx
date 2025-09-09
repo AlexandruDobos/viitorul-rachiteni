@@ -231,13 +231,13 @@ const Results = () => {
                     {homeName} <span className="text-gray-700">vs</span> {awayName}
                   </div>
 
-                  {/* Logos + scor final */}
-                  <div className="px-5 py-6 flex items-center justify-center gap-10 sm:gap-16">
-                    <img src={homeLogo} alt={homeName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow" />
-                    <div className="text-4xl sm:text-5xl font-extrabold">
+                  {/* Logos + scor final - responsive */}
+                  <div className="px-5 py-6 flex items-center justify-center gap-6 sm:gap-12">
+                    <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
+                    <div className="text-3xl sm:text-5xl font-extrabold min-w-[60px] text-center">
                       {match.homeGoals} <span className="mx-1">-</span> {match.awayGoals}
                     </div>
-                    <img src={awayLogo} alt={awayName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow" />
+                    <img src={awayLogo} alt={awayName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
                   </div>
 
                   {/* Badges competiție/sezon */}

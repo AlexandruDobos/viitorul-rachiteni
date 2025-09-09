@@ -108,7 +108,7 @@ const Navbar = () => {
               <motion.img
                 src={logo}
                 alt="ACS Viitorul Răchiteni"
-                className="h-20 md:h-24 w-auto object-contain drop-shadow"
+                className="h-24 md:h-28 w-auto object-contain drop-shadow"
                 whileHover={{ rotate: [0, -8, 8, -6, 6, -3, 3, 0] }}
                 transition={{ duration: 0.8, ease: 'easeInOut' }}
                 whileTap={{ scale: 0.96 }}
@@ -118,7 +118,7 @@ const Navbar = () => {
             {/* RIGHT: NAV */}
             <motion.nav
               ref={leftMenuRef}
-              className="flex items-center gap-8 font-semibold text-sm md:text-base tracking-wide uppercase text-gray-700"
+              className="flex items-center gap-7 font-semibold text-xs md:text-sm lg:text-base tracking-wide uppercase text-gray-700"
               variants={navListVariants}
               initial="hidden"
               animate="show"
@@ -140,17 +140,17 @@ const Navbar = () => {
                 <AnimatePresence>
                   {menuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 6, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute right-0 mt-2 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
+                      className="absolute left-0 mt-2 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
                     >
-                      <ul className="flex flex-col text-sm normal-case tracking-normal">
-                        <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Lista jucători</Link></li>
-                        <li><Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Meciuri</Link></li>
-                        <li><Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Rezultate</Link></li>
-                        <li><Link to="/standings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Clasament</Link></li>
+                      <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide">
+                        <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
+                        <li><Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">MECIURI</Link></li>
+                        <li><Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">REZULTATE</Link></li>
+                        <li><Link to="/standings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">CLASAMENT</Link></li>
                       </ul>
                     </motion.div>
                   )}
@@ -159,14 +159,14 @@ const Navbar = () => {
 
               <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/donations" className="group relative pb-1 hover:text-gray-900">
-                  Donații
+                  DONAȚII
                   <Underline active={isActive('/donations')} />
                 </Link>
               </motion.div>
 
               <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
-                  Contact
+                  CONTACT
                   <Underline active={isActive('/contact')} />
                 </Link>
               </motion.div>
@@ -179,7 +179,7 @@ const Navbar = () => {
                   </button>
                 ) : (
                   <Link to="/login" className="group relative pb-1 hover:text-gray-900">
-                    Login
+                    LOGIN
                     <Underline active={isActive('/login')} />
                   </Link>
                 )}
@@ -193,7 +193,7 @@ const Navbar = () => {
               <motion.img
                 src={logo}
                 alt="ACS Viitorul Răchiteni"
-                className="h-16 w-auto object-contain"
+                className="h-20 w-auto object-contain"
                 whileHover={{ rotate: [0, -8, 8, -6, 6, -3, 3, 0] }}
                 transition={{ duration: 0.8, ease: 'easeInOut' }}
                 whileTap={{ scale: 0.96 }}
@@ -232,7 +232,7 @@ const Navbar = () => {
               transition={{ type: 'tween', duration: 0.25 }}
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold">Meniu</span>
+                <span className="font-semibold">MENIU</span>
                 <button onClick={handleMobileClose} aria-label="Închide meniul" className="rounded-md p-2 hover:bg-gray-100">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -241,7 +241,7 @@ const Navbar = () => {
               </div>
 
               <motion.ul
-                className="mt-2 space-y-3 font-semibold text-[13px] tracking-wide uppercase text-gray-700"
+                className="mt-2 space-y-3 font-semibold text-sm uppercase tracking-wide text-gray-700"
                 variants={mobileListVariants}
                 initial="hidden"
                 animate="show"
@@ -254,7 +254,7 @@ const Navbar = () => {
                     aria-expanded={echipaOpen}
                     aria-controls="echipa-submenu"
                   >
-                    <span>Echipă</span>
+                    <span>ECHIPĂ</span>
                     <span className={`text-xs transition-transform ${echipaOpen ? 'rotate-180' : ''}`}>▼</span>
                   </button>
 
@@ -262,15 +262,15 @@ const Navbar = () => {
                     {echipaOpen && (
                       <motion.ul
                         id="echipa-submenu"
-                        className="mt-2 space-y-1 text-sm normal-case tracking-normal text-gray-700"
+                        className="mt-2 space-y-1 text-xs uppercase tracking-wide text-gray-700"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                       >
-                        <li><Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Lista jucători</Link></li>
-                        <li><Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Meciuri</Link></li>
-                        <li><Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Rezultate</Link></li>
-                        <li><Link to="/standings" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Clasament</Link></li>
+                        <li><Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
+                        <li><Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">MECIURI</Link></li>
+                        <li><Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">REZULTATE</Link></li>
+                        <li><Link to="/standings" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">CLASAMENT</Link></li>
                       </motion.ul>
                     )}
                   </AnimatePresence>
@@ -278,12 +278,12 @@ const Navbar = () => {
 
                 <motion.li variants={mobileItemVariants}>
                   <Link to="/donations" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
-                    Donații
+                    DONAȚII
                   </Link>
                 </motion.li>
                 <motion.li variants={mobileItemVariants}>
                   <Link to="/contact" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
-                    Contact
+                    CONTACT
                   </Link>
                 </motion.li>
 
@@ -294,13 +294,13 @@ const Navbar = () => {
                       onClick={() => { handleLogout(); handleMobileClose(); }}
                       className="block w-full text-left px-1 py-2 rounded hover:bg-gray-50 text-red-600"
                     >
-                      Logout
+                      LOGOUT
                     </button>
                   </motion.li>
                 ) : (
                   <motion.li variants={mobileItemVariants}>
                     <Link to="/login" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
-                      Login
+                      LOGIN
                     </Link>
                   </motion.li>
                 )}

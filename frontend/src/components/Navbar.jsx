@@ -98,8 +98,8 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 font-[Poppins,sans-serif]">
-      {/* glassy gradient bar */}
-      <div className="backdrop-blur bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-sky-500/10 border-b border-white/50 shadow-sm">
+      {/* bar cu fundal clar, dar mereu lizibil */}
+      <div className="backdrop-blur-md bg-white/80 bg-gradient-to-r from-blue-50/70 via-indigo-50/70 to-sky-50/70 border-b border-gray-200 shadow-sm">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10">
           {/* DESKTOP BAR */}
           <div className="hidden md:flex items-center justify-between py-2">
@@ -118,7 +118,7 @@ const Navbar = () => {
             {/* RIGHT: NAV */}
             <motion.nav
               ref={leftMenuRef}
-              className="flex items-center gap-7 font-semibold text-xs md:text-sm lg:text-base tracking-wide uppercase text-gray-700"
+              className="flex items-center gap-7 font-semibold text-xs md:text-sm lg:text-base tracking-wide uppercase text-gray-800"
               variants={navListVariants}
               initial="hidden"
               animate="show"
@@ -144,9 +144,9 @@ const Navbar = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -4, scale: 0.98 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="absolute top-full mt-2 left-0 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
+                      className="absolute top-full mt-2 left-0 w-56 rounded-xl bg-white shadow-lg border overflow-hidden"
                     >
-                      <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide">
+                      <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide text-gray-700">
                         <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
                         <li><Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">MECIURI</Link></li>
                         <li><Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">REZULTATE</Link></li>

@@ -5,12 +5,6 @@ import { BASE_URL } from '../utils/constants';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
-const Badge = ({ children, className = '' }) => (
-  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${className}`}>
-    {children}
-  </span>
-);
-
 const Matches = () => {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +39,9 @@ const Matches = () => {
     const date = new Date(d);
     if (Number.isNaN(date.getTime())) return d;
     return date.toLocaleDateString('ro-RO', {
-      weekday: 'short',
+      weekday: 'long',
       day: '2-digit',
-      month: 'short',
+      month: 'long',
       year: 'numeric',
     });
   };
@@ -57,9 +51,9 @@ const Matches = () => {
   return (
     <div className="px-4 sm:px-6">
       {/* ===== TITLU ANIMAT ===== */}
-      <div className="relative mx-auto mt-2 mb-6 max-w-3xl px-2">
+      <div className="relative mx-auto mt-2 mb-8 max-w-3xl px-2">
         <div aria-hidden className="absolute inset-0 -z-10 flex justify-center">
-          <div className="h-12 md:h-16 w-[70%] md:w-[60%] bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 blur-2xl opacity-25 rounded-full" />
+          <div className="h-14 w-[75%] bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 blur-3xl opacity-25 rounded-full" />
         </div>
 
         <motion.h1
@@ -68,7 +62,7 @@ const Matches = () => {
           transition={{ duration: 0.5, ease: 'easeOut' }}
           className="text-center font-extrabold tracking-tight text-2xl sm:text-3xl"
         >
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
+          <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
             Meciuri programate
           </span>
         </motion.h1>
@@ -92,7 +86,7 @@ const Matches = () => {
           Nu există meciuri viitoare disponibile.
         </div>
       ) : (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-10">
           {items.map((match) => {
             const homeName = match.homeTeamName ?? 'Echipă gazdă';
             const awayName = match.awayTeamName ?? 'Echipă oaspete';
@@ -102,56 +96,55 @@ const Matches = () => {
             const seasonLabel = match.seasonLabel ?? match.season?.label ?? match.season ?? null;
 
             return (
-              <div
+              <motion.div
                 key={match.id}
-                className="rounded-2xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="rounded-3xl shadow-xl bg-gradient-to-br from-blue-600/90 via-indigo-600/90 to-sky-600/90 text-white overflow-hidden"
               >
                 {/* Header titlu vs */}
-                <div className="px-5 pt-4">
-                  <div className="bg-gray-50 rounded-lg px-3 py-2 text-center text-sm sm:text-base md:text-lg font-semibold">
-                    <span className="truncate">{homeName}</span>{' '}
-                    <span className="text-red-600 font-extrabold">vs</span>{' '}
-                    <span className="truncate">{awayName}</span>
-                  </div>
+                <div className="px-6 py-3 bg-white/15 backdrop-blur-md text-center text-lg sm:text-xl font-bold tracking-wide">
+                  {homeName} <span className="text-yellow-300">VS</span> {awayName}
                 </div>
 
                 {/* Logos + separator “–” */}
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-center gap-8 sm:gap-12">
-                    <img src={homeLogo} alt={homeName} className="w-14 h-14 sm:w-20 sm:h-20 object-contain" />
-                    <div className="text-4xl sm:text-5xl font-bold text-gray-300">-</div>
-                    <img src={awayLogo} alt={awayName} className="w-14 h-14 sm:w-20 sm:h-20 object-contain" />
-                  </div>
+                <div className="px-6 py-6 flex items-center justify-center gap-10 sm:gap-16">
+                  <img src={homeLogo} alt={homeName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg" />
+                  <div className="text-4xl sm:text-5xl font-extrabold text-white/70">-</div>
+                  <img src={awayLogo} alt={awayName} className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg" />
                 </div>
 
                 {/* Badges competiție/sezon */}
-                <div className="px-5 pb-1">
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                    {compName && <Badge className="bg-indigo-100 text-indigo-800">Competiție: {compName}</Badge>}
-                    {seasonLabel && <Badge className="bg-gray-100 text-gray-800">Sezon: {seasonLabel}</Badge>}
-                  </div>
+                <div className="px-6 pb-2 flex justify-center flex-wrap gap-2">
+                  {compName && (
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-sm font-semibold">
+                      Competiție: {compName}
+                    </span>
+                  )}
+                  {seasonLabel && (
+                    <span className="px-3 py-1 rounded-full bg-white/20 text-sm font-semibold">
+                      Sezon: {seasonLabel}
+                    </span>
+                  )}
                 </div>
 
                 {/* Dată / oră / locație */}
-                <div className="px-5 pb-2 text-xs sm:text-sm text-gray-600 text-center">
-                  <div className="mt-1">
-                    {formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}
-                  </div>
+                <div className="px-6 pb-4 text-center text-sm sm:text-base text-white/90">
+                  <div>{formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}</div>
                   {match.location && <div className="mt-1">📍 {match.location}</div>}
                 </div>
 
                 {/* CTA */}
-                <div className="px-5 pb-5">
-                  <div className="flex justify-center">
-                    <button
-                      onClick={() => navigate(`/matches/${match.id}`)}
-                      className="bg-black text-white text-sm py-2 px-4 rounded-lg hover:bg-gray-800 transition"
-                    >
-                      Detalii meci
-                    </button>
-                  </div>
+                <div className="px-6 pb-6">
+                  <button
+                    onClick={() => navigate(`/matches/${match.id}`)}
+                    className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-500 shadow-md hover:opacity-90 transition"
+                  >
+                    Detalii meci
+                  </button>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

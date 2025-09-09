@@ -5,7 +5,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '../assets/logo.png';
 import { BASE_URL } from '../utils/constants';
-import AuthContext from '../context/AuthContext'; // <- ajustează importul dacă ai alt path
+import AuthContext from '../context/AuthContext';
 
 const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);        // desktop dropdown "ECHIPĂ"
@@ -40,7 +40,6 @@ const Navbar = () => {
 
   // re-check auth + close menus on route change
   useEffect(() => {
-    // dacă vrei să fie mereu sincronizat când schimbi ruta
     checkAuth?.();
     setMenuOpen(false);
     setShowMobileMenu(false);
@@ -68,13 +67,11 @@ const Navbar = () => {
     setEchipaOpen(false);
   };
 
-  // route highlighting
   const isActive = (path) => location.pathname.startsWith(path);
   const echipaActive = ['/squad', '/matches', '/results', '/standings'].some((p) =>
     location.pathname.startsWith(p)
   );
 
-  // gradient underline
   const Underline = ({ active }) => (
     <span
       className={`absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full transition-transform
@@ -83,24 +80,36 @@ const Navbar = () => {
     />
   );
 
-  // opțional: poți afișa nimic sau un skeleton când încă se verifică auth
-  // if (loading) return null;
-
   const isAuthenticated = !!user;
+
+  // === Animations ===
+  const navItemVariants = {
+    hidden: { opacity: 0, y: -6 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+  };
+  const navListVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08 } },
+  };
+
+  const mobileItemVariants = {
+    hidden: { opacity: 0, x: 20 },
+    show: { opacity: 1, x: 0, transition: { duration: 0.25 } },
+  };
+  const mobileListVariants = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.07 } },
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
-      {/* glassy bar */}
-      <div className="backdrop-blur bg-white/80 border-b border-white/60 shadow-sm">
+      {/* glassy gradient bar */}
+      <div className="backdrop-blur bg-gradient-to-r from-blue-600/10 via-indigo-500/10 to-sky-500/10 border-b border-white/50 shadow-sm">
         <div className="max-w-[1440px] mx-auto px-6 md:px-10">
           {/* DESKTOP BAR */}
           <div className="hidden md:flex items-center justify-between py-3">
             {/* LEFT: LOGO */}
             <Link to="/" aria-label="Mergi la pagina principală" className="relative">
-              <span
-                aria-hidden
-                className="absolute -inset-x-8 -bottom-1 -top-1 -z-10 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 opacity-10 blur-xl"
-              />
               <motion.img
                 src={logo}
                 alt="ACS Viitorul Răchiteni"
@@ -112,9 +121,15 @@ const Navbar = () => {
             </Link>
 
             {/* RIGHT: NAV */}
-            <nav ref={leftMenuRef} className="flex items-center gap-7 font-semibold text-[13px] tracking-wide uppercase text-gray-700">
+            <motion.nav
+              ref={leftMenuRef}
+              className="flex items-center gap-7 font-semibold text-[13px] tracking-wide uppercase text-gray-700"
+              variants={navListVariants}
+              initial="hidden"
+              animate="show"
+            >
               {/* ECHIPĂ dropdown */}
-              <div className="relative">
+              <motion.div variants={navItemVariants} className="relative">
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
@@ -137,59 +152,48 @@ const Navbar = () => {
                       className="absolute right-0 mt-2 w-56 rounded-xl bg-white/95 backdrop-blur border shadow-lg overflow-hidden"
                     >
                       <ul className="flex flex-col text-sm normal-case tracking-normal">
-                        <li>
-                          <Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">
-                            Lista jucători
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">
-                            Meciuri
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">
-                            Rezultate
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/standings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">
-                            Clasament
-                          </Link>
-                        </li>
+                        <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Lista jucători</Link></li>
+                        <li><Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Meciuri</Link></li>
+                        <li><Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Rezultate</Link></li>
+                        <li><Link to="/standings" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">Clasament</Link></li>
                       </ul>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
 
-              <Link to="/donations" className="group relative pb-1 hover:text-gray-900">
-                Donații
-                <Underline active={isActive('/donations')} />
-              </Link>
-
-              <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
-                Contact
-                <Underline active={isActive('/contact')} />
-              </Link>
-
-              {isAuthenticated ? (
-                <button onClick={handleLogout} className="group relative pb-1 text-gray-700 hover:text-red-600">
-                  LOGOUT
-                  <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full transition-transform group-hover:scale-x-100 bg-red-500/70" />
-                </button>
-              ) : (
-                <Link to="/login" className="group relative pb-1 hover:text-gray-900">
-                  Login
-                  <Underline active={isActive('/login')} />
+              <motion.div variants={navItemVariants}>
+                <Link to="/donations" className="group relative pb-1 hover:text-gray-900">
+                  Donații
+                  <Underline active={isActive('/donations')} />
                 </Link>
-              )}
-            </nav>
+              </motion.div>
+
+              <motion.div variants={navItemVariants}>
+                <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
+                  Contact
+                  <Underline active={isActive('/contact')} />
+                </Link>
+              </motion.div>
+
+              <motion.div variants={navItemVariants}>
+                {isAuthenticated ? (
+                  <button onClick={handleLogout} className="group relative pb-1 text-gray-700 hover:text-red-600">
+                    LOGOUT
+                    <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full transition-transform group-hover:scale-x-100 bg-red-500/70" />
+                  </button>
+                ) : (
+                  <Link to="/login" className="group relative pb-1 hover:text-gray-900">
+                    Login
+                    <Underline active={isActive('/login')} />
+                  </Link>
+                )}
+              </motion.div>
+            </motion.nav>
           </div>
 
           {/* MOBILE BAR */}
           <div className="md:hidden flex items-center justify-between py-3">
-            {/* logo left */}
             <Link to="/" onClick={handleMobileClose} aria-label="Mergi la pagina principală" className="flex-shrink-0">
               <motion.img
                 src={logo}
@@ -241,8 +245,13 @@ const Navbar = () => {
                 </button>
               </div>
 
-              <ul className="mt-2 space-y-3 font-semibold text-[13px] tracking-wide uppercase text-gray-700">
-                <li className="border-b pb-2">
+              <motion.ul
+                className="mt-2 space-y-3 font-semibold text-[13px] tracking-wide uppercase text-gray-700"
+                variants={mobileListVariants}
+                initial="hidden"
+                animate="show"
+              >
+                <motion.li variants={mobileItemVariants} className="border-b pb-2">
                   <button
                     type="button"
                     onClick={() => setEchipaOpen((v) => !v)}
@@ -263,44 +272,28 @@ const Navbar = () => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                       >
-                        <li>
-                          <Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">
-                            Lista jucători
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">
-                            Meciuri
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">
-                            Rezultate
-                          </Link>
-                        </li>
-                        <li>
-                          <Link to="/standings" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">
-                            Clasament
-                          </Link>
-                        </li>
+                        <li><Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Lista jucători</Link></li>
+                        <li><Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Meciuri</Link></li>
+                        <li><Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Rezultate</Link></li>
+                        <li><Link to="/standings" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">Clasament</Link></li>
                       </motion.ul>
                     )}
                   </AnimatePresence>
-                </li>
+                </motion.li>
 
-                <li>
+                <motion.li variants={mobileItemVariants}>
                   <Link to="/donations" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
                     Donații
                   </Link>
-                </li>
-                <li>
+                </motion.li>
+                <motion.li variants={mobileItemVariants}>
                   <Link to="/contact" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
                     Contact
                   </Link>
-                </li>
+                </motion.li>
 
                 {isAuthenticated ? (
-                  <li>
+                  <motion.li variants={mobileItemVariants}>
                     <button
                       type="button"
                       onClick={() => { handleLogout(); handleMobileClose(); }}
@@ -308,15 +301,15 @@ const Navbar = () => {
                     >
                       Logout
                     </button>
-                  </li>
+                  </motion.li>
                 ) : (
-                  <li>
+                  <motion.li variants={mobileItemVariants}>
                     <Link to="/login" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
                       Login
                     </Link>
-                  </li>
+                  </motion.li>
                 )}
-              </ul>
+              </motion.ul>
             </motion.aside>
           </>
         )}

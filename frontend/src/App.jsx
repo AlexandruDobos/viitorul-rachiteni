@@ -27,6 +27,10 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import DonationsSuccess from './pages/DonationsSuccess';
 import DonationsCancel from './pages/DonationsCancel';
+
+// >>> NOU: import NextMatchSection
+import NextMatchSection from './components/NextMatchSection';
+
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
@@ -70,6 +74,8 @@ const App = () => {
                         <>
                           <HeroTitle />
                           <AnnouncementsSection limit={6} />
+                          {/* >>> NOU: Secțiunea „Următorul meci” */}
+                          <NextMatchSection />
                           <PlayersCarousel />
                         </>
                       }

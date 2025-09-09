@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
-// Importă imaginea locală (Vite/Webpack va genera URL-ul corect în build)
 import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
 
 const AddPlayerForm = () => {
@@ -8,8 +7,8 @@ const AddPlayerForm = () => {
     name: '',
     position: '',
     shirtNumber: '',
-    // implicit: poza anonimă locală
     profileImageUrl: defaultAvatar,
+    isActive: true, // nou: implicit activ
   });
   const [players, setPlayers] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -19,8 +18,8 @@ const AddPlayerForm = () => {
   const fileRef = useRef(null);
 
   // preview control
-  const [preview, setPreview] = useState(null);      // local blob: URL
-  const [showImg, setShowImg] = useState(true);      // randăm <img> by default
+  const [preview, setPreview] = useState(null); // local blob: URL
+  const [showImg, setShowImg] = useState(true); // randăm <img> by default
 
   // keep showImg in sync with available source
   useEffect(() => {
@@ -34,7 +33,7 @@ const AddPlayerForm = () => {
     };
   }, [preview]);
 
-  // ---- helpers pentru R2 (identice ca la anunțuri, dar cu folder=players)
+  // ---- helpers pentru R2 (folder=players)
   async function presignForR2(file, folder = 'players') {
     const q = new URLSearchParams({
       filename: file.name,
@@ -63,22 +62,28 @@ const AddPlayerForm = () => {
   }
 
   const fetchPlayers = async () => {
-    const res = await fetch(`${BASE_URL}/app/players`);
+    // aducem TOȚI jucătorii (inclusiv inactivi), ca să putem reactiva din UI
+    const res = await fetch(`${BASE_URL}/app/players?activeOnly=false`);
     if (!res.ok) {
       alert('Eroare la listare jucători');
       return;
     }
     const data = await res.json();
-    setPlayers(data);
+    // asigurăm fallback pentru isActive (în caz că vechile înregistrări nu au coloana populată)
+    setPlayers((Array.isArray(data) ? data : []).map(p => ({ ...p, isActive: p.isActive ?? true })));
   };
 
   useEffect(() => {
     fetchPlayers();
   }, []);
 
+  // suportă și checkbox (isActive)
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    const { name, type, value, checked } = e.target;
+    setFormData((p) => ({
+      ...p,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -96,8 +101,14 @@ const AddPlayerForm = () => {
 
     if (res.ok) {
       await fetchPlayers();
-      // resetare: păstrăm implicit avatarul anonim
-      setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar });
+      // resetare: păstrăm implicit avatarul anonim + activ
+      setFormData({
+        name: '',
+        position: '',
+        shirtNumber: '',
+        profileImageUrl: defaultAvatar,
+        isActive: true,
+      });
       setEditId(null);
       if (preview) {
         URL.revokeObjectURL(preview);
@@ -114,8 +125,8 @@ const AddPlayerForm = () => {
       name: player.name || '',
       position: player.position || '',
       shirtNumber: player.shirtNumber || '',
-      // dacă nu are imagine, folosim implicit avatarul anonim
       profileImageUrl: player.profileImageUrl || defaultAvatar,
+      isActive: player.isActive ?? true, // nou
     });
     setEditId(player.id);
     if (preview) {
@@ -125,13 +136,28 @@ const AddPlayerForm = () => {
     setShowImg(true);
   };
 
-  const handleDelete = async (id) => {
-    if (confirm('Sigur vrei să ștergi acest jucător?')) {
-      const res = await fetch(`${BASE_URL}/app/players/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) fetchPlayers();
-      else alert('Eroare la ștergere');
+  // În loc de ștergere: toggle activ/inactiv
+  const toggleActive = async (player) => {
+    const toActivate = !player.isActive;
+    const ok = confirm(
+      toActivate
+        ? `Activezi jucătorul "${player.name}"?`
+        : `Dezactivezi jucătorul "${player.name}"?`
+    );
+    if (!ok) return;
+
+    const endpoint = toActivate ? 'activate' : 'deactivate';
+    const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, {
+      method: 'PATCH',
+    });
+    if (res.ok) {
+      await fetchPlayers();
+      // dacă edităm fix acest jucător, sincronizăm și formularul
+      if (editId === player.id) {
+        setFormData((p) => ({ ...p, isActive: toActivate }));
+      }
+    } else {
+      alert('Operația a eșuat');
     }
   };
 
@@ -268,7 +294,6 @@ const AddPlayerForm = () => {
                 alt=""
                 className="w-16 h-16 rounded-full object-cover border"
                 onError={() => {
-                  // dacă eșuează, folosim avatarul implicit
                   setPreview(null);
                   setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
                   setShowImg(true);
@@ -284,6 +309,18 @@ const AddPlayerForm = () => {
           </div>
         </div>
 
+        {/* Nou: status activ/inactiv */}
+        <label className="inline-flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="isActive"
+            checked={!!formData.isActive}
+            onChange={handleChange}
+            className="h-4 w-4"
+          />
+          <span>Jucător activ</span>
+        </label>
+
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
           {editId ? 'Salvează modificările' : 'Adaugă'}
         </button>
@@ -293,43 +330,61 @@ const AddPlayerForm = () => {
       <div className="bg-white shadow rounded p-4">
         <h3 className="text-lg font-semibold mb-2">Jucători existenți</h3>
         <ul className="space-y-2">
-          {players.map((player) => (
-            <li
-              key={player.id}
-              className="flex items-center justify-between border p-2 rounded"
-            >
-              <div className="flex items-center gap-3">
-                <img
-                  src={player.profileImageUrl || defaultAvatar}
-                  alt={player.name || ''}
-                  className="w-10 h-10 rounded-full object-cover border"
-                  onError={(e) => {
-                    e.currentTarget.src = defaultAvatar;
-                  }}
-                />
-                <div>
-                  <div className="font-semibold">{player.name}</div>
-                  <div className="text-sm text-gray-600">
-                    {player.position} #{player.shirtNumber}
+          {players.map((player) => {
+            const inactive = player.isActive === false;
+            return (
+              <li
+                key={player.id}
+                className={`flex items-center justify-between border p-2 rounded ${
+                  inactive ? 'opacity-75' : ''
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={player.profileImageUrl || defaultAvatar}
+                    alt={player.name || ''}
+                    className="w-10 h-10 rounded-full object-cover border"
+                    onError={(e) => {
+                      e.currentTarget.src = defaultAvatar;
+                    }}
+                  />
+                  <div>
+                    <div className={`font-semibold ${inactive ? 'line-through text-gray-500' : ''}`}>
+                      {player.name}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {player.position} #{player.shirtNumber}
+                    </div>
+                    {!inactive ? (
+                      <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        Activ
+                      </span>
+                    ) : (
+                      <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
+                        Inactiv
+                      </span>
+                    )}
                   </div>
                 </div>
-              </div>
-              <div className="space-x-2">
-                <button
-                  onClick={() => handleEdit(player)}
-                  className="text-blue-600 text-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(player.id)}
-                  className="text-red-600 text-sm"
-                >
-                  Delete
-                </button>
-              </div>
-            </li>
-          ))}
+
+                <div className="space-x-2">
+                  <button
+                    onClick={() => handleEdit(player)}
+                    className="text-blue-600 text-sm"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => toggleActive(player)}
+                    className={`text-sm ${inactive ? 'text-emerald-700' : 'text-red-600'}`}
+                    title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}
+                  >
+                    {inactive ? 'Activează' : 'Dezactivează'}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>

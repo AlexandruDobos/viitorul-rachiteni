@@ -106,14 +106,19 @@ export default function PlayersCarousel({
     return () => window.removeEventListener("resize", compute);
   }, []);
 
-  /* fetch jucători */
+  /* fetch jucători — DOAR activii */
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${BASE_URL}/app/players`);
+        // cerem explicit doar activii
+        const res = await fetch(`${BASE_URL}/app/players?activeOnly=true`);
         const data = await res.json();
-        setPlayers(Array.isArray(data) ? data : []);
+        // filtrăm defensiv dacă backend-ul ar returna totuși și inactivi
+        const onlyActive = (Array.isArray(data) ? data : []).filter(
+          (p) => p.isActive !== false
+        );
+        setPlayers(onlyActive);
       } catch (e) {
         console.error("Failed to load players:", e);
         setPlayers([]);

@@ -94,19 +94,19 @@ const Results = () => {
     const viitorulAway = away.includes('răchiteni');
 
     if (!viitorulHome && !viitorulAway) {
-      return { from: 'from-gray-200', to: 'to-gray-100', border: 'border-gray-400', button: 'bg-gray-600 hover:bg-gray-700' };
+      return { from: '#e5e7eb', to: '#f3f4f6', border: 'border-gray-400', button: 'bg-gray-600 hover:bg-gray-700' };
     }
 
     const hg = match.homeGoals;
     const ag = match.awayGoals;
 
     if ((viitorulHome && hg > ag) || (viitorulAway && ag > hg)) {
-      return { from: 'from-green-300', to: 'to-green-100', border: 'border-green-400', button: 'bg-green-600 hover:bg-green-700' };
+      return { from: '#86efac', to: '#bbf7d0', border: 'border-green-400', button: 'bg-green-600 hover:bg-green-700' };
     }
     if ((viitorulHome && hg < ag) || (viitorulAway && ag < hg)) {
-      return { from: 'from-red-300', to: 'to-red-100', border: 'border-red-400', button: 'bg-red-600 hover:bg-red-700' };
+      return { from: '#fca5a5', to: '#fecaca', border: 'border-red-400', button: 'bg-red-600 hover:bg-red-700' };
     }
-    return { from: 'from-yellow-300', to: 'to-yellow-100', border: 'border-yellow-400', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
+    return { from: '#fde68a', to: '#fef9c3', border: 'border-yellow-400', button: 'bg-yellow-500 hover:bg-yellow-600 text-black' };
   };
 
   return (
@@ -202,11 +202,13 @@ const Results = () => {
                 transition={{ duration: 0.35 }}
                 className={`relative rounded-3xl shadow-md overflow-hidden border ${border}`}
               >
-                {/* Fundal animat mai vizibil */}
+                {/* Fundal animat tip steag */}
                 <div
-                  className={`absolute inset-0 bg-gradient-to-r ${from} ${to} opacity-80`}
+                  className="absolute inset-0 opacity-90"
                   style={{
-                    animation: 'waveAnim 3s ease-in-out infinite',
+                    background: `linear-gradient(120deg, ${from}, ${to})`,
+                    backgroundSize: '200% 200%',
+                    animation: 'waveGradient 6s ease-in-out infinite',
                   }}
                   aria-hidden="true"
                 />
@@ -214,10 +216,10 @@ const Results = () => {
                 {/* KEYFRAMES inline */}
                 <style>
                   {`
-                    @keyframes waveAnim {
-                      0% { transform: translateX(0); opacity: 0.7; }
-                      50% { transform: translateX(-10px); opacity: 1; }
-                      100% { transform: translateX(0); opacity: 0.7; }
+                    @keyframes waveGradient {
+                      0% { background-position: 0% 50%; }
+                      50% { background-position: 100% 50%; }
+                      100% { background-position: 0% 50%; }
                     }
                   `}
                 </style>

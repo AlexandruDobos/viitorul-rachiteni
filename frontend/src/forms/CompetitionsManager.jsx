@@ -262,7 +262,14 @@ const CompetitionsManager = () => {
 
   /* ============================= UI ============================= */
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6"
+      style={{
+        // ✅ Padding top only on mobile (under fixed admin menu); 0 on ≥1024px
+        paddingTop:
+          "clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))",
+      }}
+    >
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">

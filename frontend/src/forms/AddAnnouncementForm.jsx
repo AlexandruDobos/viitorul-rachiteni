@@ -181,7 +181,6 @@ function AddAnnouncementForm({ onSave }) {
   }, []);
 
   const [title, setTitle] = useState("");
-  the
   const [publishedAt, setPublishedAt] = useState(
     new Date().toISOString().slice(0, 16)
   );

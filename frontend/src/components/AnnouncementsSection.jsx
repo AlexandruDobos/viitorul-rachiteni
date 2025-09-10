@@ -55,7 +55,6 @@ const detailVariants = {
   exit: { opacity: 0, y: -6, transition: { duration: 0.2 } },
 };
 
-/** Skeleton */
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
@@ -77,6 +76,27 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
   const [selectedId, setSelectedId] = useState(null);
   const [page, setPage] = useState(0); // 0-based
   const [totalPages, setTotalPages] = useState(1);
+
+  // injectăm o singură dată keyframes pentru “shine”
+  useEffect(() => {
+    const id = 'ann-cards-keyframes';
+    if (!document.getElementById(id)) {
+      const style = document.createElement('style');
+      style.id = id;
+      style.innerHTML = `
+        @media (prefers-reduced-motion: no-preference) {
+          .ann-card:hover .ann-shine { animation: annCardShine 900ms ease-in-out; }
+          @keyframes annCardShine {
+            0%   { transform: translateX(-120%) skewX(-18deg); opacity: .0; }
+            30%  { opacity: .18; }
+            60%  { opacity: .18; }
+            100% { transform: translateX(130%) skewX(-18deg); opacity: 0; }
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   const fetchPage = async (pageNum = 0) => {
     try {
@@ -154,29 +174,47 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
                   <motion.div key={a.id} variants={itemVariants} layout>
                     <button
                       onClick={() => setSelectedId(a.id)}
-                      className="group w-full text-left overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200 hover:ring-gray-300 hover:shadow-lg hover:-translate-y-1 transition"
+                      className="ann-card group w-full text-left overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200 transition-all duration-300
+                                 hover:-translate-y-[3px] hover:shadow-xl hover:ring-indigo-200/70 hover:shadow-indigo-100"
                       title={a.title}
                     >
-                      <div className="relative aspect-[16/9] bg-gray-100">
+                      <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden">
                         {imgSrc ? (
                           <img
                             src={imgSrc}
                             alt={a.title}
-                            className="absolute inset-0 w-full h-full object-cover transform transition duration-300 group-hover:scale-105"
+                            className="absolute inset-0 w-full h-full object-cover transition-all duration-500
+                                       group-hover:scale-[1.02] group-hover:saturate-125 group-hover:contrast-110"
                             onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
                           />
                         ) : (
                           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
                         )}
 
+                        {/* shine diagonal – rulează doar pe hover (via CSS din useEffect) */}
+                        <div
+                          className="ann-shine pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
+                          style={{
+                            background:
+                              'linear-gradient(105deg, transparent 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.05) 70%, transparent 100%)',
+                          }}
+                        />
+
+                        {/* gradient de citire */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                        {/* titlu + dată + underline + CTA */}
                         <div className="absolute inset-x-0 bottom-0 p-4">
                           <h3 className="text-white text-lg md:text-xl font-semibold leading-snug line-clamp-2">
                             {a.title}
                           </h3>
-                          <p className="text-white/80 text-xs md:text-sm mt-1">
-                            {formatDate(a.publishedAt)}
-                          </p>
+                          <div className="mt-1 flex items-center justify-between">
+                            <p className="text-white/85 text-xs md:text-sm">{formatDate(a.publishedAt)}</p>
+                            <span className="inline-flex items-center gap-1 text-white/90 text-[11px] md:text-xs opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0">
+                              Citește <span>→</span>
+                            </span>
+                          </div>
+                          <div className="mt-2 h-0.5 w-10 origin-left scale-x-0 bg-gradient-to-r from-blue-500 via-indigo-500 to-sky-500 transition-transform duration-300 group-hover:scale-x-100" />
                         </div>
                       </div>
 

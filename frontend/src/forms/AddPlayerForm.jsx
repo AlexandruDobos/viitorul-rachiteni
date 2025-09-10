@@ -1,5 +1,5 @@
 // ==============================
-// AddPlayerForm.jsx — blue-only refined UI
+// AddPlayerForm.jsx — blue-only refined UI (with mobile-only top offset)
 // ==============================
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
@@ -175,7 +175,14 @@ const AddPlayerForm = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div
+      className="space-y-8"
+      style={{
+        // ✅ Top padding numai pe mobil (sub meniul fix); 0 pe ≥1024px
+        paddingTop:
+          'clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))',
+      }}
+    >
       {/* input ascuns pentru fișier */}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
@@ -262,7 +269,11 @@ const AddPlayerForm = () => {
               {editId ? 'Salvează modificările' : 'Adaugă'}
             </button>
             {editId && (
-              <button type="button" onClick={() => { setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar, isActive: true }); setEditId(null); }} className="border px-5 py-2.5 rounded-xl hover:bg-gray-50">
+              <button
+                type="button"
+                onClick={() => { setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar, isActive: true }); setEditId(null); }}
+                className="border px-5 py-2.5 rounded-xl hover:bg-gray-50"
+              >
                 Anulează editarea
               </button>
             )}

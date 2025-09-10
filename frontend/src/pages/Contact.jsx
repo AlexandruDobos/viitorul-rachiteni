@@ -11,7 +11,7 @@ const Contact = () => {
   const UI = {
     mainTitle: 'Contactează-ne',
     subtitle:
-      'Ai întrebări, idei sau propuneri de parteneriat? Scrie-ne – revenim rapid!',
+      'Ai întrebări, idei sau propuneri de parteneriat? Scrie-ne!',
     message: 'Mesaj',
     messagePlaceholder: 'Mesajul tău pentru noi',
     nameLabel: 'Nume și prenume',

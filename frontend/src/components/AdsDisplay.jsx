@@ -10,6 +10,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const initialDevice = initialCompact ? "MOBILE" : "LAPTOP";
 
   const [ads, setAds] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCompact, setIsCompact] = useState(initialCompact);
   const [deviceType, setDeviceType] = useState(initialDevice);
@@ -54,6 +55,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   // fetch ads
   useEffect(() => {
     const fetchAds = async () => {
+      setLoading(true);
       try {
         const url = api(`/app/ads?device=${encodeURIComponent(deviceType)}`);
         const res = await fetch(url, {
@@ -78,6 +80,9 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
         setCurrentIndex(0);
       } catch (e) {
         console.error("Eroare la încărcarea reclamelor:", e);
+        setAds([]); // fallback
+      } finally {
+        setLoading(false);
       }
     };
     fetchAds();
@@ -100,12 +105,25 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     return () => clearInterval(id);
   }, [isCompact, ads]);
 
-  if (!ads.length) {
-    return (
-      <div className="text-center text-gray-500 italic text-sm p-2">
-        Spațiu publicitar disponibil
+  // --- LOADING SPINNER ---
+  if (loading) {
+    // same dimensions as compact container so layout doesn't jump
+    const commonClasses =
+      "flex items-center justify-center rounded-xl border border-gray-200 bg-white shadow-md";
+    return isCompact ? (
+      <div className={`relative w-full h-28 sm:h-32 md:h-36 ${commonClasses}`} role="status" aria-label="Se încarcă reclamele">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+      </div>
+    ) : (
+      <div className={`w-full ${commonClasses} p-6`} role="status" aria-label="Se încarcă reclamele">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
       </div>
     );
+  }
+
+  // dacă nu sunt ads după încărcare -> nu afișăm nimic
+  if (!ads.length) {
+    return null;
   }
 
   // === COMPACT (mobil/tabletă) ===
@@ -121,9 +139,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
               target="_blank"
               rel="noopener noreferrer"
               className={`absolute inset-0 isolate transition-opacity duration-700 ease-out ${
-                active
-                  ? "opacity-100 pointer-events-auto"
-                  : "opacity-0 pointer-events-none"
+                active ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
               }`}
               title={ad.title || "Sponsor"}
               style={{

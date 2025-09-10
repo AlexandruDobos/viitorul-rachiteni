@@ -1,23 +1,25 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const PILL_LABELS = ['Echipă', 'Comunitate', 'Pasiune'];
-const INTERVAL_MS = 1800; // timp între pași
+const DELAY_STEP = 800; // delay între pilule în ms
 
 export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
-  const [step, setStep] = useState(0); // 0-3: 0=Echipă, 1=Comunitate, 2=Pasiune, 3=Toate
+  const [visibleCount, setVisibleCount] = useState(0);
 
-  // schimbă starea la fiecare INTERVAL_MS
+  // la încărcare, afișează progresiv pilulele, apoi oprește animația
   useEffect(() => {
-    const id = setInterval(() => {
-      setStep((s) => (s + 1) % 4);
-    }, INTERVAL_MS);
-    return () => clearInterval(id);
+    let timers = [];
+    PILL_LABELS.forEach((_, i) => {
+      timers.push(
+        setTimeout(() => {
+          setVisibleCount((c) => c + 1);
+        }, (i + 1) * DELAY_STEP)
+      );
+    });
+    return () => timers.forEach((t) => clearTimeout(t));
   }, []);
-
-  // ce pilule arătăm în funcție de step
-  const pillsToShow = step === 3 ? PILL_LABELS : [PILL_LABELS[step]];
 
   return (
     <div className="relative mx-auto mb-6 mt-2 max-w-4xl px-2">
@@ -30,9 +32,9 @@ export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
       <div className="flex items-center justify-center">
         <motion.h1
           key={text}
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
           className="text-center font-extrabold tracking-tight text-2xl md:text-3xl lg:text-4xl"
         >
           <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]">
@@ -45,30 +47,27 @@ export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
       <motion.div
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
-        transition={{ delay: 0.35, duration: 0.5, ease: 'easeOut' }}
+        transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
         className="origin-left mx-auto mt-2 h-1 w-40 md:w-56 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500"
         aria-hidden="true"
       />
 
-      {/* Pilule animate */}
+      {/* Pilule animate progresiv, apoi rămân afișate */}
       <div className="mx-auto mt-3 flex items-center justify-center gap-2 min-h-[32px]">
-        <AnimatePresence mode="sync">
-          {pillsToShow.map((label) => (
-            <motion.span
-              key={label}
-              initial={{ opacity: 0, y: 8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
-              className="px-3 py-1 rounded-full text-[11px] md:text-sm font-semibold
-                         text-white shadow-sm
-                         bg-gradient-to-r from-blue-600 to-indigo-500
-                         ring-1 ring-indigo-400/50"
-            >
-              {label}
-            </motion.span>
-          ))}
-        </AnimatePresence>
+        {PILL_LABELS.slice(0, visibleCount).map((label, idx) => (
+          <motion.span
+            key={label}
+            initial={{ opacity: 0, y: 12, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: idx * 0.15, duration: 0.5, ease: 'easeOut' }}
+            className="px-3 py-1 rounded-full text-[11px] md:text-sm font-semibold
+                       text-white shadow-md
+                       bg-gradient-to-r from-blue-600 to-indigo-500
+                       ring-1 ring-indigo-400/40"
+          >
+            {label}
+          </motion.span>
+        ))}
       </div>
     </div>
   );

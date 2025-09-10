@@ -36,7 +36,7 @@ const Label = ({ children, htmlFor, hint }) => (
 const Input = ({ id, className = '', ...props }) => (
   <input
     id={id}
-    className={`w-full h-11 px-3 border rounded-xl bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition ${className}`}
+    className={`w-full h-11 px-3 border rounded-xl bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition ${className}`}
     {...props}
   />
 );
@@ -44,7 +44,7 @@ const Input = ({ id, className = '', ...props }) => (
 const Select = ({ id, className = '', children, ...props }) => (
   <select
     id={id}
-    className={`w-full h-11 px-3 border rounded-xl bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500 transition ${className}`}
+    className={`w-full h-11 px-3 border rounded-xl bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500 transition ${className}`}
     {...props}
   >
     {children}
@@ -53,7 +53,7 @@ const Select = ({ id, className = '', children, ...props }) => (
 
 const SectionCard = ({ title, subtitle, children, footer, className = '' }) => (
   <div className={`bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 ${className}`}>
-    <div className="border-b rounded-t-2xl p-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
+    <div className="border-b rounded-t-2xl p-5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
     </div>
@@ -166,7 +166,7 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
   return (
     <div className="mt-4 border rounded-2xl overflow-hidden ring-1 ring-gray-100">
       {/* Header inline */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 border-b bg-gradient-to-r from-purple-600 to-fuchsia-600">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 border-b bg-gradient-to-r from-blue-700 to-indigo-600">
         <div className="w-full md:w-1/2">
           <Input
             type="text"
@@ -177,10 +177,10 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
           />
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${starting.length === 11 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}`}>
+          <Badge className={`${starting.length === 11 ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-700'}`}>
             {starting.length}/11 Titulari
           </Badge>
-          <Badge className="bg-amber-100 text-amber-800">{subs.length} Rezerve</Badge>
+          <Badge className="bg-sky-100 text-sky-800">{subs.length} Rezerve</Badge>
         </div>
         <div className="flex gap-2">
           <button onClick={onCancel} className="px-4 py-2 rounded-xl border border-white/30 bg-white/10 text-white hover:bg-white/20">
@@ -189,8 +189,8 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
           <button
             onClick={save}
             disabled={!canSave}
-            className={`px-4 py-2 rounded-xl text-white shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${
-              canSave ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-400 cursor-not-allowed'
+            className={`px-4 py-2 rounded-xl text-white shadow-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 ${
+              canSave ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
             }`}
           >
             Salvează line-up
@@ -222,7 +222,7 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
                       onClick={() => addStarter(p.id)}
                       disabled={isStarter || startersFull}
                       className={`px-2 py-1 rounded-lg text-sm text-white transition ${
-                        isStarter ? 'bg-emerald-400 cursor-not-allowed' : startersFull ? 'bg-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'
+                        isStarter ? 'bg-blue-400 cursor-not-allowed' : startersFull ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                     >
                       Titular
@@ -232,7 +232,7 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
                       onClick={() => addReserve(p.id)}
                       disabled={isSub}
                       className={`px-2 py-1 rounded-lg text-sm text-white transition ${
-                        isSub ? 'bg-amber-400 cursor-not-allowed' : 'bg-amber-500 hover:bg-amber-600'
+                        isSub ? 'bg-sky-400 cursor-not-allowed' : 'bg-sky-600 hover:bg-sky-700'
                       }`}
                     >
                       Rezervă
@@ -253,7 +253,7 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
           <div className="border-b lg:border-b-0 lg:border-l">
             <div className="flex items-center justify-between p-3 border-b bg-gray-50">
               <h4 className="font-medium">Titulari</h4>
-              <Badge className={`${starting.length === 11 ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-700'}`}>{starting.length}/11</Badge>
+              <Badge className={`${starting.length === 11 ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-700'}`}>{starting.length}/11</Badge>
             </div>
             <div className="p-3 space-y-2 max-h-[200px] md:max-h-[280px] overflow-auto">
               {starting.length === 0 && <div className="text-sm text-gray-500">Niciun titular adăugat încă.</div>}
@@ -262,14 +262,14 @@ const InlineLineupEditor = ({ match, players, initialStarting = [], initialSubs 
                 return <Chip key={id} text={p ? p.label : `ID ${id}`} onRemove={() => removeStarter(id)} title={p?.name} />;
               })}
             </div>
-            {startersFull && <div className="px-3 pb-2 text-xs text-emerald-700">Ai atins limita de 11 titulari.</div>}
+            {startersFull && <div className="px-3 pb-2 text-xs text-blue-700">Ai atins limita de 11 titulari.</div>}
           </div>
 
           {/* Rezerve */}
           <div className="lg:border-l">
             <div className="flex items-center justify-between p-3 border-b bg-gray-50">
               <h4 className="font-medium">Rezerve</h4>
-              <Badge className="bg-amber-100 text-amber-800">{subs.length}</Badge>
+              <Badge className="bg-sky-100 text-sky-800">{subs.length}</Badge>
             </div>
             <div className="p-3 space-y-2 max-h-[200px] md:max-h-[280px] overflow-auto">
               {subs.length === 0 && <div className="text-sm text-gray-500">Nicio rezervă adăugată încă.</div>}
@@ -542,7 +542,14 @@ const AddMatchForm = () => {
   }, [matches]);
 
   return (
-    <div className="space-y-8">
+    <div
+      className="space-y-8"
+      style={{
+        // ✅ Padding top only on mobile (under fixed admin menu); 0 on ≥1024px
+        paddingTop:
+          'clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))',
+      }}
+    >
       {/* FORM */}
       <SectionCard title={editId ? 'Editează Meci' : 'Adaugă Meci'} subtitle="Completează detaliile și salvează." className="">
         {error && (
@@ -668,12 +675,12 @@ const AddMatchForm = () => {
                 placeholder="Note interne (ex: absențe, starea terenului etc.)"
                 value={formData.notes}
                 onChange={handleChange}
-                className="w-full p-3 border rounded-xl min-h-[88px] bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-emerald-200 focus:border-emerald-500"
+                className="w-full p-3 border rounded-xl min-h-[88px] bg-white/90 shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-500"
               />
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl shadow-sm">
+              <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm">
                 {editId ? 'Salvează modificările' : 'Adaugă Meci'}
               </button>
               {editId && (
@@ -735,18 +742,18 @@ const AddMatchForm = () => {
 
                       {/* Actions */}
                       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto sm:justify-center">
-                        <button onClick={() => handleEdit(match)} className="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-xl text-sm shadow-sm">
+                        <button onClick={() => handleEdit(match)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm shadow-sm">
                           Editează
                         </button>
                         <button
                           onClick={() => setSelectedMatchIdForStats(selectedMatchIdForStats === match.id ? null : match.id)}
-                          className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm shadow-sm"
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm shadow-sm"
                         >
                           Statistici
                         </button>
                         <button
                           onClick={() => toggleLineup(match.id)}
-                          className={`text-white px-4 py-2 rounded-xl text-sm shadow-sm ${isLineupOpen ? 'bg-fuchsia-700' : 'bg-fuchsia-600 hover:bg-fuchsia-700'}`}
+                          className={`text-white px-4 py-2 rounded-xl text-sm shadow-sm ${isLineupOpen ? 'bg-sky-700' : 'bg-sky-600 hover:bg-sky-700'}`}
                         >
                           {isLineupOpen ? 'Ascunde Line-up' : 'Line-up'}
                         </button>

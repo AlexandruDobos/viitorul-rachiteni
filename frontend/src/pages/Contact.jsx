@@ -102,15 +102,14 @@ const Contact = () => {
 
         {/* Conținut */}
         <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-5">
-          {/* Col stânga – card info / canale rapide */}
+          {/* Col stânga – info */}
           <aside className="lg:col-span-2">
             <div className="h-full rounded-2xl border border-gray-100 bg-gray-50 p-5">
               <h2 className="text-base md:text-lg font-semibold">
                 ACS Viitorul Răchiteni
               </h2>
               <p className="mt-2 text-sm text-gray-700">
-                Ideal pentru parteneriate, presă, meciuri amicale sau întrebări
-                despre club.
+                Ideal pentru parteneriate, presă, meciuri amicale sau întrebări despre club.
               </p>
 
               <ul className="mt-4 space-y-2 text-sm text-gray-700">
@@ -124,29 +123,8 @@ const Contact = () => {
                 </li>
               </ul>
 
-              {/* „Carduri” de contact rapide (fără date sensibile hardcodate) */}
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-xl border border-indigo-200 bg-white p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-600 font-semibold">
-                    Email
-                  </div>
-                  <div className="mt-1 text-sm text-gray-800">
-                    Folosește formularul alăturat
-                  </div>
-                </div>
-                <div className="rounded-xl border border-indigo-200 bg-white p-3">
-                  <div className="text-xs uppercase tracking-wide text-indigo-600 font-semibold">
-                    Social
-                  </div>
-                  <div className="mt-1 text-sm text-gray-800">
-                    Urmărește-ne pe rețelele sociale ale clubului
-                  </div>
-                </div>
-              </div>
-
               <p className="mt-5 text-[11px] leading-5 text-gray-500">
-                Trimițând mesajul, ești de acord cu prelucrarea datelor în scopul
-                soluționării cererii tale.
+                Trimițând mesajul, ești de acord cu prelucrarea datelor în scopul soluționării cererii tale.
               </p>
             </div>
           </aside>
@@ -154,7 +132,7 @@ const Contact = () => {
           {/* Col dreapta – formular */}
           <section className="lg:col-span-3">
             {/* feedback global */}
-            <div aria-live="polite" className="space-y-3 mb-2">
+            <div aria-live="polite" className="mb-2 space-y-3">
               {state.sent && (
                 <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
                   Mesajul a fost trimis cu succes. Mulțumim!
@@ -185,9 +163,10 @@ const Contact = () => {
                     placeholder={UI.messagePlaceholder}
                     aria-invalid={invalid.message || undefined}
                     className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                      ${invalid.message
-                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                      ${
+                        invalid.message
+                          ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                          : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                       }`}
                   />
                   <div className="pointer-events-none absolute bottom-1 right-2 text-[11px] text-gray-400">
@@ -195,9 +174,7 @@ const Contact = () => {
                   </div>
                 </div>
                 {invalid.message && (
-                  <p className="mt-1 text-xs text-rose-600">
-                    Te rugăm să scrii un mesaj.
-                  </p>
+                  <p className="mt-1 text-xs text-rose-600">Te rugăm să scrii un mesaj.</p>
                 )}
               </div>
 
@@ -216,9 +193,10 @@ const Contact = () => {
                   placeholder={UI.nameLabel}
                   aria-invalid={invalid.name || undefined}
                   className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                    ${invalid.name
-                      ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                      : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                    ${
+                      invalid.name
+                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                     }`}
                 />
                 {invalid.name && (
@@ -228,8 +206,8 @@ const Contact = () => {
                 )}
               </div>
 
-              {/* Email & Telefon – compact, fără suprapuneri */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Email & Telefon */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     {UI.emailLabel} <span className="text-indigo-600">*</span>
@@ -244,9 +222,10 @@ const Contact = () => {
                     placeholder="email@exemplu.com"
                     aria-invalid={invalid.email || undefined}
                     className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                      ${invalid.email
-                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                      ${
+                        invalid.email
+                          ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                          : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                       }`}
                   />
                   {invalid.email && (
@@ -273,10 +252,9 @@ const Contact = () => {
               </div>
 
               {/* CTA */}
-              <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
+              <div className="pt-2 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-gray-500">
-                  Câmpurile marcate cu <span className="text-indigo-600">*</span> sunt
-                  obligatorii.
+                  Câmpurile marcate cu <span className="text-indigo-600">*</span> sunt obligatorii.
                 </div>
 
                 <button

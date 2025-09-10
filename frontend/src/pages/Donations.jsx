@@ -83,7 +83,7 @@ export default function Donations() {
   const presetActive = (v) => Number(amount.replace(',', '.')) === v;
 
   return (
-    <div className="px-4 py-6">
+    <div className="px-4">
       {/* tiny CSS for animated CTA sheen */}
       <style>{`
         @keyframes btn-sheen {

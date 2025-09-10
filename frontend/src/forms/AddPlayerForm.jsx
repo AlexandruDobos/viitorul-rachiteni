@@ -1,6 +1,45 @@
+// ==============================
+// AddPlayerForm.jsx — blue-only refined UI
+// ==============================
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
+
+// Small UI helpers (blue-focused)
+const SectionCard = ({ title, subtitle, children, footer }) => (
+  <div className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+    <div className="p-5 border-b bg-gradient-to-r from-blue-700 to-blue-900 text-white">
+      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
+    </div>
+    <div className="p-6">{children}</div>
+    {footer && <div className="border-t p-4 bg-gray-50">{footer}</div>}
+  </div>
+);
+
+const Label = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-900 mb-1">{children}</label>
+);
+
+const Input = (props) => (
+  <input
+    {...props}
+    className={`w-full h-11 px-3 border rounded-xl bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-600 transition ${props.className || ''}`}
+  />
+);
+
+const Select = ({ children, ...props }) => (
+  <select
+    {...props}
+    className={`w-full h-11 px-3 border rounded-xl bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-600 transition ${props.className || ''}`}
+  >
+    {children}
+  </select>
+);
+
+const Badge = ({ children, className = '' }) => (
+  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1 ring-inset ring-black/5 ${className}`}>{children}</span>
+);
 
 const AddPlayerForm = () => {
   const [formData, setFormData] = useState({
@@ -8,7 +47,7 @@ const AddPlayerForm = () => {
     position: '',
     shirtNumber: '',
     profileImageUrl: defaultAvatar,
-    isActive: true, // nou: implicit activ
+    isActive: true,
   });
   const [players, setPlayers] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -18,37 +57,22 @@ const AddPlayerForm = () => {
   const fileRef = useRef(null);
 
   // preview control
-  const [preview, setPreview] = useState(null); // local blob: URL
-  const [showImg, setShowImg] = useState(true); // randăm <img> by default
+  const [preview, setPreview] = useState(null); // local blob URL
+  const [showImg, setShowImg] = useState(true); // render <img> by default
 
-  // keep showImg in sync with available source
   useEffect(() => {
     setShowImg(Boolean(preview || formData.profileImageUrl));
   }, [preview, formData.profileImageUrl]);
 
-  // revoke blob URLs to avoid leaks
-  useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   // ---- helpers pentru R2 (folder=players)
   async function presignForR2(file, folder = 'players') {
-    const q = new URLSearchParams({
-      filename: file.name,
-      contentType: file.type || 'application/octet-stream',
-      folder,
-    });
-
-    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    const q = new URLSearchParams({ filename: file.name, contentType: file.type || 'application/octet-stream', folder });
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, { method: 'GET', credentials: 'include' });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
-    const uploadUrl = data.uploadUrl;
-    const publicUrl = data.publicUrl;
+    const { uploadUrl, publicUrl } = data || {};
     if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
     return { uploadUrl, publicUrl };
   }
@@ -62,58 +86,31 @@ const AddPlayerForm = () => {
   }
 
   const fetchPlayers = async () => {
-    // aducem TOȚI jucătorii (inclusiv inactivi), ca să putem reactiva din UI
     const res = await fetch(`${BASE_URL}/app/players?activeOnly=false`);
-    if (!res.ok) {
-      alert('Eroare la listare jucători');
-      return;
-    }
+    if (!res.ok) return alert('Eroare la listare jucători');
     const data = await res.json();
-    // asigurăm fallback pentru isActive (în caz că vechile înregistrări nu au coloana populată)
-    setPlayers((Array.isArray(data) ? data : []).map(p => ({ ...p, isActive: p.isActive ?? true })));
+    setPlayers((Array.isArray(data) ? data : []).map((p) => ({ ...p, isActive: p.isActive ?? true })));
   };
 
-  useEffect(() => {
-    fetchPlayers();
-  }, []);
+  useEffect(() => { fetchPlayers(); }, []);
 
-  // suportă și checkbox (isActive)
   const handleChange = (e) => {
     const { name, type, value, checked } = e.target;
-    setFormData((p) => ({
-      ...p,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setFormData((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = editId ? 'PUT' : 'POST';
-    const url = editId
-      ? `${BASE_URL}/app/players/${editId}`
-      : `${BASE_URL}/app/players`;
+    const url = editId ? `${BASE_URL}/app/players/${editId}` : `${BASE_URL}/app/players`;
 
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-    });
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
 
     if (res.ok) {
       await fetchPlayers();
-      // resetare: păstrăm implicit avatarul anonim + activ
-      setFormData({
-        name: '',
-        position: '',
-        shirtNumber: '',
-        profileImageUrl: defaultAvatar,
-        isActive: true,
-      });
+      setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar, isActive: true });
       setEditId(null);
-      if (preview) {
-        URL.revokeObjectURL(preview);
-        setPreview(null);
-      }
+      if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
       setShowImg(true);
     } else {
       alert('Eroare la salvare');
@@ -126,36 +123,23 @@ const AddPlayerForm = () => {
       position: player.position || '',
       shirtNumber: player.shirtNumber || '',
       profileImageUrl: player.profileImageUrl || defaultAvatar,
-      isActive: player.isActive ?? true, // nou
+      isActive: player.isActive ?? true,
     });
     setEditId(player.id);
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
   };
 
-  // În loc de ștergere: toggle activ/inactiv
   const toggleActive = async (player) => {
     const toActivate = !player.isActive;
-    const ok = confirm(
-      toActivate
-        ? `Activezi jucătorul "${player.name}"?`
-        : `Dezactivezi jucătorul "${player.name}"?`
-    );
+    const ok = confirm(toActivate ? `Activezi jucătorul "${player.name}"?` : `Dezactivezi jucătorul "${player.name}"?`);
     if (!ok) return;
 
     const endpoint = toActivate ? 'activate' : 'deactivate';
-    const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, {
-      method: 'PATCH',
-    });
+    const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, { method: 'PATCH' });
     if (res.ok) {
       await fetchPlayers();
-      // dacă edităm fix acest jucător, sincronizăm și formularul
-      if (editId === player.id) {
-        setFormData((p) => ({ ...p, isActive: toActivate }));
-      }
+      if (editId === player.id) setFormData((p) => ({ ...p, isActive: toActivate }));
     } else {
       alert('Operația a eșuat');
     }
@@ -166,10 +150,9 @@ const AddPlayerForm = () => {
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = ''; // reset input
+    e.target.value = '';
     if (!file) return;
 
-    // arată imediat preview local
     if (preview) URL.revokeObjectURL(preview);
     const local = URL.createObjectURL(file);
     setPreview(local);
@@ -179,12 +162,10 @@ const AddPlayerForm = () => {
       setUploadingImg(true);
       const { uploadUrl, publicUrl } = await presignForR2(file, 'players');
       await putFileToR2(uploadUrl, file);
-      // setăm URL-ul public în formular (se va salva în DB)
       setFormData((p) => ({ ...p, profileImageUrl: publicUrl }));
     } catch (err) {
       console.error(err);
       alert(err.message || 'Încărcarea imaginii a eșuat.');
-      // revenim la avatarul implicit
       setPreview(null);
       setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
       setShowImg(true);
@@ -194,191 +175,129 @@ const AddPlayerForm = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* input ascuns pentru fișier */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* FORMULAR */}
-      <form onSubmit={handleSubmit} className="bg-white shadow rounded p-6 space-y-4">
-        <h2 className="text-lg font-semibold">
-          {editId ? 'Editează Jucător' : 'Adaugă Jucător'}
-        </h2>
-
-        <input
-          name="name"
-          placeholder="Nume"
-          value={formData.name}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        />
-
-        <select
-          name="position"
-          value={formData.position}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          required
-        >
-          <option value="">Selectează poziția</option>
-          <option value="portar">Portar</option>
-          <option value="fundas">Fundaș</option>
-          <option value="mijlocas">Mijlocaș</option>
-          <option value="atacant">Atacant</option>
-        </select>
-
-        <input
-          name="shirtNumber"
-          type="number"
-          placeholder="Număr tricou"
-          value={formData.shirtNumber}
-          onChange={handleChange}
-          className="w-full border p-2 rounded"
-          min={0}
-        />
-
-        {/* Poză profil: URL + Upload în R2 */}
-        <div className="grid gap-2">
-          <label className="text-sm font-medium">Poză profil</label>
-          <div className="flex gap-2">
-            <input
-              name="profileImageUrl"
-              placeholder="Link poză (sau încarcă mai jos)"
-              value={formData.profileImageUrl}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-            <button
-              type="button"
-              onClick={onChooseImage}
-              disabled={uploadingImg}
-              className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-              title="Încarcă imagine în R2"
-            >
-              {uploadingImg ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-dashed" />
-                  Upload…
-                </>
-              ) : (
-                <>Upload</>
-              )}
-            </button>
+      <SectionCard title={editId ? 'Editează Jucător' : 'Adaugă Jucător'} subtitle="Completează detaliile jucătorului și salvează.">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nume</Label>
+            <Input id="name" name="name" placeholder="Nume" value={formData.name} onChange={handleChange} required />
           </div>
 
-          {formData.profileImageUrl && (
-            <div className="mt-1 text-xs text-gray-600 truncate">
-              Salvat:&nbsp;
-              <a
-                href={formData.profileImageUrl}
-                className="underline"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {formData.profileImageUrl}
-              </a>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-1">
+              <Label htmlFor="position">Poziție</Label>
+              <Select id="position" name="position" value={formData.position} onChange={handleChange} required>
+                <option value="">Selectează poziția</option>
+                <option value="portar">Portar</option>
+                <option value="fundas">Fundaș</option>
+                <option value="mijlocas">Mijlocaș</option>
+                <option value="atacant">Atacant</option>
+              </Select>
             </div>
-          )}
+            <div className="md:col-span-1">
+              <Label htmlFor="shirtNumber">Număr tricou</Label>
+              <Input id="shirtNumber" name="shirtNumber" type="number" min={0} placeholder="0" value={formData.shirtNumber} onChange={handleChange} />
+            </div>
 
-          {/* Preview sigur */}
-          <div className="mt-2">
-            {showImg ? (
-              <img
-                src={preview || formData.profileImageUrl || defaultAvatar}
-                alt=""
-                className="w-16 h-16 rounded-full object-cover border"
-                onError={() => {
-                  setPreview(null);
-                  setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
-                  setShowImg(true);
-                }}
-              />
-            ) : (
-              <img
-                src={defaultAvatar}
-                alt=""
-                className="w-16 h-16 rounded-full object-cover border"
-              />
+            <div className="md:col-span-1">
+              <Label>Stare</Label>
+              <div className="h-11 flex items-center gap-2">
+                <input type="checkbox" id="isActive" name="isActive" checked={!!formData.isActive} onChange={handleChange} className="h-4 w-4" />
+                <label htmlFor="isActive" className="text-sm">Jucător activ</label>
+              </div>
+            </div>
+          </div>
+
+          {/* Poză profil: URL + Upload în R2 */}
+          <div className="grid gap-2">
+            <Label htmlFor="profileImageUrl">Poză profil</Label>
+            <div className="flex gap-2">
+              <Input id="profileImageUrl" name="profileImageUrl" placeholder="Link poză (sau încarcă mai jos)" value={formData.profileImageUrl} onChange={handleChange} />
+              <button type="button" onClick={onChooseImage} disabled={uploadingImg} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-60" title="Încarcă imagine în R2">
+                {uploadingImg ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                    Upload…
+                  </>
+                ) : (
+                  <>Upload</>
+                )}
+              </button>
+            </div>
+
+            {formData.profileImageUrl && (
+              <div className="mt-1 text-xs text-gray-600 truncate">
+                Salvat:&nbsp;
+                <a href={formData.profileImageUrl} className="underline text-blue-700 hover:text-blue-900" target="_blank" rel="noreferrer">
+                  {formData.profileImageUrl}
+                </a>
+              </div>
+            )}
+
+            {/* Preview */}
+            <div className="mt-2">
+              {showImg ? (
+                <img
+                  src={preview || formData.profileImageUrl || defaultAvatar}
+                  alt=""
+                  className="w-20 h-20 rounded-full object-cover border"
+                  onError={() => {
+                    setPreview(null);
+                    setFormData((p) => ({ ...p, profileImageUrl: defaultAvatar }));
+                    setShowImg(true);
+                  }}
+                />
+              ) : (
+                <img src={defaultAvatar} alt="" className="w-20 h-20 rounded-full object-cover border" />
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 pt-2">
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm">
+              {editId ? 'Salvează modificările' : 'Adaugă'}
+            </button>
+            {editId && (
+              <button type="button" onClick={() => { setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar, isActive: true }); setEditId(null); }} className="border px-5 py-2.5 rounded-xl hover:bg-gray-50">
+                Anulează editarea
+              </button>
             )}
           </div>
-        </div>
-
-        {/* Nou: status activ/inactiv */}
-        <label className="inline-flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="isActive"
-            checked={!!formData.isActive}
-            onChange={handleChange}
-            className="h-4 w-4"
-          />
-          <span>Jucător activ</span>
-        </label>
-
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">
-          {editId ? 'Salvează modificările' : 'Adaugă'}
-        </button>
-      </form>
+        </form>
+      </SectionCard>
 
       {/* LISTĂ */}
-      <div className="bg-white shadow rounded p-4">
-        <h3 className="text-lg font-semibold mb-2">Jucători existenți</h3>
-        <ul className="space-y-2">
+      <SectionCard title="Jucători existenți" subtitle="Editează sau activează/dezactivează jucători.">
+        <ul className="space-y-3">
           {players.map((player) => {
             const inactive = player.isActive === false;
             return (
-              <li
-                key={player.id}
-                className={`flex items-center justify-between border p-2 rounded ${
-                  inactive ? 'opacity-75' : ''
-                }`}
-              >
+              <li key={player.id} className={`flex items-center justify-between border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition ${inactive ? 'opacity-80' : ''}`}>
                 <div className="flex items-center gap-3">
                   <img
                     src={player.profileImageUrl || defaultAvatar}
                     alt={player.name || ''}
-                    className="w-10 h-10 rounded-full object-cover border"
-                    onError={(e) => {
-                      e.currentTarget.src = defaultAvatar;
-                    }}
+                    className="w-12 h-12 rounded-full object-cover border"
+                    onError={(e) => { e.currentTarget.src = defaultAvatar; }}
                   />
                   <div>
-                    <div className={`font-semibold ${inactive ? 'line-through text-gray-500' : ''}`}>
-                      {player.name}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {player.position} #{player.shirtNumber}
-                    </div>
+                    <div className={`font-semibold ${inactive ? 'line-through text-gray-500' : 'text-gray-900'}`}>{player.name}</div>
+                    <div className="text-sm text-gray-600">{player.position} {player.shirtNumber ? `#${player.shirtNumber}` : ''}</div>
                     {!inactive ? (
-                      <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                        Activ
-                      </span>
+                      <Badge className="mt-1 bg-blue-100 text-blue-800">Activ</Badge>
                     ) : (
-                      <span className="mt-0.5 inline-block text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-700">
-                        Inactiv
-                      </span>
+                      <Badge className="mt-1 bg-gray-200 text-gray-700">Inactiv</Badge>
                     )}
                   </div>
                 </div>
 
-                <div className="space-x-2">
-                  <button
-                    onClick={() => handleEdit(player)}
-                    className="text-blue-600 text-sm"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => toggleActive(player)}
-                    className={`text-sm ${inactive ? 'text-emerald-700' : 'text-red-600'}`}
-                    title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}
-                  >
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(player)} className="px-3 py-1.5 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm">Edit</button>
+                  <button onClick={() => toggleActive(player)} className={`px-3 py-1.5 rounded-lg text-sm shadow-sm ${inactive ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`} title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}>
                     {inactive ? 'Activează' : 'Dezactivează'}
                   </button>
                 </div>
@@ -386,7 +305,7 @@ const AddPlayerForm = () => {
             );
           })}
         </ul>
-      </div>
+      </SectionCard>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-// AddTeamForm.jsx — refined professional UI, blue gradient accents only
+// AddTeamForm.jsx — refined professional UI, blue gradient accents only (with mobile-only top offset)
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 import defaultLogo from '../assets/unknown-team-logo.png';
@@ -181,7 +181,14 @@ const AddTeamForm = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div
+      className="space-y-8"
+      style={{
+        // ✅ Padding sus doar pe mobil (sub meniul fix); 0 pe ≥1024px
+        paddingTop:
+          'clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))',
+      }}
+    >
       {/* input ascuns pentru upload logo */}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 

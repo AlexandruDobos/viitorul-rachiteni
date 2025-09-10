@@ -26,21 +26,9 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
             from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
           }
-          /* === ANIMAȚII NOI === */
-          @keyframes ads-shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-4px); }
-            40% { transform: translateX(4px); }
-            60% { transform: translateX(-3px); }
-            80% { transform: translateX(3px); }
-          }
           @keyframes ads-glowPulse {
-            0%, 100% { box-shadow: 0 0 4px rgba(59,130,246,0.5); }
-            50% { box-shadow: 0 0 18px rgba(59,130,246,0.9); }
-          }
-          @keyframes ads-flashBorder {
-            0%, 100% { border-color: rgba(99,102,241,0.3); }
-            50% { border-color: rgba(99,102,241,1); }
+            0%, 100% { box-shadow: 0 0 4px rgba(59,130,246,0.4); }
+            50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
           }
           @keyframes ads-mobile-zoom {
             0% { transform: scale(0.95); opacity: 0; }
@@ -169,7 +157,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
           rel="noopener noreferrer"
           className="group block rounded-xl overflow-hidden border bg-white shadow-lg hover:shadow-2xl transition-transform"
           style={{
-            animation: `ads-fade-in 400ms ease-out both, ads-glowPulse 3s ease-in-out infinite, ads-flashBorder 2.5s linear infinite, ads-shake 8s ease-in-out infinite`,
+            animation: `ads-fade-in 400ms ease-out both, ads-glowPulse 3s ease-in-out infinite`,
             animationDelay: `${idx * 100}ms`,
           }}
           title={ad.title || "Sponsor"}
@@ -179,13 +167,9 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
               src={ad.imageUrl}
               alt={ad.title || "publicitate"}
               className="w-full h-auto will-change-transform transition-transform duration-700 ease-in-out group-hover:scale-105"
-              style={{
-                animation: `ads-glowPulse 3s ease-in-out infinite, ads-flash 5s linear infinite`,
-              }}
               loading="lazy"
               decoding="async"
             />
-
             <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity bg-indigo-900" />
           </div>
         </a>

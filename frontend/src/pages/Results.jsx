@@ -124,7 +124,7 @@ const Results = () => {
           className="text-center font-extrabold tracking-tight text-2xl sm:text-3xl"
         >
           <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
-            Rezultate
+            REZULTATE
           </span>
         </motion.h1>
 

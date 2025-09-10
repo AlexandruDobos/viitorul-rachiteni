@@ -19,10 +19,10 @@ import logo from "../assets/logo.png";
 const AdminPanel = () => {
   const navigate = useNavigate();
 
-  // ce secțiune e activă
+  // secțiune activă
   const [activeView, setActiveView] = useState("add-announcement");
 
-  // sidebar desktop: colapsat/expandat (persistă în localStorage)
+  // sidebar desktop: colapsat/expandat (persistă)
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem("adminSidebarCollapsed") === "1";
@@ -30,7 +30,6 @@ const AdminPanel = () => {
       return false;
     }
   });
-
   useEffect(() => {
     try {
       localStorage.setItem("adminSidebarCollapsed", collapsed ? "1" : "0");
@@ -83,7 +82,7 @@ const AdminPanel = () => {
     }
   };
 
-  // pictograme simple inline
+  // pictograme simple
   const Icon = ({ name }) => {
     const base = "h-5 w-5 flex-shrink-0";
     switch (name) {
@@ -156,12 +155,6 @@ const AdminPanel = () => {
             <path d="M3 4h18v16H3zM3 10h18M9 4v16" />
           </svg>
         );
-      case "app":
-        return (
-          <svg className={base} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />
-          </svg>
-        );
       default:
         return null;
     }
@@ -189,7 +182,7 @@ const AdminPanel = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-50">
-      {/* ============== MOBILE TOP BAR ============== */}
+      {/* ===== MOBILE TOP BAR ===== */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-30 border-b bg-white">
         <div className="flex items-center justify-between px-4 py-2">
           <button
@@ -197,21 +190,28 @@ const AdminPanel = () => {
             className="flex items-center gap-2"
             aria-label="Mergi la site-ul public"
           >
-            <img
-              src={logo}
-              alt="ACS Viitorul Răchiteni"
-              className="h-10 w-auto object-contain"
-            />
+            <img src={logo} alt="ACS Viitorul Răchiteni" className="h-10 w-auto object-contain" />
             <span className="text-sm font-semibold">ACSVR — Admin</span>
           </button>
 
+          {/* FIX: icon cu stroke, altfel nu se vede pe unele browsere */}
           <button
             className="p-2 rounded-md hover:bg-gray-100"
             onClick={() => setMobileOpen(true)}
             aria-label="Deschide meniul"
           >
-            <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="h-6 w-6"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h16" />
             </svg>
           </button>
         </div>
@@ -235,26 +235,22 @@ const AdminPanel = () => {
                 className="rounded-md p-2 hover:bg-gray-100"
                 aria-label="Închide meniul"
               >
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-6 w-6"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 18L18 6" />
+                  <path d="M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             <nav className="mt-3 space-y-2">
-              {/* Go to App */}
-              <button
-                onClick={() => {
-                  setMobileOpen(false);
-                  navigate("/");
-                }}
-                className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white shadow"
-              >
-                <Icon name="app" />
-                <span className="truncate">Go to App</span>
-              </button>
-
-              {/* Items */}
               {menuItems.map(({ key, label }) => {
                 const iconName =
                   key === "add-announcement"
@@ -292,9 +288,7 @@ const AdminPanel = () => {
                     }}
                     className={[
                       "w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition",
-                      active
-                        ? "bg-gray-900 text-white"
-                        : "hover:bg-gray-100 text-gray-800",
+                      active ? "bg-gray-900 text-white" : "hover:bg-gray-100 text-gray-800",
                     ].join(" ")}
                   >
                     <Icon name={iconName} />
@@ -310,30 +304,23 @@ const AdminPanel = () => {
       {/* spacer pentru top bar pe mobil */}
       <div className="lg:hidden h-[52px] w-px" aria-hidden />
 
-      {/* ============== DESKTOP SIDEBAR ============== */}
+      {/* ===== DESKTOP SIDEBAR ===== */}
       <aside
         className={[
           "hidden lg:flex lg:flex-col bg-white border-r border-gray-200 transition-[width] duration-300",
           collapsed ? "w-16" : "w-64",
         ].join(" ")}
       >
-        {/* Header sidebar */}
+        {/* Header sidebar cu logo → home */}
         <div className="flex items-center justify-between gap-2 px-3 py-3 border-b">
           <button
             onClick={() => navigate("/")}
             className="flex items-center gap-2"
             title="Mergi la site-ul public"
           >
-            <img
-              src={logo}
-              alt="ACS Viitorul Răchiteni"
-              className="h-10 w-auto object-contain"
-            />
-            {!collapsed && (
-              <span className="font-semibold text-sm">ACSVR — Admin</span>
-            )}
+            <img src={logo} alt="ACS Viitorul Răchiteni" className="h-10 w-auto object-contain" />
+            {!collapsed && <span className="font-semibold text-sm">ACSVR — Admin</span>}
           </button>
-
         </div>
 
         {/* Control collapse */}
@@ -358,18 +345,6 @@ const AdminPanel = () => {
 
         {/* Meniu */}
         <nav className="mt-2 px-2 space-y-1 overflow-y-auto">
-          {/* Go to App */}
-          <button
-            onClick={() => navigate("/")}
-            className="w-full flex items-center gap-3 rounded-lg px-3 py-2 text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white shadow hover:opacity-95"
-            title="Go to App"
-          >
-            <Icon name="app" />
-            {!collapsed && <span className="truncate">Go to App</span>}
-          </button>
-
-          <div className="pt-2" />
-
           {menuItems.map(({ key, label }) => {
             const iconName =
               key === "add-announcement"
@@ -400,16 +375,13 @@ const AdminPanel = () => {
           })}
         </nav>
 
-        {/* footer sidebar (opțional) */}
         <div className="mt-auto p-3 text-[11px] text-gray-500">
           {!collapsed ? "Panou administrare" : "Admin"}
         </div>
       </aside>
 
-      {/* ============== CONȚINUT ============== */}
-      <main className="flex-1 p-4 md:p-8">
-        {renderContent()}
-      </main>
+      {/* ===== CONȚINUT ===== */}
+      <main className="flex-1 p-4 md:p-8">{renderContent()}</main>
     </div>
   );
 };

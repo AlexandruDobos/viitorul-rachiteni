@@ -170,7 +170,18 @@ function formatDateForList(iso) {
 
 /* ====================== Main component ====================== */
 function AddAnnouncementForm({ onSave }) {
+  // ✅ Mobile-only offset under fixed admin top bar
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 1024 : true
+  );
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const [title, setTitle] = useState("");
+  the
   const [publishedAt, setPublishedAt] = useState(
     new Date().toISOString().slice(0, 16)
   );
@@ -399,7 +410,10 @@ function AddAnnouncementForm({ onSave }) {
 
   /* ============================ UI ============================ */
   return (
-    <div className="space-y-6">
+    <div
+      className="space-y-6 lg:pt-0"
+      style={{ paddingTop: isMobile ? "calc(env(safe-area-inset-top, 0px) + 56px)" : 0 }}
+    >
       {/* hidden inputs for uploads */}
       <input ref={coverFileRef} type="file" accept="image/*" className="hidden" onChange={handleCoverFile} />
       <input ref={inlineFileRef} type="file" accept="image/*" className="hidden" onChange={handleInlineFile} />
@@ -434,7 +448,7 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* Row 2: Date (small) + Cover URL + Upload (aligned) */}
+          {/* Row 2: Date + Cover */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
             {/* date small */}
             <div className="md:col-span-3">

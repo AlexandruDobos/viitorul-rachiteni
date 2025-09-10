@@ -121,13 +121,13 @@ const Squad = () => {
           </span>
         </motion.h1>
 
-        <motion.div
-          initial={{ scaleX: 0 }}
-          animate={{ scaleX: 1 }}
-          transition={{ delay: 0.25, duration: 0.5, ease: 'easeOut' }}
-          className="origin-left mx-auto mt-2 h-1 w-32 md:w-44 rounded-full bg-gradient-to-r from-emerald-500 via-sky-500 to-indigo-500"
-          aria-hidden="true"
-        />
+      <motion.div
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: 1 }}
+        transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
+        className="origin-left mx-auto mt-2 h-1 w-40 md:w-56 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500"
+        aria-hidden="true"
+      />
       </div>
       {/* ===== /TITLU ANIMAT ===== */}
 

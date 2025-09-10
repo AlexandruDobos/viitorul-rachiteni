@@ -110,7 +110,7 @@ export default function Footer() {
               )}
             </div>
 
-            {/* Quick links */}
+            {/* Quick links + Legal */}
             <nav className="w-full max-w-sm">
               <h3 className="text-sm font-semibold text-gray-900">Navigație</h3>
               <ul className="mt-3 space-y-2 text-sm text-gray-700/90">
@@ -119,6 +119,16 @@ export default function Footer() {
                 <li><Link className="hover:text-gray-900" to="/results">Rezultate</Link></li>
                 <li><Link className="hover:text-gray-900" to="/standings">Clasament</Link></li>
                 <li><Link className="hover:text-gray-900" to="/contact">Contact</Link></li>
+
+                {/* LEGAL group */}
+                <li className="pt-3 mt-3 border-t border-indigo-100/60">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    Legal
+                  </span>
+                </li>
+                <li><Link className="hover:text-gray-900" to="/termeni">Termeni & Condiții</Link></li>
+                <li><Link className="hover:text-gray-900" to="/confidentialitate">Confidențialitate</Link></li>
+                <li><Link className="hover:text-gray-900" to="/cookie-uri">Cookie-uri</Link></li>
               </ul>
             </nav>
 

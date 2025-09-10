@@ -28,16 +28,18 @@ import AnnouncementsSection from './components/AnnouncementsSection';
 import DonationsSuccess from './pages/DonationsSuccess';
 import DonationsCancel from './pages/DonationsCancel';
 import ScrollToTop from './components/ScrollToTop';
-// >>> NOU: import NextMatchSection
 import NextMatchSection from './components/NextMatchSection';
-
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Terms from './pages/Terms';
+import Cookies from './pages/Cookies';
+import CookieBanner from './components/CookieBanner';
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <Router>
           <RouteMetaManager />
-          <ScrollToTop /> 
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col bg-white">
             <Navbar />
 
@@ -96,6 +98,9 @@ const App = () => {
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/matches/:matchId" element={<MatchDetails />} />
                     <Route path="/players/:playerId" element={<PlayerDetails />} />
+                    <Route path="/confidentialitate" element={<PrivacyPolicy />} />
+                    <Route path="/termeni" element={<Terms />} />
+                    <Route path="/cookie-uri" element={<Cookies />} />
                     <Route
                       path="/admin"
                       element={
@@ -121,6 +126,7 @@ const App = () => {
                 </aside>
               </div>
             </div>
+            <CookieBanner />
             <Footer />
           </div>
         </Router>

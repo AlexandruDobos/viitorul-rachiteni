@@ -27,7 +27,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import AnnouncementsSection from './components/AnnouncementsSection';
 import DonationsSuccess from './pages/DonationsSuccess';
 import DonationsCancel from './pages/DonationsCancel';
-
+import ScrollToTop from './components/ScrollToTop';
 // >>> NOU: import NextMatchSection
 import NextMatchSection from './components/NextMatchSection';
 
@@ -37,6 +37,7 @@ const App = () => {
       <AuthProvider>
         <Router>
           <RouteMetaManager />
+          <ScrollToTop /> 
           <div className="min-h-screen flex flex-col bg-white">
             <Navbar />
 

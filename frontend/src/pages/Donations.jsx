@@ -241,7 +241,7 @@ export default function Donations() {
                       value={donorName}
                       onChange={(e) => setDonorName(e.target.value)}
                       className="mt-1 w-full min-w-0 rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
-                      placeholder="Prenume Nume"
+                      placeholder="Nume"
                     />
                   </div>
                   <div className="min-w-0">

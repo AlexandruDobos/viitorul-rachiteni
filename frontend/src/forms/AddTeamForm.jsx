@@ -1,11 +1,58 @@
+// AddTeamForm.jsx — refined professional UI, blue gradient accents only
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
-// imagine implicită locală pentru echipă
 import defaultLogo from '../assets/unknown-team-logo.png';
 
+/** ------------------ Small UI helpers (blue-only) ------------------ */
+const SectionCard = ({ title, subtitle, children, footer }) => (
+  <div className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+    <div className="p-5 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
+      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
+    </div>
+    <div className="p-6">{children}</div>
+    {footer && <div className="border-t p-4 bg-gray-50">{footer}</div>}
+  </div>
+);
+
+const Label = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-900 mb-1">{children}</label>
+);
+
+const Input = (props) => (
+  <input
+    {...props}
+    className={`w-full h-11 px-3 border rounded-xl bg-white shadow-sm focus:outline-none focus:ring-4 focus:ring-blue-200 focus:border-blue-600 transition ${props.className || ''}`}
+  />
+);
+
+const ButtonPrimary = ({ children, className = '', ...props }) => (
+  <button
+    {...props}
+    className={`inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 px-5 py-2.5 text-sm text-white shadow-sm transition hover:opacity-95 disabled:opacity-60 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const ButtonGhost = ({ children, className = '', ...props }) => (
+  <button
+    {...props}
+    className={`inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-60 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+const Message = ({ text }) => (
+  <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50/70 px-3 py-2 text-sm text-blue-900">
+    {text}
+  </div>
+);
+
+/** ------------------ Component ------------------ */
 const AddTeamForm = () => {
   const [name, setName] = useState('');
-  // folosim implicit logo-ul local
   const [logo, setLogo] = useState(defaultLogo);
   const [teams, setTeams] = useState([]);
   const [message, setMessage] = useState('');
@@ -15,55 +62,37 @@ const AddTeamForm = () => {
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileRef = useRef(null);
 
-  // control pentru preview sigur (fără icon rupt + text)
-  const [preview, setPreview] = useState(null);   // blob URL local
-  const [showImg, setShowImg] = useState(true);   // afișăm <img> by default
+  // preview sigur
+  const [preview, setPreview] = useState(null);
+  const [showImg, setShowImg] = useState(true);
 
-  // sincronizează randarea imaginii în funcție de sursele disponibile
   useEffect(() => {
     setShowImg(Boolean(preview || logo || defaultLogo));
   }, [preview, logo]);
 
-  // curăță blob URL-urile ca să nu avem scurgeri de memorie
-  useEffect(() => {
-    return () => {
-      if (preview) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   const fetchTeams = async () => {
     try {
       const res = await fetch(`${BASE_URL}/app/teams`);
       if (!res.ok) throw new Error('Eroare la listare echipe');
       const data = await res.json();
-      setTeams(data);
+      setTeams(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
       setMessage('❌ Eroare la încărcarea listelor de echipe.');
     }
   };
 
-  useEffect(() => {
-    fetchTeams();
-  }, []);
+  useEffect(() => { fetchTeams(); }, []);
 
-  // ---- helpers R2 (ca în celelalte formulare)
+  // ---- helpers R2
   async function presignForR2(file, folder = 'teams') {
-    const q = new URLSearchParams({
-      filename: file.name,
-      contentType: file.type || 'application/octet-stream',
-      folder,
-    });
-
-    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
-      method: 'GET',
-      credentials: 'include',
-    });
+    const q = new URLSearchParams({ filename: file.name, contentType: file.type || 'application/octet-stream', folder });
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, { method: 'GET', credentials: 'include' });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
-
-    const uploadUrl = data.uploadUrl;
-    const publicUrl = data.publicUrl;
+    const { uploadUrl, publicUrl } = data || {};
     if (!uploadUrl || !publicUrl) throw new Error('Răspuns invalid la presign.');
     return { uploadUrl, publicUrl };
   }
@@ -80,10 +109,9 @@ const AddTeamForm = () => {
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
-    e.target.value = ''; // reset input
+    e.target.value = '';
     if (!file) return;
 
-    // arată instant preview local
     if (preview) URL.revokeObjectURL(preview);
     const local = URL.createObjectURL(file);
     setPreview(local);
@@ -92,13 +120,13 @@ const AddTeamForm = () => {
       setUploadingLogo(true);
       const { uploadUrl, publicUrl } = await presignForR2(file, 'teams');
       await putFileToR2(uploadUrl, file);
-      setLogo(publicUrl); // URL-ul public (se salvează în DB)
+      setLogo(publicUrl);
       setMessage('✅ Logo încărcat cu succes.');
     } catch (err) {
       console.error(err);
       setMessage(err.message || '❌ Încărcarea logo-ului a eșuat.');
-      setPreview(null); // ascunde preview dacă a eșuat
-      setLogo(defaultLogo); // revenim la implicit
+      setPreview(null);
+      setLogo(defaultLogo);
     } finally {
       setUploadingLogo(false);
     }
@@ -108,9 +136,7 @@ const AddTeamForm = () => {
     e.preventDefault();
     setMessage('');
     try {
-      // dacă câmpul e gol din greșeală, folosim tot implicitul
       const payloadLogo = logo || defaultLogo;
-
       const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -118,16 +144,12 @@ const AddTeamForm = () => {
       });
 
       if (!res.ok) throw new Error('Failed to save team');
-
       const data = await res.json();
       setMessage(`✅ Echipa "${data.name}" a fost ${editId ? 'modificată' : 'adăugată'} cu succes.`);
       setName('');
-      setLogo(defaultLogo); // după salvare, revine la implicit
+      setLogo(defaultLogo);
       setEditId(null);
-      if (preview) {
-        URL.revokeObjectURL(preview);
-        setPreview(null);
-      }
+      if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
       setShowImg(true);
       fetchTeams();
     } catch (err) {
@@ -138,13 +160,10 @@ const AddTeamForm = () => {
 
   const handleEdit = (team) => {
     setName(team.name);
-    setLogo(team.logo || defaultLogo); // dacă nu are, folosim implicit
+    setLogo(team.logo || defaultLogo);
     setEditId(team.id);
     setMessage('');
-    if (preview) {
-      URL.revokeObjectURL(preview);
-      setPreview(null);
-    }
+    if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
   };
 
@@ -162,127 +181,108 @@ const AddTeamForm = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* input ascuns pentru upload logo */}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow">
-        <h2 className="text-lg font-semibold mb-4 text-center">
-          {editId ? 'Editează Echipă' : 'Adaugă Echipă'}
-        </h2>
+      {/* FORM */}
+      <SectionCard title={editId ? 'Editează Echipă' : 'Adaugă Echipă'} subtitle="Completează detaliile și salvează.">
+        {message && <Message text={message} />}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="team-name">Nume echipă</Label>
+            <Input id="team-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
 
-        {message && <p className="mb-4 text-sm text-center">{message}</p>}
+          {/* Logo: URL + upload în R2 */}
+          <div>
+            <Label htmlFor="team-logo">Logo</Label>
+            <div className="flex gap-2">
+              <Input
+                id="team-logo"
+                type="url"
+                placeholder="Link logo (sau încarcă)"
+                value={logo}
+                onChange={(e) => setLogo(e.target.value || defaultLogo)}
+              />
+              <ButtonGhost type="button" onClick={onChooseLogo} disabled={uploadingLogo} title="Încarcă logo în R2">
+                {uploadingLogo ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                    Upload…
+                  </>
+                ) : (
+                  <>Upload</>
+                )}
+              </ButtonGhost>
+            </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Nume echipă</label>
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
-
-        {/* Logo: URL + buton de upload în R2 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1">Logo</label>
-          <div className="flex gap-2">
-            <input
-              type="url"
-              placeholder="Link logo (sau încarcă)"
-              value={logo}
-              onChange={e => setLogo(e.target.value || defaultLogo)}
-              className="w-full border px-3 py-2 rounded"
-            />
-            <button
-              type="button"
-              onClick={onChooseLogo}
-              disabled={uploadingLogo}
-              className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-              title="Încarcă logo în R2"
-            >
-              {uploadingLogo ? (
-                <>
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-400 border-dashed" />
-                  Upload…
-                </>
+            {/* preview */}
+            <div className="mt-3 flex items-center gap-3">
+              {showImg ? (
+                <img
+                  src={preview || logo || defaultLogo}
+                  alt=""
+                  className="w-12 h-12 object-contain rounded border bg-white"
+                  onError={(e) => { e.currentTarget.src = defaultLogo; setShowImg(true); }}
+                />
               ) : (
-                <>Upload</>
+                <img src={defaultLogo} alt="" className="w-12 h-12 object-contain rounded border bg-white" />
               )}
-            </button>
+              {logo && logo !== defaultLogo && (
+                <a href={logo} target="_blank" rel="noreferrer" className="text-xs underline text-blue-700 hover:text-blue-900 truncate max-w-[60%]" title={logo}>
+                  {logo}
+                </a>
+              )}
+            </div>
           </div>
 
-          {/* preview sigur */}
-          <div className="mt-2 flex items-center gap-3">
-            {showImg ? (
-              <img
-                src={preview || logo || defaultLogo}
-                alt=""
-                className="w-10 h-10 object-contain rounded border bg-white"
-                onError={(e) => {
-                  // dacă eșuează încărcarea, folosim implicitul
-                  e.currentTarget.src = defaultLogo;
-                  setShowImg(true);
-                }}
-              />
-            ) : (
-              <img
-                src={defaultLogo}
-                alt=""
-                className="w-10 h-10 object-contain rounded border bg-white"
-              />
-            )}
-            {logo && logo !== defaultLogo && (
-              <a
-                href={logo}
-                target="_blank"
-                rel="noreferrer"
-                className="text-xs underline text-gray-600 truncate"
-                title={logo}
-              >
-                {logo}
-              </a>
+          <div className="flex flex-wrap gap-3 pt-2">
+            <ButtonPrimary type="submit" className="w-full sm:w-auto">
+              {editId ? 'Salvează modificările' : 'Salvează echipa'}
+            </ButtonPrimary>
+            {editId && (
+              <ButtonGhost type="button" onClick={() => { setName(''); setLogo(defaultLogo); setEditId(null); }}>
+                Anulează editarea
+              </ButtonGhost>
             )}
           </div>
-        </div>
+        </form>
+      </SectionCard>
 
-        <button
-          type="submit"
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded"
-        >
-          {editId ? 'Salvează modificările' : 'Salvează echipa'}
-        </button>
-      </form>
-
-      <div className="bg-white p-4 rounded shadow">
-        <h3 className="text-lg font-semibold mb-2">Echipe existente</h3>
-        <ul className="space-y-2">
+      {/* LISTĂ */}
+      <SectionCard title="Echipe existente" subtitle="Editează sau elimină echipe.">
+        <ul className="space-y-3">
           {teams.map((team) => (
-            <li key={team.id} className="flex justify-between items-center border p-2 rounded">
-              <div className="flex items-center gap-2">
+            <li key={team.id} className="flex items-center justify-between border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition">
+              <div className="flex items-center gap-3 min-w-0">
                 <img
                   src={team.logo || defaultLogo}
                   alt={team.name || ''}
-                  className="w-6 h-6 object-contain rounded bg-white border"
+                  className="w-10 h-10 object-contain rounded bg-white border"
                   onError={(e) => { e.currentTarget.src = defaultLogo; }}
                 />
-                <strong>{team.name}</strong>
+                <div className="truncate">
+                  <div className="font-semibold text-gray-900 truncate">{team.name}</div>
+                  {team.logo && team.logo !== defaultLogo && (
+                    <a href={team.logo} target="_blank" rel="noreferrer" className="text-xs text-blue-700 underline truncate max-w-[320px]">
+                      {team.logo}
+                    </a>
+                  )}
+                </div>
               </div>
-              <div className="space-x-2">
-                <button onClick={() => handleEdit(team)} className="text-blue-600 text-sm">Edit</button>
-                <button onClick={() => handleDelete(team.id)} className="text-red-600 text-sm">Delete</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleEdit(team)} className="px-3 py-1.5 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+                  Edit
+                </button>
+                <button onClick={() => handleDelete(team.id)} className="px-3 py-1.5 rounded-lg text-sm border border-gray-300 text-gray-800 hover:bg-gray-100">
+                  Delete
+                </button>
               </div>
             </li>
           ))}
         </ul>
-      </div>
+      </SectionCard>
     </div>
   );
 };

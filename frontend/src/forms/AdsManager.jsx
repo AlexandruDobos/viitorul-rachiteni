@@ -201,7 +201,7 @@ const AdsManager = () => {
       URL.revokeObjectURL(preview);
       setPreview(null);
     }
-    // scroll to form top on mobile (admin top-bar covers top portion)
+    // scroll to top (spațiul sub bară este calculat mai jos)
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -224,7 +224,17 @@ const AdsManager = () => {
   };
 
   return (
-    <div className="space-y-6">
+    /**
+     * IMPORTANT: offset pe mobil sub bara fixă din Admin.
+     * Folosim safe-area pentru notch + o înălțime aproximativă a barei (56px).
+     * Pe ecrane ≥lg, paddingul se anulează.
+     */
+    <div
+      className="space-y-6 lg:pt-0"
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
+      }}
+    >
       {/* hidden file input */}
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
@@ -263,19 +273,17 @@ const AdsManager = () => {
         <div className="rounded-lg bg-green-50 text-green-700 ring-1 ring-green-200 px-3 py-2 text-sm">{successMessage}</div>
       )}
 
-      {/* FORM CARD (compact, 1 col mobile / 2 cols desktop) */}
+      {/* FORM CARD */}
       <form
         onSubmit={handleSubmit}
         className="rounded-2xl border border-gray-200 bg-white/80 backdrop-blur p-4 md:p-5 shadow-sm space-y-4"
       >
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold">
-            {form.id ? "Editează reclamă" : "Adaugă reclamă"}
-          </h3>
+          <h3 className="font-semibold">{form.id ? "Editează reclamă" : "Adaugă reclamă"}</h3>
           <Chip>Device curent: {labelForDeviceType(form.deviceType)}</Chip>
         </div>
 
-        {/* Title */}
+        {/* Titlu */}
         <div className="grid gap-1.5">
           <label className="text-xs font-medium text-gray-600">Titlu</label>
           <input
@@ -286,7 +294,7 @@ const AdsManager = () => {
           />
         </div>
 
-        {/* Image row: URL + Upload + preview (tight) */}
+        {/* Imagine: URL + Upload */}
         <div className="grid md:grid-cols-[1fr_auto] gap-2">
           <div className="grid gap-1.5">
             <label className="text-xs font-medium text-gray-600">Imagine (URL sau upload)</label>
@@ -310,7 +318,7 @@ const AdsManager = () => {
           </div>
         </div>
 
-        {/* small preview line */}
+        {/* Preview mic */}
         <div className="flex items-center gap-3">
           {showImg ? (
             <img
@@ -320,9 +328,7 @@ const AdsManager = () => {
               onError={() => setShowImg(false)}
             />
           ) : (
-            <div className="h-14 w-24 grid place-items-center rounded-lg border bg-white text-[11px] text-gray-500">
-              —
-            </div>
+            <div className="h-14 w-24 grid place-items-center rounded-lg border bg-white text-[11px] text-gray-500">—</div>
           )}
           {form.imageUrl && (
             <a
@@ -348,7 +354,7 @@ const AdsManager = () => {
           />
         </div>
 
-        {/* Compact grid */}
+        {/* Grid compact */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="grid gap-1.5">
             <label className="text-xs font-medium text-gray-600">Poziție</label>
@@ -392,7 +398,7 @@ const AdsManager = () => {
           </div>
         </div>
 
-        {/* Dates */}
+        {/* Date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div className="grid gap-1.5">
             <label className="text-xs font-medium text-gray-600">Start</label>
@@ -423,24 +429,18 @@ const AdsManager = () => {
             {form.id ? "Actualizează" : "Adaugă"}
           </button>
           {form.id && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-sm text-gray-700 underline"
-            >
+            <button type="button" onClick={resetForm} className="text-sm text-gray-700 underline">
               Renunță la editare
             </button>
           )}
         </div>
       </form>
 
-      {/* LIST GRID (compact cards) */}
+      {/* LIST GRID */}
       <div className="rounded-2xl border border-gray-200 bg-white/60 backdrop-blur p-4 md:p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="font-semibold">Reclame existente</h3>
-          {loading && (
-            <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-dashed animate-spin" />
-          )}
+          {loading && <div className="h-5 w-5 rounded-full border-2 border-blue-500 border-dashed animate-spin" />}
         </div>
 
         {ads.length === 0 && !loading ? (
@@ -451,10 +451,7 @@ const AdsManager = () => {
               .slice()
               .sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0))
               .map((ad) => (
-                <div
-                  key={ad.id}
-                  className="rounded-xl overflow-hidden ring-1 ring-gray-200 bg-white shadow-sm"
-                >
+                <div key={ad.id} className="rounded-xl overflow-hidden ring-1 ring-gray-200 bg-white shadow-sm">
                   <div className="relative aspect-[16/9] bg-gray-50">
                     {ad.imageUrl ? (
                       <img
@@ -466,9 +463,7 @@ const AdsManager = () => {
                         }}
                       />
                     ) : (
-                      <div className="absolute inset-0 grid place-items-center text-xs text-gray-400">
-                        Fără imagine
-                      </div>
+                      <div className="absolute inset-0 grid place-items-center text-xs text-gray-400">Fără imagine</div>
                     )}
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 p-2">
                       <div className="flex flex-wrap gap-1">
@@ -480,9 +475,7 @@ const AdsManager = () => {
                   </div>
 
                   <div className="p-3">
-                    <div className="text-sm font-medium line-clamp-1">
-                      {ad.title || "Reclamă"}
-                    </div>
+                    <div className="text-sm font-medium line-clamp-1">{ad.title || "Reclamă"}</div>
                     {(ad.startDate || ad.endDate) && (
                       <div className="mt-1 text-[11px] text-gray-500">
                         {ad.startDate || "—"} → {ad.endDate || "—"}

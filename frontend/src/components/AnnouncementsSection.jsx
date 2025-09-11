@@ -1,4 +1,3 @@
-// src/components/AnnouncementsSection.jsx
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from 'react';
 import { BASE_URL } from '../utils/constants';
@@ -73,7 +72,7 @@ const SkeletonCard = () => (
  * Props:
  * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare)
  * - pageSize: câte pe pagină în modul full (default 4)
- * - title: titlul secțiunii
+ * - title: titlul secțiunii; dacă e falsy (null/""), nu afișăm titlu — lăsăm căutarea pe toată lățimea
  * - enableSearch: afișează bara de căutare (server-side via ?q=) — live, cu debounce
  */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
@@ -110,16 +109,20 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   }, []);
 
-  // live search (debounced)
+  // live search (debounced) — apelăm fetch imediat cu pagina 0
   useEffect(() => {
     if (!enableSearch) return;
     const t = setTimeout(() => {
+      const newQ = queryInput.trim();
       setPage(0);
-      setQuery(queryInput.trim());
+      setQuery(newQ);
+      fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch]);
 
+  // fetch helper
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
@@ -127,7 +130,9 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         page: String(pageNum),
         size: String(EFFECTIVE_SIZE),
       });
-      if (enableSearch && effectiveQuery) params.set('q', effectiveQuery);
+      // trimitem mereu q în modul cu search (și când e gol)
+      if (enableSearch) params.set('q', effectiveQuery || '');
+
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
@@ -140,12 +145,12 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   };
 
-  // initial + when page size / page / query changes
+  // paginație: când se schimbă pagina sau mărimea paginii — refetch cu q curent
   useEffect(() => {
     fetchPage(page, query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, EFFECTIVE_SIZE, query]);
+  }, [page, EFFECTIVE_SIZE]);
 
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
@@ -161,6 +166,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     setQueryInput('');
     setPage(0);
     setQuery('');
+    fetchPage(0, '');
   };
 
   if (selectedId) {
@@ -174,21 +180,22 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   }
 
   const showPager = !limit && totalPages > 1;
+  const showTitle = Boolean(title);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header + Search (live) */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>
+      {/* Header + Search (live). Dacă nu avem titlu, bara de search ocupă toată lățimea. */}
+      <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'w-full'}`}>
+        {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
 
         {enableSearch && (
-          <div className="relative">
+          <div className={`relative ${showTitle ? '' : 'w-full'}`}>
             <input
               type="search"
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Caută după titlu…"
-              className="h-11 w-72 sm:w-80 max-w-[70vw] rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2"
+              className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
               aria-label="Caută știri după titlu"
             />
             {/* icon */}

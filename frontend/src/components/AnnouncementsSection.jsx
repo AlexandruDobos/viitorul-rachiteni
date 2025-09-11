@@ -45,56 +45,57 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* CHENARUL mare – transparență în paleta site-ului, NU își schimbă înălțimea după poză */}
+      {/* CHENARUL mare – în paleta site-ului, cu sticlă/gradient */}
       <div
         className="
-          relative rounded-3xl p-3 sm:p-4
-          bg-gradient-to-br from-indigo-500/10 via-sky-500/10 to-blue-500/10
-          ring-1 ring-indigo-200/50 shadow-[0_10px_30px_rgba(30,58,138,0.10)]
-          backdrop-blur-sm
+          relative rounded-[28px] p-3 sm:p-4
+          bg-white/70 backdrop-blur-md
+          ring-1 ring-indigo-200/60 shadow-[0_12px_40px_rgba(30,58,138,0.10)]
+          bg-gradient-to-br from-white via-sky-50/60 to-indigo-50/50
         "
       >
-        {/* CHENARUL interior FIX pentru imagine (preview box) */}
+        {/* CHENARUL interior FIX pentru imagine */}
         <div
           className="
-            relative overflow-hidden rounded-2xl
-            ring-1 ring-white/60 bg-white/70
+            relative overflow-hidden rounded-2xl ring-1 ring-indigo-100
+            bg-[radial-gradient(120%_80%_at_50%_0%,rgba(59,130,246,0.10),rgba(99,102,241,0.10)_45%,rgba(12,74,110,0.08)_85%)]
           "
         >
           {/* Înălțime FIXĂ pe breakpoints:
-             - mobil:   220px
-             - tabletă: 300px
-             - laptop:  380px
-             - desktop mare: 440px
+             - mobil:   240px
+             - tabletă: 320px
+             - laptop:  420px
+             - desktop: 480px
           */}
-          <div className="relative w-full h-[220px] sm:h-[300px] lg:h-[380px] xl:h-[440px]">
+          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px] flex items-center justify-center">
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
-                /* FIT – fără crop/zoom */
-                className="absolute inset-0 h-full w-full object-contain object-center"
+                /* FIT – fără crop/zoom, perfect centrat */
+                className="max-h-full max-w-full object-contain object-center"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
                 }}
+                style={{
+                  imageRendering: 'auto',
+                }}
               />
             ) : (
-              <div className="absolute inset-0 grid place-items-center text-gray-400">
-                Fără imagine
-              </div>
+              <div className="text-gray-400">Fără imagine</div>
             )}
 
-            {/* overlay subtil pentru lizibilitate – acoperă și barele letterbox */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
+            {/* overlay DOAR jos pentru lizibilitate (nu acoperă toată imaginea) */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-            {/* titlu + dată în interiorul chenarului de imagine */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+            {/* titlu + dată – poziționate jos-stânga, ca în exemplele de presă */}
+            <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-6">
               <h3 className="text-white font-extrabold uppercase tracking-tight leading-tight drop-shadow
                               text-xl sm:text-2xl lg:text-3xl">
                 {a.title}
               </h3>
               <p className="mt-1 text-white/85 text-xs sm:text-sm">{formatDate(a.publishedAt)}</p>
-              <div className="mt-2 h-0.5 w-12 origin-left scale-x-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 transition-all duration-300 group-hover:scale-x-100" />
+              <div className="mt-2 h-0.5 w-14 origin-left scale-x-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 transition-all duration-300 group-hover:scale-x-100" />
             </div>
           </div>
         </div>
@@ -153,9 +154,9 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       className="
         relative select-none
         rounded-[32px] overflow-hidden
-        ring-1 ring-indigo-200/50
-        bg-white/60 backdrop-blur-sm
-        bg-gradient-to-b from-white via-sky-50/40 to-indigo-50/30
+        ring-1 ring-indigo-200/60
+        bg-white/70 backdrop-blur-md
+        bg-gradient-to-b from-white via-sky-50/50 to-indigo-50/50
         shadow-[0_12px_40px_rgba(30,58,138,0.10)]
         px-2 sm:px-4 md:px-6 py-4 md:py-6
       "
@@ -232,7 +233,7 @@ const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: 
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
-      <div className="relative bg-gray-200 h-[220px] sm:h-[300px] lg:h-[380px] xl:h-[440px]" />
+      <div className="relative h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px] bg-gray-200" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -244,7 +245,7 @@ const SkeletonCard = () => (
 
 /* =========================================================
    COMPONENTA PRINCIPALĂ
-   - homepage (limit): carusel 1x, fără text „noutăți”
+   - homepage (limit): carusel 1x, fără text „Noutăți”
    - /stiri: listă + paginare (+ opțional search)
    ========================================================= */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
@@ -324,7 +325,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-[32px] ring-1 ring-indigo-200/50 bg-white/60 backdrop-blur-sm px-3 sm:px-4 md:px-6 py-5 shadow-[0_12px_40px_rgba(30,58,138,0.10)]">
+        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/70 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_12px_40px_rgba(30,58,138,0.10)]">
           <SkeletonCard />
         </section>
       );
@@ -358,7 +359,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* titlu + search (doar /stiri). pe homepage nu afișăm „noutăți” */}
+      {/* titlu + search (doar /stiri). pe homepage nu afișăm „Noutăți” */}
       <div className={`flex ${!enableSearch ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : ''}`}>
         {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
 
@@ -446,6 +447,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
+                {/* ferestruică de pagini */}
                 {(() => {
                   const total = Math.max(1, totalPages);
                   const current = page + 1;

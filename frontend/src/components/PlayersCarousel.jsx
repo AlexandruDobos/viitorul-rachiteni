@@ -198,7 +198,7 @@ export default function PlayersCarousel({
 
       {/* Carusel pe „pagini” */}
       <div
-        className="relative"
+        className="relative overflow-hidden"
         onMouseEnter={pause}
         onMouseLeave={resume}
         onTouchStart={pause}

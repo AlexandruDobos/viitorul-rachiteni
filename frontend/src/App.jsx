@@ -34,12 +34,31 @@ import News from "./pages/News";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
 
+function FixXOverflow() {
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflowX;
+    const prevBody = body.style.overflowX;
+    html.style.overflowX = "hidden";
+    body.style.overflowX = "hidden";
+    return () => {
+      html.style.overflowX = prevHtml;
+      body.style.overflowX = prevBody;
+    };
+  }, []);
+  return null;
+}
+
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
       <AuthProvider>
         <Router>
           <RouteMetaManager />
+
+          {/* === ADĂUGAT: blochează overflow-ul orizontal global === */}
+          <FixXOverflow />
 
           <Routes>
             {/* === Rute PUBLICe cu layout complet (Navbar + Ads + Footer) === */}

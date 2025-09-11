@@ -33,14 +33,13 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* =========================================================
-   CARD ANUNȚ – stil „featured slider”:
-   - înălțime fixă pe breakpoints (container nu sare)
-   - imagine principală CENTRATĂ & FIT (object-contain)
-   - strat de fundal blur + cover ca în exemplele din presă
+   CARD ANUNȚ – stil "featured":
+   - înălțime FIXĂ (nu sare după poză)
+   - imagine object-cover + object-center (plin, ca în exemplu)
    - overlay negru jos pentru titlu
    ========================================================= */
 function AnnouncementCard({ a, onOpen }) {
-  const img = toAbsoluteUrl(a.coverUrl);
+  const imgSrc = toAbsoluteUrl(a.coverUrl);
 
   return (
     <button
@@ -49,70 +48,58 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* Chenar mare, în paleta albastră a site-ului */}
+      {/* Chenar mare – paletă albastră */}
       <div
         className="
-          relative rounded-[26px] p-2 sm:p-3
-          bg-white/75 backdrop-blur-md
+          relative rounded-[28px] p-2 sm:p-3
+          bg-white/80 backdrop-blur-md
           ring-1 ring-indigo-200/60
           shadow-[0_12px_36px_rgba(30,58,138,0.12)]
           bg-gradient-to-br from-white via-sky-50/60 to-indigo-50/50
         "
       >
-        {/* Box fix pentru media */}
-        <div className="relative overflow-hidden rounded-2xl">
-          {/* Înălțime fixă (telefon/tabletă/laptop/desktop) */}
+        {/* Media box cu înălțime fixă */}
+        <div className="relative overflow-hidden rounded-2xl ring-1 ring-indigo-100">
+          {/* înălțimi fixe pe breakpoint-uri */}
           <div className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px]">
-            {/* Fundal „cover” blurat – umple chenarul ca în exemplu */}
-            {img && (
+            {imgSrc ? (
               <img
-                src={img}
-                alt=""
-                aria-hidden="true"
+                src={imgSrc}
+                alt={a.title}
                 className="
-                  absolute inset-0 h-full w-full object-cover
-                  scale-105 blur-md brightness-[.65] saturate-125
+                  absolute inset-0 h-full w-full
+                  object-cover object-center
+                  transition-transform duration-500
+                  group-hover:scale-[1.03]
                 "
-                onError={(e) => (e.currentTarget.style.display = 'none')}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.png';
+                }}
               />
-            )}
-
-            {/* Strat de culoare albastru subtil peste blur (brand) */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/20 via-indigo-900/10 to-sky-900/0" />
-
-            {/* Imaginea principală – FIT & CENTRAT (fără crop) */}
-            {img ? (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <img
-                  src={img}
-                  alt={a.title}
-                  className="max-h-full max-w-full object-contain object-center drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.png';
-                  }}
-                />
-              </div>
             ) : (
-              <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
+              <div className="absolute inset-0 grid place-items-center text-gray-400">
+                Fără imagine
+              </div>
             )}
 
-            {/* Overlay jos pentru caption (nu întunecă toată poza) */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+            {/* overlay jos pentru lizibilitate */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-            {/* Caption ca în exemplu */}
+            {/* Caption */}
             <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-6">
               <h3 className="text-white font-black uppercase tracking-tight leading-tight
-                              text-xl sm:text-2xl lg:text-3xl">
+                              text-xl sm:text-2xl lg:text-3xl drop-shadow-md">
                 {a.title}
               </h3>
-              <span className="mt-1 block text-white/85 text-xs sm:text-sm">
+              <span className="mt-1 block text-white/90 text-xs sm:text-sm">
                 {formatDate(a.publishedAt)}
               </span>
+              <div className="mt-2 h-0.5 w-14 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
             </div>
           </div>
         </div>
 
-        {/* Teaser sub media */}
+        {/* teaser sub media */}
         <div className="p-4">
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -124,8 +111,7 @@ function AnnouncementCard({ a, onOpen }) {
 }
 
 /* =========================================================
-   CARUSEL – un singur slide vizibil, swipe + butoane laterale
-   (look ca în sportsmagazine, dar în paleta de albastru)
+   CARUSEL – 1 slide vizibil, swipe + săgeți laterale
    ========================================================= */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -168,7 +154,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         relative select-none
         rounded-[32px] overflow-hidden
         ring-1 ring-indigo-200/60
-        bg-white/75 backdrop-blur-md
+        bg-white/80 backdrop-blur-md
         bg-gradient-to-b from-white via-sky-50/55 to-indigo-50/50
         shadow-[0_14px_44px_rgba(30,58,138,0.12)]
         px-2 sm:px-4 md:px-6 py-4 md:py-6
@@ -176,7 +162,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți laterale (centru vertical) */}
+      {/* săgeți laterale – centrate vertical */}
       {pages.length > 1 && (
         <>
           <button
@@ -268,8 +254,6 @@ const SkeletonCard = () => (
 
 /* =========================================================
    COMPONENTA PRINCIPALĂ
-   - homepage (limit): carusel 1x, fără text „Noutăți”
-   - /stiri: listă + paginare (+ opțional search)
    ========================================================= */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
@@ -348,7 +332,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/75 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
+        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/80 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
           <SkeletonCard />
         </section>
       );
@@ -382,7 +366,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* titlu + search (doar /stiri). pe homepage nu afișăm „Noutăți” */}
       <div className={`flex ${!enableSearch ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : ''}`}>
         {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
 

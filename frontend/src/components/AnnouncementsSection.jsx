@@ -189,7 +189,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
 
         {enableSearch && (
-          <div className={`relative ${showTitle ? '' : 'w-full'}`}>
+          <div className={`relative 'w-full'}`}>
             <input
               type="search"
               value={queryInput}

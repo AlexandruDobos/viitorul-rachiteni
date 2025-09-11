@@ -29,6 +29,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 import News from "./pages/News";
+
 // Layout-uri
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
@@ -46,14 +47,28 @@ const App = () => {
               <Route
                 path="/"
                 element={
-                  <>
-                    <HeroTitle />
-                    <AnnouncementsSection limit={4} />
-                    <NextMatchSection />
-                    <PlayersCarousel />
-                  </>
+                  // Taie overflow-ul DOAR pe home (sursele overflow-ului sunt secțiuni specifice home)
+                  <div className="overflow-x-hidden">
+                    <div className="overflow-hidden">
+                      <HeroTitle />
+                    </div>
+
+                    <div className="overflow-hidden">
+                      <AnnouncementsSection limit={4} />
+                    </div>
+
+                    <div className="overflow-hidden">
+                      <NextMatchSection />
+                    </div>
+
+                    {/* Carouselele sunt adesea sursa overflow-ului -> învelit cu overflow-hidden */}
+                    <div className="overflow-hidden">
+                      <PlayersCarousel />
+                    </div>
+                  </div>
                 }
               />
+
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/request-reset" element={<RequestResetPassword />} />

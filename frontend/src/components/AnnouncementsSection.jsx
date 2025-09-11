@@ -99,7 +99,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
 }
 
 /* ===== CARUSEL – HOME =====
-   Un singur chenar, cu albastrul site-ului (mai închis)
+   FĂRĂ niciun background/chenar – secțiunea e invizibilă.
 */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -140,12 +140,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     <section
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="
-        relative select-none overflow-hidden
-        rounded-2xl border-2 border-blue-600/40
-        bg-gradient-to-br from-blue-600/10 via-indigo-500/10 to-sky-500/10
-        px-2 sm:px-3 md:px-4 py-3 md:py-4
-      "
+      className="relative select-none"  /* invizibil: fără bg, fără border, fără padding */
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
@@ -323,17 +318,15 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
-          <section className="rounded-2xl border-2 border-blue-600/40 bg-gradient-to-br from-blue-600/10 via-indigo-500/10 to-sky-500/10 px-3 sm:px-4 md:px-6 py-4 overflow-hidden">
-            <SkeletonCard />
-          </section>
+          <SkeletonCard />
         </div>
       );
     }
     if (state.error) {
-      return <div className="max-w-6xl mx-auto rounded-2xl border-2 border-red-500/30 bg-white p-4 text-red-700">{state.error}</div>;
+      return <div className="max-w-6xl mx-auto text-red-700">{state.error}</div>;
     }
     if (!items.length) {
-      return <div className="max-w-6xl mx-auto rounded-2xl border-2 border-blue-600/30 bg-gradient-to-br from-blue-600/10 via-indigo-500/10 to-sky-500/10 p-6 text-gray-700">Nu există anunțuri momentan.</div>;
+      return <div className="max-w-6xl mx-auto text-gray-700">Nu există anunțuri momentan.</div>;
     }
     return (
       <div className="max-w-6xl mx-auto">

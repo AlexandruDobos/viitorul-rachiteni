@@ -28,7 +28,7 @@ import NextMatchSection from "./components/NextMatchSection";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
-
+import News from "./pages/News";
 // Layout-uri
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
@@ -72,6 +72,7 @@ const App = () => {
               <Route path="/confidentialitate" element={<PrivacyPolicy />} />
               <Route path="/termeni" element={<Terms />} />
               <Route path="/cookie-uri" element={<Cookies />} />
+              <Route path="/stiri" element={<News />} />
             </Route>
 
             {/* === Rută ADMIN cu layout gol (fără navbar/footer/ads) === */}

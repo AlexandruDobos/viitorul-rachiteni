@@ -140,7 +140,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     <section
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="relative select-none" /* invizibil: fără bg, fără border, fără padding */
+      className="relative select-none"
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
@@ -257,6 +257,17 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
+  // 🔧 FIX: acest hook trebuie să fie ÎNTOTDEAUNA apelat (nu după un return condițional)
+  const pageNumbers = useMemo(() => {
+    const total = Math.max(1, totalPages);
+    const current = page + 1;
+    const half = Math.floor(WINDOW / 2);
+    let start = Math.max(1, current - half);
+    let end = Math.min(total, start + WINDOW - 1);
+    start = Math.max(1, Math.min(start, end - WINDOW + 1));
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  }, [page, totalPages]);
+
   // fetch helper
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
@@ -315,7 +326,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   /* ---------- HOMEPAGE ---------- */
   if (limit) {
-    // Titlul deasupra caruselului (gradientul site-ului)
     const HomeHeading = (
       <div className="mb-3 sm:mb-4 flex justify-center">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
@@ -359,16 +369,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   }
 
   /* ---------- /stiri ---------- */
-  const pageNumbers = useMemo(() => {
-    const total = Math.max(1, totalPages);
-    const current = page + 1;
-    const half = Math.floor(WINDOW / 2);
-    let start = Math.max(1, current - half);
-    let end = Math.min(total, start + WINDOW - 1);
-    start = Math.max(1, Math.min(start, end - WINDOW + 1));
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  }, [page, totalPages]);
-
   const onClear = () => {
     setQueryInput('');
     setPage(0);
@@ -463,38 +463,28 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
-                {(() => {
-                  const total = Math.max(1, totalPages);
-                  const current = page + 1;
-                  const half = Math.floor(WINDOW / 2);
-                  let start = Math.max(1, current - half);
-                  let end = Math.min(total, start + WINDOW - 1);
-                  start = Math.max(1, Math.min(start, end - WINDOW + 1));
-                  const nums = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-                  return (
+                {/* folosim pageNumbers calculat SUS (mereu apelat) */}
+                <>
+                  {pageNumbers[0] > 1 && (
                     <>
-                      {nums[0] > 1 && (
-                        <>
-                          <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(0)}>1</button>
-                          {nums[0] > 2 && <span className="px-1 text-sm text-gray-500">…</span>}
-                        </>
-                      )}
-                      {nums.map((n) => (
-                        <button key={n}
-                          onClick={() => setPage(n - 1)}
-                          className={`px-3 py-1.5 text-sm rounded-lg border ${n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'}`}>
-                          {n}
-                        </button>
-                      ))}
-                      {nums[nums.length - 1] < totalPages && (
-                        <>
-                          {nums[nums.length - 1] < totalPages - 1 && <span className="px-1 text-sm text-gray-500">…</span>}
-                          <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(totalPages - 1)}>{totalPages}</button>
-                        </>
-                      )}
+                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(0)}>1</button>
+                      {pageNumbers[0] > 2 && <span className="px-1 text-sm text-gray-500">…</span>}
                     </>
-                  );
-                })()}
+                  )}
+                  {pageNumbers.map((n) => (
+                    <button key={n}
+                      onClick={() => setPage(n - 1)}
+                      className={`px-3 py-1.5 text-sm rounded-lg border ${n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'}`}>
+                      {n}
+                    </button>
+                  ))}
+                  {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                    <>
+                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-sm text-gray-500">…</span>}
+                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(totalPages - 1)}>{totalPages}</button>
+                    </>
+                  )}
+                </>
 
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}

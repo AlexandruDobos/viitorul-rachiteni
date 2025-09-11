@@ -219,7 +219,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
   const [items, setItems] = useState([]);
-  the [state, setState] = useState({ loading: false, error: null });
+  const [state, setState] = useState({ loading: false, error: null });
   const [selectedId, setSelectedId] = useState(null);
 
   // paginare pentru /stiri

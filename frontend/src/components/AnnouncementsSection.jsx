@@ -140,7 +140,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     <section
       tabIndex={0}
       onKeyDown={onKeyDown}
-      className="relative select-none"  /* invizibil: fără bg, fără border, fără padding */
+      className="relative select-none" /* invizibil: fără bg, fără border, fără padding */
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
@@ -315,21 +315,44 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   /* ---------- HOMEPAGE ---------- */
   if (limit) {
+    // Titlul deasupra caruselului (gradientul site-ului)
+    const HomeHeading = (
+      <div className="mb-3 sm:mb-4 flex justify-center">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
+          <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
+            Ultimele noutăți
+          </span>
+        </h2>
+      </div>
+    );
+
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
+          {HomeHeading}
           <SkeletonCard />
         </div>
       );
     }
     if (state.error) {
-      return <div className="max-w-6xl mx-auto text-red-700">{state.error}</div>;
+      return (
+        <div className="max-w-6xl mx-auto">
+          {HomeHeading}
+          <div className="text-red-700">{state.error}</div>
+        </div>
+      );
     }
     if (!items.length) {
-      return <div className="max-w-6xl mx-auto text-gray-700">Nu există anunțuri momentan.</div>;
+      return (
+        <div className="max-w-6xl mx-auto">
+          {HomeHeading}
+          <div className="text-gray-700">Nu există anunțuri momentan.</div>
+        </div>
+      );
     }
     return (
       <div className="max-w-6xl mx-auto">
+        {HomeHeading}
         <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />
       </div>
     );

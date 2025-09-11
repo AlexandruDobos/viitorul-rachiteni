@@ -193,13 +193,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
           {enableSearch && (
             <div className={`relative ${showTitle ? '' : 'w-full'}`}>
+              {/* type=text ca să nu mai avem X-ul nativ în unele browsere */}
               <input
-                type="search"
+                type="text"
                 value={queryInput}
                 onChange={(e) => setQueryInput(e.target.value)}
                 placeholder="Caută după titlu…"
                 className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
                 aria-label="Caută știri după titlu"
+                inputMode="search"
+                autoComplete="off"
               />
               {/* icon */}
               <svg
@@ -212,7 +215,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
-              {/* clear */}
+              {/* clear (un singur X controlat de noi) */}
               {queryInput && (
                 <button
                   type="button"
@@ -277,9 +280,9 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
                         )}
 
-                        {/* shine diagonal */}
+                        {/* shine diagonal — ascuns pe mobil ca să evităm overflow-uri pe X */}
                         <div
-                          className="ann-shine pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
+                          className="ann-shine hidden sm:block pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
                           style={{
                             background:
                               'linear-gradient(105deg, transparent 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.05) 70%, transparent 100%)',
@@ -316,7 +319,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             </motion.div>
           </AnimatePresence>
 
-          {/* CTA în modul "limit": mic, centru (nu full-width) */}
+          {/* CTA în modul "limit": mic, centru */}
           {inLimitMode && (
             <div className="pt-2 flex justify-center">
               <Link

@@ -87,7 +87,13 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 overflow-x-clip">
-      <div className="w-full backdrop-blur-md bg-white/80 border-b border-gray-100 px-4 md:px-6 lg:px-10 [padding-left:env(safe-area-inset-left)] [padding-right:env(safe-area-inset-right)]">
+      {/* Bare: am mărit padding-ul pe mobil și am adăugat safe-area insets */}
+      <div className="
+          w-full backdrop-blur-md bg-white/80 border-b border-gray-100
+          px-5 md:px-6 lg:px-10
+          [padding-left:calc(env(safe-area-inset-left)+1.25rem)]
+          [padding-right:calc(env(safe-area-inset-right)+1.25rem)]
+        ">
         <div className="max-w-[1440px] mx-auto min-w-0">
           {/* DESKTOP BAR */}
           <div className="hidden md:flex items-center justify-between py-2">
@@ -173,8 +179,8 @@ const Navbar = () => {
             </motion.nav>
           </div>
 
-          {/* MOBILE BAR */}
-          <div className="md:hidden flex items-center justify-between py-3">
+          {/* MOBILE BAR — padding mărit și hit-area mai mare */}
+          <div className="md:hidden flex items-center justify-between py-4">
             <Link to="/" onClick={handleMobileClose} aria-label="Mergi la pagina principală" className="flex-shrink-0">
               <motion.img
                 src={logo}
@@ -187,7 +193,7 @@ const Navbar = () => {
             </Link>
 
             <button
-              className="rounded-md p-2 hover:bg-gray-100"
+              className="rounded-md p-3 hover:bg-gray-100"
               onClick={() => setShowMobileMenu(true)}
               aria-label="Deschide meniul"
             >
@@ -211,15 +217,22 @@ const Navbar = () => {
               exit={{ opacity: 0 }}
             />
             <motion.aside
-              className="fixed top-0 right-0 h-full w-2/3 sm:w-1/2 bg-white z-50 p-4 shadow-xl font-[Poppins,sans-serif]"
+              className="
+                fixed top-0 right-0 h-full w-4/5 sm:w-1/2 bg-white z-50
+                shadow-2xl rounded-l-2xl
+                p-5
+                pt-[calc(env(safe-area-inset-top)+1rem)]
+                [padding-left:calc(env(safe-area-inset-left)+1rem)]
+                [padding-right:calc(env(safe-area-inset-right)+1rem)]
+              "
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
             >
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-4">
                 <span className="font-semibold">MENIU</span>
-                <button onClick={handleMobileClose} aria-label="Închide meniul" className="rounded-md p-2 hover:bg-gray-100">
+                <button onClick={handleMobileClose} aria-label="Închide meniul" className="rounded-md p-3 hover:bg-gray-100">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -227,16 +240,16 @@ const Navbar = () => {
               </div>
 
               <motion.ul
-                className="mt-2 space-y-3 font-semibold text-sm uppercase tracking-wide text-gray-700"
+                className="mt-2 space-y-4 font-semibold text-sm uppercase tracking-wide text-gray-700"
                 variants={mobileListVariants}
                 initial="hidden"
                 animate="show"
               >
-                <motion.li variants={mobileItemVariants} className="border-b pb-2">
+                <motion.li variants={mobileItemVariants} className="border-b pb-3">
                   <button
                     type="button"
                     onClick={() => setEchipaOpen((v) => !v)}
-                    className="w-full text-left flex items-center justify-between px-1 py-2 rounded hover:bg-gray-50"
+                    className="w-full text-left flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50"
                     aria-expanded={echipaOpen}
                     aria-controls="echipa-submenu"
                   >
@@ -248,28 +261,28 @@ const Navbar = () => {
                     {echipaOpen && (
                       <motion.ul
                         id="echipa-submenu"
-                        className="mt-2 space-y-1 text-xs uppercase tracking-wide text-gray-700"
+                        className="mt-2 space-y-2 text-xs uppercase tracking-wide text-gray-700 px-1"
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                       >
-                        <li><Link to="/stiri" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">ȘTIRI</Link></li>
-                        <li><Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
-                        <li><Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">MECIURI</Link></li>
-                        <li><Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">REZULTATE</Link></li>
-                        <li><Link to="/standings" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">CLASAMENT</Link></li>
+                        <li><Link to="/stiri" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">ȘTIRI</Link></li>
+                        <li><Link to="/squad" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
+                        <li><Link to="/matches" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">MECIURI</Link></li>
+                        <li><Link to="/results" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">REZULTATE</Link></li>
+                        <li><Link to="/standings" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">CLASAMENT</Link></li>
                       </motion.ul>
                     )}
                   </AnimatePresence>
                 </motion.li>
 
                 <motion.li variants={mobileItemVariants}>
-                  <Link to="/donations" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
+                  <Link to="/donations" onClick={handleMobileClose} className="block px-3 py-3 rounded-lg hover:bg-gray-50">
                     DONAȚII
                   </Link>
                 </motion.li>
                 <motion.li variants={mobileItemVariants}>
-                  <Link to="/contact" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
+                  <Link to="/contact" onClick={handleMobileClose} className="block px-3 py-3 rounded-lg hover:bg-gray-50">
                     CONTACT
                   </Link>
                 </motion.li>
@@ -279,14 +292,14 @@ const Navbar = () => {
                     <button
                       type="button"
                       onClick={() => { handleLogout(); handleMobileClose(); }}
-                      className="block w-full text-left px-1 py-2 rounded hover:bg-gray-50 text-red-600"
+                      className="block w-full text-left px-3 py-3 rounded-lg hover:bg-gray-50 text-red-600"
                     >
                       LOGOUT
                     </button>
                   </motion.li>
                 ) : (
                   <motion.li variants={mobileItemVariants}>
-                    <Link to="/login" onClick={handleMobileClose} className="block px-1 py-2 rounded hover:bg-gray-50">
+                    <Link to="/login" onClick={handleMobileClose} className="block px-3 py-3 rounded-lg hover:bg-gray-50">
                       LOGIN
                     </Link>
                   </motion.li>

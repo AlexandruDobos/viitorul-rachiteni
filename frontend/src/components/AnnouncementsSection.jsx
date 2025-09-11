@@ -4,7 +4,7 @@ import { BASE_URL } from '../utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DEFAULT_PAGE_SIZE = 4; // pentru /stiri (mod listă)
+const DEFAULT_PAGE_SIZE = 4;
 const WINDOW = 5;
 
 /* ===== utilitare ===== */
@@ -32,12 +32,7 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* =========================================================
-   CARD ANUNȚ – ACELAȘI pe /stiri și pe homepage
-   - înălțime FIXĂ (mai mică pe laptop)
-   - imagine object-cover + center
-   - overlay jos pentru titlu
-   ========================================================= */
+/* ===== CARD – identic pe /stiri și pe home ===== */
 function AnnouncementCard({ a, onOpen }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
@@ -57,7 +52,7 @@ function AnnouncementCard({ a, onOpen }) {
         "
       >
         <div className="relative overflow-hidden rounded-xl ring-1 ring-indigo-100/70">
-          {/* înălțimi mai mici ca să încapă pe laptop */}
+          {/* înălțimi mai mici pt. laptop */}
           <div className="relative w-full h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]">
             {imgSrc ? (
               <img
@@ -72,10 +67,8 @@ function AnnouncementCard({ a, onOpen }) {
               </div>
             )}
 
-            {/* overlay jos pentru lizibilitate */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
-            {/* Caption */}
             <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-5">
               <h3 className="text-white font-black uppercase tracking-tight leading-tight text-lg sm:text-xl lg:text-2xl drop-shadow-md">
                 {a.title}
@@ -88,7 +81,6 @@ function AnnouncementCard({ a, onOpen }) {
           </div>
         </div>
 
-        {/* teaser sub media */}
         <div className="p-4">
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -99,12 +91,7 @@ function AnnouncementCard({ a, onOpen }) {
   );
 }
 
-/* =========================================================
-   CARUSEL (homepage)
-   - folosește ACELAȘI CARD ca /stiri
-   - doar un fundal albastru discret în jur (NU alt chenar)
-   - overflow-ul este tăiat corect
-   ========================================================= */
+/* ===== CARUSEL – home ===== */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -138,13 +125,15 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     if (e.key === 'ArrowRight') next();
   };
 
+  const slidePct = pages.length ? 100 / pages.length : 100;
+
   return (
     <section
       tabIndex={0}
       onKeyDown={onKeyDown}
       className="
         relative select-none
-        overflow-hidden    /* taie pista și săgețile */
+        overflow-hidden
         rounded-2xl
         bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50
         ring-1 ring-indigo-100/50
@@ -154,7 +143,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți – nu mai depășesc containerul */}
+      {/* săgeți */}
       {pages.length > 1 && (
         <>
           <button
@@ -192,7 +181,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         </>
       )}
 
-      {/* pistă carusel */}
+      {/* pistă */}
       <div
         className="relative overflow-hidden rounded-xl"
         onMouseDown={onPointerDown}
@@ -205,10 +194,17 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       >
         <div
           className="flex transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${page * 100}%)`, width: `${pages.length * 100}%` }}
+          style={{
+            width: `${pages.length * 100}%`,
+            transform: `translateX(-${page * slidePct}%)`,
+          }}
         >
           {pages.map((a, i) => (
-            <div key={a.id ?? i} className="w-full flex-shrink-0 px-1 sm:px-2">
+            <div
+              key={a.id ?? i}
+              className="flex-shrink-0 px-1 sm:px-2"
+              style={{ width: `${slidePct}%` }}
+            >
               <AnnouncementCard a={a} onOpen={onOpen} />
             </div>
           ))}
@@ -218,7 +214,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
   );
 }
 
-/* ===== animații pentru /stiri ===== */
+/* ===== animații /stiri ===== */
 const gridVariants = {
   hidden: { opacity: 0, y: 12 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut', when: 'beforeChildren', staggerChildren: 0.06 } },
@@ -244,9 +240,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-/* =========================================================
-   COMPONENTA PRINCIPALĂ
-   ========================================================= */
+/* ===== COMPONENTA PRINCIPALĂ ===== */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
@@ -284,13 +278,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   };
 
-  // inițial & la schimbări
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
-  // live search doar pe /stiri
   useEffect(() => {
     if (limit || !enableSearch) return;
     const t = setTimeout(() => {
@@ -320,25 +312,31 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     );
   }
 
-  /* ---------- HOMEPAGE: CARUSEL 1x ---------- */
+  /* ---------- HOMEPAGE ---------- */
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-2xl ring-1 ring-indigo-100/50 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-4 shadow-[0_12px_36px_rgba(30,58,138,0.10)] overflow-hidden">
-          <SkeletonCard />
-        </section>
+        <div className="max-w-6xl mx-auto">
+          <section className="rounded-2xl ring-1 ring-indigo-100/50 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-4 shadow-[0_12px_36px_rgba(30,58,138,0.10)] overflow-hidden">
+            <SkeletonCard />
+          </section>
+        </div>
       );
     }
     if (state.error) {
-      return <div className="rounded-2xl ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
+      return <div className="max-w-6xl mx-auto rounded-2xl ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
     }
     if (!items.length) {
-      return <div className="rounded-2xl ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
+      return <div className="max-w-6xl mx-auto rounded-2xl ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
     }
-    return <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />;
+    return (
+      <div className="max-w-6xl mx-auto">
+        <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />
+      </div>
+    );
   }
 
-  /* ---------- /stiri: GRID + PAGINARE + (opțional) SEARCH ---------- */
+  /* ---------- /stiri ---------- */
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -358,7 +356,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* titlu + search (CENTRAT pe laptop/desktop) */}
       <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
         {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
 
@@ -399,7 +396,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         )}
       </div>
 
-      {/* listă /stiri */}
       {state.loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}
@@ -431,7 +427,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             </motion.div>
           </AnimatePresence>
 
-          {/* PAGINARE */}
           {totalPages > 1 && (
             <AnimatePresence>
               <motion.div

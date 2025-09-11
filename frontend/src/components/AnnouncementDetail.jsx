@@ -1,5 +1,5 @@
 // components/AnnouncementDetail.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
 function formatDate(iso) {
@@ -37,6 +37,22 @@ const AnnouncementDetail = ({ id, onBack }) => {
   const [item, setItem] = useState(null);
   const [state, setState] = useState({ loading: true, error: null });
 
+  // Toast state
+  const [toast, setToast] = useState({ show: false, kind: 'success', text: '' });
+  const toastTimer = useRef(null);
+
+  const openToast = (text, kind = 'success', ms = 2200) => {
+    setToast({ show: true, kind, text });
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), ms);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -61,12 +77,26 @@ const AnnouncementDetail = ({ id, onBack }) => {
     }
   }, []);
 
+  // ✅ Custom copy (no alert/prompt). Falls back to execCommand if needed.
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
-      alert('Link copiat în clipboard!');
+      openToast('Link copiat în clipboard! ✅', 'success');
     } catch {
-      window.prompt('Copiază linkul:', shareUrl);
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = shareUrl;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        openToast('Link copiat în clipboard! ✅', 'success');
+      } catch {
+        openToast('Nu am putut copia linkul.', 'error');
+      }
     }
   };
 
@@ -92,6 +122,47 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
+      {/* Toast */}
+      <div
+        aria-live="polite"
+        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${
+          toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}
+      >
+        <div
+          className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
+            toast.kind === 'success'
+              ? 'bg-emerald-600 text-white ring-emerald-500/60'
+              : 'bg-red-600 text-white ring-red-500/60'
+          }`}
+        >
+          {toast.kind === 'success' ? (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <path d="M22 4 12 14.01l-3-3" />
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <path d="M15 9l-6 6M9 9l6 6" />
+            </svg>
+          )}
+          <span className="font-medium text-sm">{toast.text}</span>
+        </div>
+      </div>
+
       {/* container lărgit la max-w-6xl pentru a ocupa tot spațiul coloanei centrale */}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <button

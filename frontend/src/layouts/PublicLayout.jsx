@@ -14,9 +14,13 @@ export default function PublicLayout() {
       <ScrollToTop />
       <Navbar />
 
-      {/* spațiu sub navbarul cu logo mare pentru conținutul central */}
+      {/* spațiu sub navbarul cu logo mare */}
       <div className="pt-20 lg:pt-28 flex-grow overflow-x-hidden">
-        {/* 1 coloană pe mobil/tabletă; 3 coloane de la lg în sus */}
+        {/* 
+          Pe desktop:
+          - min-height = înălțimea viewportului minus navbar (~7rem)
+          - overflow hidden ca să nu apară scroll pe pagină; scrollează doar main
+        */}
         <div
           className="
             w-full mx-auto max-w-[1800px]
@@ -25,13 +29,13 @@ export default function PublicLayout() {
             gap-x-6 lg:gap-x-12 xl:gap-x-16
             px-4 sm:px-6 lg:px-10
             overflow-x-hidden
+            lg:min-h-[calc(100vh-7rem)]
+            lg:overflow-hidden
           "
         >
-          {/* Sidebar stânga – doar ≥lg */}
-          {/* -mt-20 lg:-mt-28 trage sidebarul sub navbar, ca înainte */}
-          <aside className="hidden lg:block lg:pr-4 -mt-20 lg:-mt-28">
-            {/* SCOS sticky ca să scrolleze odată cu pagina */}
-            <div className="space-y-3">
+          {/* Sidebar stânga – sticky sub navbar */}
+          <aside className="hidden lg:block lg:pr-4">
+            <div className="lg:sticky lg:top-28 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="left" />
@@ -39,8 +43,15 @@ export default function PublicLayout() {
             </div>
           </aside>
 
-          {/* Conținut central */}
-          <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6 overflow-x-hidden">
+          {/* Conținut central – scrollează doar aici pe desktop */}
+          <main
+            className="
+              w-full pt-4 md:pt-6 pb-16 md:pb-20
+              lg:border-x lg:border-gray-100 lg:px-6
+              overflow-x-hidden
+              lg:overflow-y-auto lg:max-h-[calc(100vh-7rem)]
+            "
+          >
             {/* Ads pe mobil/tabletă (sub lg) */}
             <div className="lg:hidden mb-5 mt-8 space-y-3 overflow-x-hidden">
               <AdsDisplay position="left" />
@@ -55,10 +66,9 @@ export default function PublicLayout() {
             </div>
           </main>
 
-          {/* Sidebar dreapta – doar ≥lg */}
-          <aside className="hidden lg:block lg:pl-4 -mt-20 lg:-mt-28">
-            {/* SCOS sticky ca să scrolleze odată cu pagina */}
-            <div className="space-y-3">
+          {/* Sidebar dreapta – sticky sub navbar */}
+          <aside className="hidden lg:block lg:pl-4">
+            <div className="lg:sticky lg:top-28 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="right" />

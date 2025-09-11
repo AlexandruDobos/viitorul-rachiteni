@@ -114,6 +114,7 @@ export default function Footer() {
             <nav className="w-full max-w-sm">
               <h3 className="text-sm font-semibold text-gray-900">Navigație</h3>
               <ul className="mt-3 space-y-2 text-sm text-gray-700/90">
+                <li><Link className="hover:text-gray-900" to="/stiri">Știri</Link></li>
                 <li><Link className="hover:text-gray-900" to="/squad">Jucători</Link></li>
                 <li><Link className="hover:text-gray-900" to="/matches">Meciuri</Link></li>
                 <li><Link className="hover:text-gray-900" to="/results">Rezultate</Link></li>

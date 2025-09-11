@@ -1,10 +1,11 @@
+// src/pages/News.jsx
 import React from 'react';
 import AnnouncementsSection from '../components/AnnouncementsSection';
 
 const News = () => {
   return (
     <div className="px-4 space-y-6">
-      {/* Banner albastru, în tonul site-ului */}
+      {/* Banner albastru frumos, în tonul site-ului */}
       <div className="max-w-6xl mx-auto">
         <div className="rounded-2xl p-6 md:p-8 text-white ring-1 ring-indigo-400/40 shadow-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Știri</h1>
@@ -14,9 +15,8 @@ const News = () => {
         </div>
       </div>
 
-      {/* Listă + căutare live + paginare (4 / pagină).
-          Trimitem title={null} ca să nu mai afișeze încă un “Știri” — bara de căutare ocupă toată lățimea. */}
-      <AnnouncementsSection title={null} enableSearch pageSize={4} />
+      {/* Secțiunea cu listă + căutare live + paginare (4 / pagină) */}
+      <AnnouncementsSection title="Știri" enableSearch pageSize={4} />
     </div>
   );
 };

@@ -29,11 +29,9 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 
+// Layout-uri
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
-
-// NEW
-import News from "./pages/News";
 
 const App = () => {
   return (
@@ -56,7 +54,6 @@ const App = () => {
                   </>
                 }
               />
-              <Route path="/stiri" element={<News />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/request-reset" element={<RequestResetPassword />} />

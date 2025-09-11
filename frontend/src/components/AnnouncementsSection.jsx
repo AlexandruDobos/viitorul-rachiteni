@@ -32,9 +32,24 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD – identic pe /stiri și pe home ===== */
-function AnnouncementCard({ a, onOpen }) {
+/* ===== CARD – identic pe /stiri, cadru albastru doar pe home ===== */
+function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
+
+  const outerFrame = blueFrame
+    ? `
+      relative rounded-[24px] p-2 sm:p-3
+      bg-blue-50/90 backdrop-blur-sm
+      ring-1 ring-blue-200 shadow-none
+    `
+    : `
+      relative rounded-[24px] p-2 sm:p-3
+      bg-white/85 backdrop-blur-md
+      ring-1 ring-indigo-200/60
+      shadow-[0_10px_30px_rgba(30,58,138,0.12)]
+    `;
+
+  const innerRing = blueFrame ? 'ring-blue-100/80' : 'ring-indigo-100/70';
 
   return (
     <button
@@ -43,15 +58,8 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      <div
-        className="
-          relative rounded-[24px] p-2 sm:p-3
-          bg-white/85 backdrop-blur-md
-          ring-1 ring-indigo-200/60
-          shadow-[0_10px_30px_rgba(30,58,138,0.12)]
-        "
-      >
-        <div className="relative overflow-hidden rounded-xl ring-1 ring-indigo-100/70">
+      <div className={outerFrame}>
+        <div className={`relative overflow-hidden rounded-xl ring-1 ${innerRing}`}>
           {/* înălțimi mai mici pt. laptop */}
           <div className="relative w-full h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]">
             {imgSrc ? (
@@ -81,6 +89,7 @@ function AnnouncementCard({ a, onOpen }) {
           </div>
         </div>
 
+        {/* teaser sub media (la fel ca înainte) */}
         <div className="p-4">
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -91,7 +100,7 @@ function AnnouncementCard({ a, onOpen }) {
   );
 }
 
-/* ===== CARUSEL – home ===== */
+/* ===== CARUSEL – home (cadru albastru curat, fără gri/shadow grele) ===== */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -135,9 +144,8 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         relative select-none
         overflow-hidden
         rounded-2xl
-        bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50
-        ring-1 ring-indigo-100/50
-        shadow-[0_12px_36px_rgba(30,58,138,0.10)]
+        border border-blue-200
+        bg-blue-50/60
         px-2 sm:px-3 md:px-4 py-3 md:py-4
       "
       style={{ touchAction: 'pan-y' }}
@@ -154,7 +162,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
             className="
               absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10
               grid h-10 w-10 place-items-center rounded-full
-              bg-white/95 ring-1 ring-indigo-200/70 shadow
+              bg-white/95 ring-1 ring-blue-200 shadow
               hover:bg-white disabled:opacity-50
             "
           >
@@ -170,7 +178,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
             className="
               absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10
               grid h-10 w-10 place-items-center rounded-full
-              bg-white/95 ring-1 ring-indigo-200/70 shadow
+              bg-white/95 ring-1 ring-blue-200 shadow
               hover:bg-white disabled:opacity-50
             "
           >
@@ -205,7 +213,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
               className="flex-shrink-0 px-1 sm:px-2"
               style={{ width: `${slidePct}%` }}
             >
-              <AnnouncementCard a={a} onOpen={onOpen} />
+              <AnnouncementCard a={a} onOpen={onOpen} blueFrame />
             </div>
           ))}
         </div>
@@ -317,17 +325,17 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
-          <section className="rounded-2xl ring-1 ring-indigo-100/50 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-4 shadow-[0_12px_36px_rgba(30,58,138,0.10)] overflow-hidden">
+          <section className="rounded-2xl border border-blue-200 bg-blue-50/60 px-3 sm:px-4 md:px-6 py-4 overflow-hidden">
             <SkeletonCard />
           </section>
         </div>
       );
     }
     if (state.error) {
-      return <div className="max-w-6xl mx-auto rounded-2xl ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
+      return <div className="max-w-6xl mx-auto rounded-2xl border border-red-200 bg-white p-4 text-red-700">{state.error}</div>;
     }
     if (!items.length) {
-      return <div className="max-w-6xl mx-auto rounded-2xl ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
+      return <div className="max-w-6xl mx-auto rounded-2xl border border-blue-100 bg-blue-50/60 p-6 text-gray-700">Nu există anunțuri momentan.</div>;
     }
     return (
       <div className="max-w-6xl mx-auto">

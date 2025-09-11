@@ -1,3 +1,4 @@
+// backend: src/main/java/com/viitorul/app/api/AnnouncementController.java
 package com.viitorul.app.api;
 
 import com.viitorul.app.dto.AnnouncementDTO;
@@ -25,11 +26,13 @@ public class AnnouncementController {
         return ResponseEntity.ok(announcementService.getAllAnnouncements());
     }
 
+    // ✅ extended with optional `q` for title search (case-insensitive)
     @GetMapping("/page")
     public ResponseEntity<Page<AnnouncementDTO>> getAnnouncementsPage(
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "4") int size) {
-        return ResponseEntity.ok(announcementService.getAnnouncementsPage(page, size));
+            @RequestParam(name = "size", defaultValue = "4") int size,
+            @RequestParam(name = "q", required = false, defaultValue = "") String q) {
+        return ResponseEntity.ok(announcementService.getAnnouncementsPage(page, size, q));
     }
 
     @GetMapping("/{id}")

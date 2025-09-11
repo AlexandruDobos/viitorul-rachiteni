@@ -1,3 +1,4 @@
+// src/layouts/PublicLayout.jsx
 /* eslint-disable no-unused-vars */
 import React from "react";
 import { Outlet } from "react-router-dom";
@@ -9,16 +10,15 @@ import ScrollToTop from "../components/ScrollToTop";
 
 export default function PublicLayout() {
   return (
-    // Taie overflow-ul pe X doar global (nu pe grid / aside / sticky)
-    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
-      {/* SEO/meta & scroll reset */}
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* SEO/meta și scroll reset pentru paginile publice */}
       <ScrollToTop />
 
       <Navbar />
 
-      {/* spațiu sub navbar pentru conținutul central */}
+      {/* spațiu sub navbarul cu logo mare */}
       <div className="pt-20 lg:pt-28 flex-grow">
-        {/* 1 coloană pe mobil/tabletă; 3 coloane de la lg în sus */}
+        {/* 1 coloană pe mobil+tabletă; 3 coloane abia de la lg (≥1024px) */}
         <div
           className="
             mx-auto max-w-[1800px]
@@ -28,10 +28,8 @@ export default function PublicLayout() {
             px-4 sm:px-6 lg:px-10
           "
         >
-          {/* Sidebar stânga */}
-          {/* Tragem aside-ul în sus cât padding-ul wrapperului central */}
-          <aside className="hidden lg:block lg:pr-4 -mt-20 lg:-mt-28">
-            {/* Sticky exact sub navbar */}
+          {/* Sidebar stânga – doar ≥lg */}
+          <aside className="hidden lg:block lg:pr-4">
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <AdsDisplay position="left" />
@@ -45,7 +43,7 @@ export default function PublicLayout() {
               <AdsDisplay position="left" />
             </div>
 
-            {/* Rutele publice */}
+            {/* Aici se vor randă rutele publice */}
             <Outlet />
 
             {/* Ads jos pe mobil/tabletă */}
@@ -54,9 +52,8 @@ export default function PublicLayout() {
             </div>
           </main>
 
-          {/* Sidebar dreapta */}
-          <aside className="hidden lg:block lg:pl-4 -mt-20 lg:-mt-28">
-            {/* Sticky exact sub navbar */}
+          {/* Sidebar dreapta – doar ≥lg */}
+          <aside className="hidden lg:block lg:pl-4">
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <AdsDisplay position="right" />

@@ -14,7 +14,7 @@ export default function PublicLayout() {
       <ScrollToTop />
       <Navbar />
 
-      {/* spațiu sub navbarul cu logo mare */}
+      {/* spațiu sub navbarul cu logo mare pentru conținutul central */}
       <div className="pt-20 lg:pt-28 flex-grow overflow-x-hidden">
         {/* 1 coloană pe mobil/tabletă; 3 coloane de la lg în sus */}
         <div
@@ -28,8 +28,8 @@ export default function PublicLayout() {
           "
         >
           {/* Sidebar stânga – doar ≥lg */}
-          <aside className="hidden lg:block lg:pr-4">
-            {/* Sticky fără offset suplimentar (nu mai apare gol în partea de sus) */}
+          {/* -mt-20 lg:-mt-28 trage sidebarul sub navbar, ca înainte */}
+          <aside className="hidden lg:block lg:pr-4 -mt-20 lg:-mt-28">
             <div className="lg:sticky lg:top-0 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
@@ -55,7 +55,7 @@ export default function PublicLayout() {
           </main>
 
           {/* Sidebar dreapta – doar ≥lg */}
-          <aside className="hidden lg:block lg:pl-4">
+          <aside className="hidden lg:block lg:pl-4 -mt-20 lg:-mt-28">
             <div className="lg:sticky lg:top-0 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">

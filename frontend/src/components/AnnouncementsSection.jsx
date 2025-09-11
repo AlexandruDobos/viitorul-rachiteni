@@ -33,16 +33,17 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* ===== CARD =====
-   - pe home (blueFrame=true): fără chenar/ring/shadow, dar ACUM afișează teaserul
+   - pe home (blueFrame=true): fără chenar/ring/shadow și fără teaser
    - pe /stiri: cardul rămâne neschimbat
 */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
   const outerClass = blueFrame
-    ? 'relative rounded-xl'
+    ? 'relative rounded-xl' // HOME: fără chenar pentru card
     : 'relative rounded-[24px] p-2 sm:p-3 bg-white/85 backdrop-blur-md ring-1 ring-indigo-200/60 shadow-[0_10px_30px_rgba(30,58,138,0.12)]';
 
+  // Înălțimi mai MARI pe laptop/desktop DOAR pe home
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -86,8 +87,8 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
           </div>
         </div>
 
-        {/* teaser sub media – ACUM vizibil și pe home */}
-        <div className="p-4">
+        {/* teaser sub media – ASCUNS pe home */}
+        <div className={`p-4 ${blueFrame ? 'hidden' : ''}`}>
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
           </p>
@@ -256,7 +257,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // ⚠️ calculăm mereu (pentru a evita hook-uri condiționale)
+  // 🔧 FIX: acest hook trebuie să fie ÎNTOTDEAUNA apelat (nu după un return condițional)
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -462,6 +463,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
+                {/* folosim pageNumbers calculat SUS (mereu apelat) */}
                 <>
                   {pageNumbers[0] > 1 && (
                     <>

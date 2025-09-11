@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,9 +71,9 @@ const SkeletonCard = () => (
 
 /**
  * Props:
- * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare)
+ * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare) + CTA "Vezi toate știrile…"
  * - pageSize: câte pe pagină în modul full (default 4)
- * - title: titlul secțiunii; dacă e falsy (null/""), nu afișăm titlu — lăsăm căutarea pe toată lățimea
+ * - title: titlul secțiunii; în modul "limit" titlul este ascuns indiferent de prop
  * - enableSearch: afișează bara de căutare (server-side via ?q=) — live, cu debounce
  */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
@@ -179,51 +180,55 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     );
   }
 
-  const showPager = !limit && totalPages > 1;
-  const showTitle = Boolean(title);
+  const inLimitMode = Boolean(limit);
+  // în modul "limit" ascundem titlul (indiferent de prop)
+  const showTitle = Boolean(title) && !inLimitMode;
+  const showPager = !inLimitMode && totalPages > 1;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* Header + Search (live). Dacă nu avem titlu, bara de search ocupă toată lățimea. */}
-      <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'w-full'}`}>
-        {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
+      {!inLimitMode && (
+        <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'w-full'}`}>
+          {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
 
-        {enableSearch && (
-          <div className={`relative ${showTitle ? '' : 'w-full'}`}>
-            <input
-              type="search"
-              value={queryInput}
-              onChange={(e) => setQueryInput(e.target.value)}
-              placeholder="Caută după titlu…"
-              className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
-              aria-label="Caută știri după titlu"
-            />
-            {/* icon */}
-            <svg
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            {/* clear */}
-            {queryInput && (
-              <button
-                type="button"
-                onClick={onClear}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-gray-500 hover:text-gray-700"
-                aria-label="Șterge căutarea"
-                title="Șterge"
+          {enableSearch && (
+            <div className={`relative ${showTitle ? '' : 'w-full'}`}>
+              <input
+                type="search"
+                value={queryInput}
+                onChange={(e) => setQueryInput(e.target.value)}
+                placeholder="Caută după titlu…"
+                className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
+                aria-label="Caută știri după titlu"
+              />
+              {/* icon */}
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
               >
-                ×
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+                <circle cx="11" cy="11" r="7" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              {/* clear */}
+              {queryInput && (
+                <button
+                  type="button"
+                  onClick={onClear}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-gray-500 hover:text-gray-700"
+                  aria-label="Șterge căutarea"
+                  title="Șterge"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Loading / Error / Empty */}
       {state.loading ? (
@@ -312,7 +317,19 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             </motion.div>
           </AnimatePresence>
 
-          {/* PAGINARE */}
+          {/* CTA în modul "limit": sub cele 4 anunțuri */}
+          {inLimitMode && (
+            <div className="pt-2 flex justify-center">
+              <Link
+                to="/news"
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm text-white shadow-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:opacity-95"
+              >
+                Vezi toate știrile…
+              </Link>
+            </div>
+          )}
+
+          {/* PAGINARE în modul full */}
           {showPager && (
             <AnimatePresence>
               <motion.div

@@ -3,29 +3,27 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const PILL_LABELS = ['Echipă', 'Comunitate', 'Pasiune'];
-const DELAY_STEP = 800; // delay între pilule în ms
+const DELAY_STEP = 800; // ms
 
 export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
   const [visibleCount, setVisibleCount] = useState(0);
 
-  // la încărcare, afișează progresiv pilulele, apoi oprește animația
   useEffect(() => {
-    let timers = [];
-    PILL_LABELS.forEach((_, i) => {
-      timers.push(
-        setTimeout(() => {
-          setVisibleCount((c) => c + 1);
-        }, (i + 1) * DELAY_STEP)
-      );
-    });
-    return () => timers.forEach((t) => clearTimeout(t));
+    const timers = PILL_LABELS.map((_, i) =>
+      setTimeout(() => setVisibleCount((c) => c + 1), (i + 1) * DELAY_STEP)
+    );
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
-    <div className="relative mx-auto mb-6 mt-2 max-w-4xl px-2">
-      {/* glow discret în spatele titlului */}
-      <div aria-hidden className="absolute inset-0 -z-10 flex justify-center">
-        <div className="h-16 md:h-20 w-[70%] md:w-[60%] bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 blur-2xl opacity-30 rounded-full" />
+    // IMPORTANT: overflow-hidden ca să nu mai poată ieși blur-ul în afară
+    <div className="relative mx-auto mb-6 mt-2 max-w-4xl px-2 overflow-hidden">
+      {/* Glow discret – lățime limitată + centrat; pointer-events-none și -z pentru siguranță */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 flex justify-center"
+      >
+        <div className="h-16 md:h-20 w-full max-w-[640px] bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 blur-2xl opacity-30 rounded-full" />
       </div>
 
       {/* Titlu */}
@@ -52,8 +50,8 @@ export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
         aria-hidden="true"
       />
 
-      {/* Pilule animate progresiv, apoi rămân afișate */}
-      <div className="mx-auto mt-3 flex items-center justify-center gap-2 min-h-[32px]">
+      {/* Pilule – acum cu flex-wrap ca să nu împingă pe orizontală */}
+      <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 min-h-[32px]">
         {PILL_LABELS.slice(0, visibleCount).map((label, idx) => (
           <motion.span
             key={label}

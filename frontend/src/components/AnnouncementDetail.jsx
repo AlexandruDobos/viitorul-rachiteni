@@ -77,7 +77,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
     }
   }, []);
 
-  // ✅ Custom copy (no alert/prompt). Falls back to execCommand if needed.
+  // Copy link with custom toast
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -229,12 +229,13 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* conținut formatat – fără limită de lățime în interiorul cardului */}
+            {/* conținut formatat – acum cu font Poppins pentru întregul articol */}
             <div
               className="
+                font-[Poppins,sans-serif]
                 prose prose-sm md:prose lg:prose-lg
                 max-w-none
-                prose-headings:font-semibold
+                prose-headings:font-[Poppins,sans-serif]
                 prose-a:text-blue-600 hover:prose-a:underline
                 prose-img:rounded-lg prose-img:shadow
                 prose-ul:list-disc prose-ol:list-decimal

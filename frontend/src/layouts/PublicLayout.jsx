@@ -30,7 +30,8 @@ export default function PublicLayout() {
           {/* Sidebar stânga – doar ≥lg */}
           {/* -mt-20 lg:-mt-28 trage sidebarul sub navbar, ca înainte */}
           <aside className="hidden lg:block lg:pr-4 -mt-20 lg:-mt-28">
-            <div className="lg:sticky lg:top-0 space-y-3">
+            {/* SCOS sticky ca să scrolleze odată cu pagina */}
+            <div className="space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="left" />
@@ -56,7 +57,8 @@ export default function PublicLayout() {
 
           {/* Sidebar dreapta – doar ≥lg */}
           <aside className="hidden lg:block lg:pl-4 -mt-20 lg:-mt-28">
-            <div className="lg:sticky lg:top-0 space-y-3">
+            {/* SCOS sticky ca să scrolleze odată cu pagina */}
+            <div className="space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="right" />

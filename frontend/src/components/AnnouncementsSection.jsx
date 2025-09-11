@@ -110,7 +110,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   }, []);
 
-  // live search (debounced)
+  // live search (debounced) — apelăm fetch imediat cu pagina 0
   useEffect(() => {
     if (!enableSearch) return;
     const t = setTimeout(() => {
@@ -123,6 +123,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch]);
 
+  // fetch helper
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
@@ -131,6 +132,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         size: String(EFFECTIVE_SIZE),
       });
       if (enableSearch) params.set('q', effectiveQuery || '');
+
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
@@ -143,6 +145,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   };
 
+  // paginație: când se schimbă pagina sau mărimea paginii — refetch cu q curent
   useEffect(() => {
     fetchPage(page, query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -177,11 +180,13 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   }
 
   const inLimitMode = Boolean(limit);
+  // în modul "limit" ascundem titlul (indiferent de prop)
   const showTitle = Boolean(title) && !inLimitMode;
   const showPager = !inLimitMode && totalPages > 1;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {/* Header + Search (live). Dacă nu avem titlu, bara de search ocupă toată lățimea. */}
       {!inLimitMode && (
         <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'w-full'}`}>
           {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
@@ -196,6 +201,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
                 aria-label="Caută știri după titlu"
               />
+              {/* icon */}
               <svg
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
                 viewBox="0 0 24 24"
@@ -206,6 +212,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
+              {/* clear */}
               {queryInput && (
                 <button
                   type="button"
@@ -237,7 +244,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         </div>
       ) : (
         <>
-          {/* GRID */}
+          {/* GRID animat */}
           <AnimatePresence mode="wait">
             <motion.div
               key={`page-${page}-${query || 'all'}`}
@@ -269,6 +276,8 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                         ) : (
                           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
                         )}
+
+                        {/* shine diagonal */}
                         <div
                           className="ann-shine pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
                           style={{
@@ -276,7 +285,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                               'linear-gradient(105deg, transparent 0%, rgba(255,255,255,.28) 45%, rgba(255,255,255,.05) 70%, transparent 100%)',
                           }}
                         />
+
+                        {/* gradient de citire */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                        {/* titlu + dată + underline + CTA */}
                         <div className="absolute inset-x-0 bottom-0 p-4">
                           <h3 className="text-white text-lg md:text-xl font-semibold leading-snug line-clamp-2">
                             {a.title}
@@ -303,19 +316,19 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             </motion.div>
           </AnimatePresence>
 
-          {/* CTA CONTAINED – nu mai face overflow pe mobil */}
+          {/* CTA în modul "limit": mic, centru (nu full-width) */}
           {inLimitMode && (
-            <div className="pt-2">
+            <div className="pt-2 flex justify-center">
               <Link
                 to="/stiri"
-                className="block w-full text-center py-3 md:py-4 font-semibold text-white rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:opacity-95 shadow-sm"
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm text-white shadow-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:opacity-95"
               >
                 Vezi toate știrile…
               </Link>
             </div>
           )}
 
-          {/* PAGINARE */}
+          {/* PAGINARE în modul full */}
           {showPager && (
             <AnimatePresence>
               <motion.div
@@ -342,6 +355,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                   ←
                 </button>
 
+                {/* numere */}
                 {pageNumbers[0] > 1 && (
                   <>
                     <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(0)}>

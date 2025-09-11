@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BASE_URL } from './utils/constants';
-import AnnouncementDetail from './AnnouncementDetail';
+import AnnouncementDetail from './components/AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_PAGE_SIZE = 4;

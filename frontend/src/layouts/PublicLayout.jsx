@@ -9,17 +9,14 @@ import ScrollToTop from "../components/ScrollToTop";
 
 export default function PublicLayout() {
   return (
-    // ✨ Blochează overflow pe X la nivel de root
+    // Blochează overflow-ul orizontal global
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
-      {/* SEO/meta și scroll reset pentru paginile publice */}
       <ScrollToTop />
-
       <Navbar />
 
       {/* spațiu sub navbarul cu logo mare */}
-      {/* ✨ Evită orice overflow orizontal și în zona de conținut */}
       <div className="pt-20 lg:pt-28 flex-grow overflow-x-hidden">
-        {/* 1 coloană pe mobil+tabletă; 3 coloane abia de la lg (≥1024px) */}
+        {/* 1 coloană pe mobil/tabletă; 3 coloane de la lg în sus */}
         <div
           className="
             w-full mx-auto max-w-[1800px]
@@ -32,7 +29,8 @@ export default function PublicLayout() {
         >
           {/* Sidebar stânga – doar ≥lg */}
           <aside className="hidden lg:block lg:pr-4">
-            <div className="lg:sticky lg:top-28 space-y-4">
+            {/* Sticky fără offset suplimentar (nu mai apare gol în partea de sus) */}
+            <div className="lg:sticky lg:top-0 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="left" />
@@ -47,7 +45,7 @@ export default function PublicLayout() {
               <AdsDisplay position="left" />
             </div>
 
-            {/* Aici se vor randă rutele publice */}
+            {/* Rutele publice */}
             <Outlet />
 
             {/* Ads jos pe mobil/tabletă */}
@@ -58,7 +56,7 @@ export default function PublicLayout() {
 
           {/* Sidebar dreapta – doar ≥lg */}
           <aside className="hidden lg:block lg:pl-4">
-            <div className="lg:sticky lg:top-28 space-y-4">
+            <div className="lg:sticky lg:top-0 space-y-3">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <div className="overflow-x-hidden">
                 <AdsDisplay position="right" />

@@ -97,8 +97,8 @@ const Navbar = () => {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 ... overflow-x-clip">
-      <div className="backdrop-blur-md bg-white/80 ... px-4 md:px-6 lg:px-10">
+    <header className="fixed top-0 left-0 w-full z-50 overflow-x-clip">
+      <div className="w-full backdrop-blur-md bg-white/80 border-b border-gray-100 px-4 md:px-6 lg:px-10 [padding-left:env(safe-area-inset-left)] [padding-right:env(safe-area-inset-right)]">
         <div className="max-w-[1440px] mx-auto">
           {/* DESKTOP BAR */}
           <div className="hidden md:flex items-center justify-between py-2">

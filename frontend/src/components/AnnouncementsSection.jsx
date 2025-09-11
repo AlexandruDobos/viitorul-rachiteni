@@ -33,10 +33,14 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* =========================================================
-   CARD ANUNȚ – chenar FIX + imagine FIT (fără crop)
+   CARD ANUNȚ – stil „featured slider”:
+   - înălțime fixă pe breakpoints (container nu sare)
+   - imagine principală CENTRATĂ & FIT (object-contain)
+   - strat de fundal blur + cover ca în exemplele din presă
+   - overlay negru jos pentru titlu
    ========================================================= */
 function AnnouncementCard({ a, onOpen }) {
-  const imgSrc = toAbsoluteUrl(a.coverUrl);
+  const img = toAbsoluteUrl(a.coverUrl);
 
   return (
     <button
@@ -45,62 +49,70 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* CHENARUL mare – în paleta site-ului, cu sticlă/gradient */}
+      {/* Chenar mare, în paleta albastră a site-ului */}
       <div
         className="
-          relative rounded-[28px] p-3 sm:p-4
-          bg-white/70 backdrop-blur-md
-          ring-1 ring-indigo-200/60 shadow-[0_12px_40px_rgba(30,58,138,0.10)]
+          relative rounded-[26px] p-2 sm:p-3
+          bg-white/75 backdrop-blur-md
+          ring-1 ring-indigo-200/60
+          shadow-[0_12px_36px_rgba(30,58,138,0.12)]
           bg-gradient-to-br from-white via-sky-50/60 to-indigo-50/50
         "
       >
-        {/* CHENARUL interior FIX pentru imagine */}
-        <div
-          className="
-            relative overflow-hidden rounded-2xl ring-1 ring-indigo-100
-            bg-[radial-gradient(120%_80%_at_50%_0%,rgba(59,130,246,0.10),rgba(99,102,241,0.10)_45%,rgba(12,74,110,0.08)_85%)]
-          "
-        >
-          {/* Înălțime FIXĂ pe breakpoints:
-             - mobil:   240px
-             - tabletă: 320px
-             - laptop:  420px
-             - desktop: 480px
-          */}
-          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px] flex items-center justify-center">
-            {imgSrc ? (
+        {/* Box fix pentru media */}
+        <div className="relative overflow-hidden rounded-2xl">
+          {/* Înălțime fixă (telefon/tabletă/laptop/desktop) */}
+          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px]">
+            {/* Fundal „cover” blurat – umple chenarul ca în exemplu */}
+            {img && (
               <img
-                src={imgSrc}
-                alt={a.title}
-                /* FIT – fără crop/zoom, perfect centrat */
-                className="max-h-full max-w-full object-contain object-center"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder.png';
-                }}
-                style={{
-                  imageRendering: 'auto',
-                }}
+                src={img}
+                alt=""
+                aria-hidden="true"
+                className="
+                  absolute inset-0 h-full w-full object-cover
+                  scale-105 blur-md brightness-[.65] saturate-125
+                "
+                onError={(e) => (e.currentTarget.style.display = 'none')}
               />
-            ) : (
-              <div className="text-gray-400">Fără imagine</div>
             )}
 
-            {/* overlay DOAR jos pentru lizibilitate (nu acoperă toată imaginea) */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+            {/* Strat de culoare albastru subtil peste blur (brand) */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-900/20 via-indigo-900/10 to-sky-900/0" />
 
-            {/* titlu + dată – poziționate jos-stânga, ca în exemplele de presă */}
+            {/* Imaginea principală – FIT & CENTRAT (fără crop) */}
+            {img ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <img
+                  src={img}
+                  alt={a.title}
+                  className="max-h-full max-w-full object-contain object-center drop-shadow-[0_6px_18px_rgba(0,0,0,.35)]"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.png';
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
+            )}
+
+            {/* Overlay jos pentru caption (nu întunecă toată poza) */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+            {/* Caption ca în exemplu */}
             <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-6">
-              <h3 className="text-white font-extrabold uppercase tracking-tight leading-tight drop-shadow
+              <h3 className="text-white font-black uppercase tracking-tight leading-tight
                               text-xl sm:text-2xl lg:text-3xl">
                 {a.title}
               </h3>
-              <p className="mt-1 text-white/85 text-xs sm:text-sm">{formatDate(a.publishedAt)}</p>
-              <div className="mt-2 h-0.5 w-14 origin-left scale-x-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 transition-all duration-300 group-hover:scale-x-100" />
+              <span className="mt-1 block text-white/85 text-xs sm:text-sm">
+                {formatDate(a.publishedAt)}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* descriere scurtă sub boxul fix – nu afectează înălțimea imaginii */}
+        {/* Teaser sub media */}
         <div className="p-4">
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -112,7 +124,8 @@ function AnnouncementCard({ a, onOpen }) {
 }
 
 /* =========================================================
-   CARUSEL HOMEPAGE – 1 anunț / ecran + butoane + swipe
+   CARUSEL – un singur slide vizibil, swipe + butoane laterale
+   (look ca în sportsmagazine, dar în paleta de albastru)
    ========================================================= */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -155,25 +168,30 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         relative select-none
         rounded-[32px] overflow-hidden
         ring-1 ring-indigo-200/60
-        bg-white/70 backdrop-blur-md
-        bg-gradient-to-b from-white via-sky-50/50 to-indigo-50/50
-        shadow-[0_12px_40px_rgba(30,58,138,0.10)]
+        bg-white/75 backdrop-blur-md
+        bg-gradient-to-b from-white via-sky-50/55 to-indigo-50/50
+        shadow-[0_14px_44px_rgba(30,58,138,0.12)]
         px-2 sm:px-4 md:px-6 py-4 md:py-6
       "
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* butoane discrete în colțul dreapta-sus */}
+      {/* săgeți laterale (centru vertical) */}
       {pages.length > 1 && (
-        <div className="absolute right-3 top-3 z-20 flex gap-2">
+        <>
           <button
             type="button"
             onClick={prev}
             aria-label="Anterior"
             disabled={page === 0}
-            className="rounded-xl bg-white/95 p-2 shadow ring-1 ring-indigo-200/60 hover:bg-white disabled:opacity-50"
+            className="
+              absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-20
+              grid h-10 w-10 place-items-center rounded-full
+              bg-white/95 ring-1 ring-indigo-200/70 shadow
+              hover:bg-white disabled:opacity-50
+            "
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
               <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
             </svg>
           </button>
@@ -182,16 +200,21 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
             onClick={next}
             aria-label="Următor"
             disabled={page === pages.length - 1}
-            className="rounded-xl bg-white/95 p-2 shadow ring-1 ring-indigo-200/60 hover:bg-white disabled:opacity-50"
+            className="
+              absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-20
+              grid h-10 w-10 place-items-center rounded-full
+              bg-white/95 ring-1 ring-indigo-200/70 shadow
+              hover:bg-white disabled:opacity-50
+            "
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
               <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
             </svg>
           </button>
-        </div>
+        </>
       )}
 
-      {/* rail: 1 card pe ecran; toate cardurile au aceeași înălțime fixă */}
+      {/* pistă carusel */}
       <div
         className="relative overflow-hidden rounded-[24px]"
         onMouseDown={onPointerDown}
@@ -325,7 +348,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/70 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_12px_40px_rgba(30,58,138,0.10)]">
+        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/75 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
           <SkeletonCard />
         </section>
       );
@@ -447,7 +470,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
-                {/* ferestruică de pagini */}
                 {(() => {
                   const total = Math.max(1, totalPages);
                   const current = page + 1;

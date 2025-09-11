@@ -1,4 +1,3 @@
-// src/layouts/PublicLayout.jsx
 /* eslint-disable no-unused-vars */
 import React from "react";
 import { Outlet } from "react-router-dom";
@@ -10,14 +9,16 @@ import ScrollToTop from "../components/ScrollToTop";
 
 export default function PublicLayout() {
   return (
-    // overflow-x-hidden DOAR la nivel global, ca să nu apară scroll orizontal
+    // Taie overflow-ul pe X doar global (nu pe grid / aside / sticky)
     <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
+      {/* SEO/meta & scroll reset */}
       <ScrollToTop />
+
       <Navbar />
 
-      {/* spațiu sub navbarul cu logo mare */}
+      {/* spațiu sub navbar pentru conținutul central */}
       <div className="pt-20 lg:pt-28 flex-grow">
-        {/* 1 coloană pe mobil/tabletă; 3 coloane abia de la lg (≥1024px) */}
+        {/* 1 coloană pe mobil/tabletă; 3 coloane de la lg în sus */}
         <div
           className="
             mx-auto max-w-[1800px]
@@ -27,8 +28,10 @@ export default function PublicLayout() {
             px-4 sm:px-6 lg:px-10
           "
         >
-          {/* Sidebar stânga – sticky sub navbar (fără overflow pe ascendenți) */}
-          <aside className="hidden lg:block lg:pr-4">
+          {/* Sidebar stânga */}
+          {/* Tragem aside-ul în sus cât padding-ul wrapperului central */}
+          <aside className="hidden lg:block lg:pr-4 -mt-20 lg:-mt-28">
+            {/* Sticky exact sub navbar */}
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <AdsDisplay position="left" />
@@ -51,8 +54,9 @@ export default function PublicLayout() {
             </div>
           </main>
 
-          {/* Sidebar dreapta – sticky sub navbar (fără overflow pe ascendenți) */}
-          <aside className="hidden lg:block lg:pl-4">
+          {/* Sidebar dreapta */}
+          <aside className="hidden lg:block lg:pl-4 -mt-20 lg:-mt-28">
+            {/* Sticky exact sub navbar */}
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
               <AdsDisplay position="right" />

@@ -33,9 +33,9 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* =========================================================
-   CARD ANUNȚ – stil "featured" (același pe /stiri și homepage)
-   - înălțime FIXĂ
-   - imagine object-cover + object-center (plin, fără deformare)
+   CARD ANUNȚ – ACELAȘI pe /stiri și pe homepage
+   - înălțime FIXĂ (mai mică pe laptop)
+   - imagine object-cover + center
    - overlay jos pentru titlu
    ========================================================= */
 function AnnouncementCard({ a, onOpen }) {
@@ -48,7 +48,6 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* Chenar identic cu /stiri */}
       <div
         className="
           relative rounded-[24px] p-2 sm:p-3
@@ -57,21 +56,15 @@ function AnnouncementCard({ a, onOpen }) {
           shadow-[0_10px_30px_rgba(30,58,138,0.12)]
         "
       >
-        {/* Media box */}
         <div className="relative overflow-hidden rounded-xl ring-1 ring-indigo-100/70">
           {/* înălțimi mai mici ca să încapă pe laptop */}
-          <div className="relative w-full h-[200px] sm:h-[260px] lg:h-[320px] xl:h-[360px]">
+          <div className="relative w-full h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]">
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
-                className="
-                  absolute inset-0 h-full w-full
-                  object-cover object-center
-                "
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder.png';
-                }}
+                className="absolute inset-0 h-full w-full object-cover object-center"
+                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-gray-400">
@@ -84,8 +77,7 @@ function AnnouncementCard({ a, onOpen }) {
 
             {/* Caption */}
             <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-5">
-              <h3 className="text-white font-black uppercase tracking-tight leading-tight
-                              text-lg sm:text-xl lg:text-2xl drop-shadow-md">
+              <h3 className="text-white font-black uppercase tracking-tight leading-tight text-lg sm:text-xl lg:text-2xl drop-shadow-md">
                 {a.title}
               </h3>
               <span className="mt-1 block text-white/90 text-xs sm:text-sm">
@@ -108,8 +100,10 @@ function AnnouncementCard({ a, onOpen }) {
 }
 
 /* =========================================================
-   CARUSEL (homepage) – folosește ACELAȘI CARD ca /stiri
-   + fundal albastru discret în jurul cardului
+   CARUSEL (homepage)
+   - folosește ACELAȘI CARD ca /stiri
+   - doar un fundal albastru discret în jur (NU alt chenar)
+   - overflow-ul este tăiat corect
    ========================================================= */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -150,17 +144,17 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       onKeyDown={onKeyDown}
       className="
         relative select-none
-        rounded-[28px] overflow-hidden
-        ring-1 ring-indigo-200/60
+        overflow-hidden    /* taie pista și săgețile */
+        rounded-2xl
         bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50
-        backdrop-blur-md
-        shadow-[0_14px_44px_rgba(30,58,138,0.12)]
-        px-2 sm:px-4 md:px-6 py-4 md:py-6
+        ring-1 ring-indigo-100/50
+        shadow-[0_12px_36px_rgba(30,58,138,0.10)]
+        px-2 sm:px-3 md:px-4 py-3 md:py-4
       "
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți laterale */}
+      {/* săgeți – nu mai depășesc containerul */}
       {pages.length > 1 && (
         <>
           <button
@@ -169,7 +163,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
             aria-label="Anterior"
             disabled={page === 0}
             className="
-              absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-20
+              absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10
               grid h-10 w-10 place-items-center rounded-full
               bg-white/95 ring-1 ring-indigo-200/70 shadow
               hover:bg-white disabled:opacity-50
@@ -185,7 +179,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
             aria-label="Următor"
             disabled={page === pages.length - 1}
             className="
-              absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-20
+              absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10
               grid h-10 w-10 place-items-center rounded-full
               bg-white/95 ring-1 ring-indigo-200/70 shadow
               hover:bg-white disabled:opacity-50
@@ -200,7 +194,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
 
       {/* pistă carusel */}
       <div
-        className="relative overflow-hidden rounded-[20px]"
+        className="relative overflow-hidden rounded-xl"
         onMouseDown={onPointerDown}
         onMouseMove={onPointerMove}
         onMouseUp={onPointerUp}
@@ -214,7 +208,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
           style={{ transform: `translateX(-${page * 100}%)`, width: `${pages.length * 100}%` }}
         >
           {pages.map((a, i) => (
-            <div key={a.id ?? i} className="w-full flex-shrink-0 px-1 sm:px-2 md:px-3">
+            <div key={a.id ?? i} className="w-full flex-shrink-0 px-1 sm:px-2">
               <AnnouncementCard a={a} onOpen={onOpen} />
             </div>
           ))}
@@ -240,7 +234,7 @@ const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: 
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
-      <div className="relative h-[200px] sm:h-[260px] lg:h-[320px] xl:h-[360px] bg-gray-200" />
+      <div className="relative h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px] bg-gray-200" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -330,16 +324,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-[28px] ring-1 ring-indigo-200/60 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
+        <section className="rounded-2xl ring-1 ring-indigo-100/50 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-4 shadow-[0_12px_36px_rgba(30,58,138,0.10)] overflow-hidden">
           <SkeletonCard />
         </section>
       );
     }
     if (state.error) {
-      return <div className="rounded-[28px] ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
+      return <div className="rounded-2xl ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
     }
     if (!items.length) {
-      return <div className="rounded-[28px] ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
+      return <div className="rounded-2xl ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
     }
     return <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />;
   }
@@ -364,7 +358,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* titlu + search (centrat pe laptop/desktop) */}
+      {/* titlu + search (CENTRAT pe laptop/desktop) */}
       <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
         {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
 

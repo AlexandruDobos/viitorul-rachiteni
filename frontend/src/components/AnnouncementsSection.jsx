@@ -40,17 +40,20 @@ function AnnouncementCard({ a, onOpen }) {
       className="group block w-full text-left overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200 transition-all duration-300 hover:shadow-xl hover:-translate-y-[2px]"
       title={a.title}
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
+      {/* Aspect adaptiv: telefon 4:3 (mai scund), tabletă 16:10, desktop 16:9 */}
+      <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9] overflow-hidden bg-gray-100">
         {imgSrc ? (
           <img
             src={imgSrc}
             alt={a.title}
-            className="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.02] group-hover:saturate-110"
+            /* FIT în container: fără zoom/crop */
+            className="absolute inset-0 h-full w-full object-contain object-center transition-none"
             onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
         )}
+        {/* overlay pentru lizibilitate (acoperă și barele letterbox) */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4">
           <h3 className="text-white text-xl font-semibold leading-snug line-clamp-2">{a.title}</h3>
@@ -65,7 +68,9 @@ function AnnouncementCard({ a, onOpen }) {
       </div>
 
       <div className="p-5">
-        <p className="text-base text-gray-600 line-clamp-4">{wordsExcerpt(a.contentText, 38)}</p>
+        <p className="text-base text-gray-600 line-clamp-4">
+          {wordsExcerpt(a.contentText, 38)}
+        </p>
       </div>
     </button>
   );
@@ -103,7 +108,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     }
   };
 
-  /* accesibilitate: să meargă și cu săgeți */
+  /* accesibilitate: săgeți stânga/dreapta */
   const onKeyDown = (e) => {
     if (e.key === 'ArrowLeft') prev();
     if (e.key === 'ArrowRight') next();
@@ -214,7 +219,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
   const [items, setItems] = useState([]);
-  const [state, setState] = useState({ loading: false, error: null });
+  the [state, setState] = useState({ loading: false, error: null });
   const [selectedId, setSelectedId] = useState(null);
 
   // paginare pentru /stiri
@@ -298,7 +303,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (!items.length) {
       return <div className="rounded-[28px] ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
     }
-    // doar primele N (de ex. 4), dar un singur card pe cadru
+    // doar primele N (ex. 4), dar un singur card pe cadru
     return <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />;
   }
 

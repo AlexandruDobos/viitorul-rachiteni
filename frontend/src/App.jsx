@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BASE_URL } from '../utils/constants';
+import { BASE_URL } from './utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -19,11 +19,11 @@ function formatDate(iso) {
 }
 
 const Skeleton = () => (
-  <div className="max-w-3xl mx-auto px-4 py-6">
+  <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
     <div className="mb-4 h-4 w-40 bg-gray-200 rounded animate-pulse" />
     <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200">
       <div className="relative bg-gray-200 aspect-[16/9] animate-pulse" />
-      <div className="p-5 md:p-7 space-y-3">
+      <div className="p-5 md:p-8 space-y-3">
         <div className="h-6 bg-gray-200 rounded w-2/3 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded animate-pulse" />
@@ -55,7 +55,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   const shareUrl = useMemo(() => {
     try {
-      // dacă ai routing pe /announcements/:id, ajustează aici
       return window.location.href;
     } catch {
       return '';
@@ -67,7 +66,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
       await navigator.clipboard.writeText(shareUrl);
       alert('Link copiat în clipboard!');
     } catch {
-      // fallback simplu
       window.prompt('Copiază linkul:', shareUrl);
     }
   };
@@ -75,7 +73,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   if (state.loading) return <Skeleton />;
   if (state.error) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <button
           onClick={onBack}
           className="text-sm text-blue-600 mb-4 hover:underline"
@@ -94,7 +92,8 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      {/* container lărgit la max-w-6xl pentru a ocupa tot spațiul coloanei centrale */}
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <button
           onClick={onBack}
           className="mb-4 inline-flex items-center gap-1 text-blue-600 hover:underline"
@@ -102,19 +101,22 @@ const AnnouncementDetail = ({ id, onBack }) => {
           <span>←</span> Înapoi la anunțuri
         </button>
 
+        {/* card pe toată lățimea disponibilă */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HERO */}
+          {/* HERO – imaginea umple complet lățimea cardului */}
           {hasCover ? (
             <div className="relative bg-gray-100 aspect-[16/9]">
               <img
                 src={item.coverUrl}
                 alt={item.title}
                 className="absolute inset-0 w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.png';
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-center">
-                <h1 className="text-white text-2xl md:text-3xl font-bold drop-shadow">
+                <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold drop-shadow">
                   {item.title}
                 </h1>
                 <p className="text-white/80 text-xs md:text-sm mt-1">
@@ -123,18 +125,20 @@ const AnnouncementDetail = ({ id, onBack }) => {
               </div>
             </div>
           ) : (
-            <header className="px-5 md:px-7 pt-6 pb-2 text-center">
-              <h1 className="text-2xl md:text-3xl font-bold">{item.title}</h1>
+            <header className="px-5 md:px-8 pt-6 pb-2 text-center">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+                {item.title}
+              </h1>
               <p className="text-gray-500 text-xs md:text-sm mt-1">
                 Publicat pe: {formatDate(item.publishedAt)}
               </p>
             </header>
           )}
 
-          {/* BODY */}
-          <div className="p-5 md:p-7">
+          {/* BODY – conținutul folosește întreaga lățime a cardului */}
+          <div className="p-5 md:p-8 lg:p-10">
             {/* butoane acțiune */}
-            <div className="flex items-center justify-center gap-2 mb-4">
+            <div className="flex items-center justify-center gap-2 mb-6">
               <button
                 onClick={copyLink}
                 className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
@@ -154,10 +158,10 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* conținut formatat */}
+            {/* conținut formatat – fără limită de lățime în interiorul cardului */}
             <div
               className="
-                prose prose-sm md:prose
+                prose prose-sm md:prose lg:prose-lg
                 max-w-none
                 prose-headings:font-semibold
                 prose-a:text-blue-600 hover:prose-a:underline

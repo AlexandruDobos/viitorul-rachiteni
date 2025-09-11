@@ -33,7 +33,7 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* =========================================================
-   CARD ANUNȚ – „dublu chenar” + imagine FIT (fără crop/zoom)
+   CARD ANUNȚ – chenar FIX + imagine FIT (fără crop)
    ========================================================= */
 function AnnouncementCard({ a, onOpen }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
@@ -45,33 +45,35 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* CHENARUL mare al cardului */}
+      {/* CHENARUL mare – transparență în paleta site-ului, NU își schimbă înălțimea după poză */}
       <div
         className="
           relative rounded-3xl p-3 sm:p-4
           bg-gradient-to-br from-indigo-500/10 via-sky-500/10 to-blue-500/10
-          ring-1 ring-indigo-200/50 shadow-[0_8px_30px_rgba(30,58,138,0.08)]
+          ring-1 ring-indigo-200/50 shadow-[0_10px_30px_rgba(30,58,138,0.10)]
           backdrop-blur-sm
         "
       >
-        {/* CHENARUL interior pentru imagine (fit) */}
+        {/* CHENARUL interior FIX pentru imagine (preview box) */}
         <div
           className="
             relative overflow-hidden rounded-2xl
-            ring-1 ring-white/50
-            bg-gradient-to-b from-slate-100 to-slate-200
+            ring-1 ring-white/60 bg-white/70
           "
         >
-          {/* raport adaptiv: telefon 4:3, tabletă 16:10, desktop 16:9 */}
-          <div className="relative aspect-[4/3] sm:aspect-[16/10] lg:aspect-[16/9]">
+          {/* Înălțime FIXĂ pe breakpoints:
+             - mobil:   220px
+             - tabletă: 300px
+             - laptop:  380px
+             - desktop mare: 440px
+          */}
+          <div className="relative w-full h-[220px] sm:h-[300px] lg:h-[380px] xl:h-[440px]">
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
-                className="
-                  absolute inset-0 h-full w-full
-                  object-contain object-center   /* FIT – fără crop/zoom */
-                "
+                /* FIT – fără crop/zoom */
+                className="absolute inset-0 h-full w-full object-contain object-center"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
                 }}
@@ -82,21 +84,22 @@ function AnnouncementCard({ a, onOpen }) {
               </div>
             )}
 
-            {/* overlay pt. lizibilitate titlu – acoperă și barele (letterbox) */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/30 to-transparent" />
+            {/* overlay subtil pentru lizibilitate – acoperă și barele letterbox */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
 
-            {/* titlu mare jos, în interiorul imaginii */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
-              <h3 className="text-white font-extrabold tracking-tight uppercase text-2xl sm:text-3xl md:text-4xl leading-tight drop-shadow">
+            {/* titlu + dată în interiorul chenarului de imagine */}
+            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+              <h3 className="text-white font-extrabold uppercase tracking-tight leading-tight drop-shadow
+                              text-xl sm:text-2xl lg:text-3xl">
                 {a.title}
               </h3>
               <p className="mt-1 text-white/85 text-xs sm:text-sm">{formatDate(a.publishedAt)}</p>
-              <div className="mt-2 h-0.5 w-14 origin-left scale-x-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 transition duration-300 group-hover:scale-x-100" />
+              <div className="mt-2 h-0.5 w-12 origin-left scale-x-0 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 transition-all duration-300 group-hover:scale-x-100" />
             </div>
           </div>
         </div>
 
-        {/* descriere scurtă sub imagine (rămâne în chenarul mare) */}
+        {/* descriere scurtă sub boxul fix – nu afectează înălțimea imaginii */}
         <div className="p-4">
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -108,7 +111,7 @@ function AnnouncementCard({ a, onOpen }) {
 }
 
 /* =========================================================
-   CARUSEL HOMEPAGE – un singur anunț pe ecran + butoane
+   CARUSEL HOMEPAGE – 1 anunț / ecran + butoane + swipe
    ========================================================= */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -120,7 +123,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
   const prev = () => setPage((p) => Math.max(0, p - 1));
   const next = () => setPage((p) => Math.min(pages.length - 1, p + 1));
 
-  /* swipe */
+  // swipe
   const onPointerDown = (e) => {
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     dragRef.current = { startX: x, deltaX: 0, active: true };
@@ -137,7 +140,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
     if (Math.abs(deltaX) > THRESH) (deltaX > 0 ? prev() : next());
   };
 
-  /* accesibilitate */
+  // accesibilitate
   const onKeyDown = (e) => {
     if (e.key === 'ArrowLeft') prev();
     if (e.key === 'ArrowRight') next();
@@ -159,7 +162,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* Butoane în colțul din dreapta-sus */}
+      {/* butoane discrete în colțul dreapta-sus */}
       {pages.length > 1 && (
         <div className="absolute right-3 top-3 z-20 flex gap-2">
           <button
@@ -187,7 +190,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         </div>
       )}
 
-      {/* Rail – 1 card pe ecran, swipe & butoane */}
+      {/* rail: 1 card pe ecran; toate cardurile au aceeași înălțime fixă */}
       <div
         className="relative overflow-hidden rounded-[24px]"
         onMouseDown={onPointerDown}
@@ -229,7 +232,7 @@ const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: 
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
-      <div className="relative bg-gray-200 aspect-[16/9]" />
+      <div className="relative bg-gray-200 h-[220px] sm:h-[300px] lg:h-[380px] xl:h-[440px]" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -241,8 +244,8 @@ const SkeletonCard = () => (
 
 /* =========================================================
    COMPONENTA PRINCIPALĂ
-   - pe homepage (limit): carusel 1x, fără titluri „noutăți”
-   - pe /stiri: listă + paginare (+ opțional search)
+   - homepage (limit): carusel 1x, fără text „noutăți”
+   - /stiri: listă + paginare (+ opțional search)
    ========================================================= */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
@@ -251,11 +254,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [state, setState] = useState({ loading: false, error: null });
   const [selectedId, setSelectedId] = useState(null);
 
-  // paginare pentru /stiri
+  // paginare /stiri
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  // search pentru /stiri
+  // search /stiri
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
@@ -332,7 +335,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (!items.length) {
       return <div className="rounded-[32px] ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
     }
-    // primele N (ex. 4), dar un singur card pe cadru
     return <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />;
   }
 
@@ -444,7 +446,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
-                {/* … pager clasic … */}
                 {(() => {
                   const total = Math.max(1, totalPages);
                   const current = page + 1;
@@ -453,7 +454,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                   let end = Math.min(total, start + WINDOW - 1);
                   start = Math.max(1, Math.min(start, end - WINDOW + 1));
                   const nums = Array.from({ length: end - start + 1 }, (_, i) => start + i);
-
                   return (
                     <>
                       {nums[0] > 1 && (

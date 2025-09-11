@@ -33,10 +33,10 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* =========================================================
-   CARD ANUNȚ – stil "featured":
-   - înălțime FIXĂ (nu sare după poză)
-   - imagine object-cover + object-center (plin, ca în exemplu)
-   - overlay negru jos pentru titlu
+   CARD ANUNȚ – stil "featured" (același pe /stiri și homepage)
+   - înălțime FIXĂ
+   - imagine object-cover + object-center (plin, fără deformare)
+   - overlay jos pentru titlu
    ========================================================= */
 function AnnouncementCard({ a, onOpen }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
@@ -48,20 +48,19 @@ function AnnouncementCard({ a, onOpen }) {
       title={a.title}
       className="group block w-full text-left"
     >
-      {/* Chenar mare – paletă albastră */}
+      {/* Chenar identic cu /stiri */}
       <div
         className="
-          relative rounded-[28px] p-2 sm:p-3
-          bg-white/80 backdrop-blur-md
+          relative rounded-[24px] p-2 sm:p-3
+          bg-white/85 backdrop-blur-md
           ring-1 ring-indigo-200/60
-          shadow-[0_12px_36px_rgba(30,58,138,0.12)]
-          bg-gradient-to-br from-white via-sky-50/60 to-indigo-50/50
+          shadow-[0_10px_30px_rgba(30,58,138,0.12)]
         "
       >
-        {/* Media box cu înălțime fixă */}
-        <div className="relative overflow-hidden rounded-2xl ring-1 ring-indigo-100">
-          {/* înălțimi fixe pe breakpoint-uri */}
-          <div className="relative w-full h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px]">
+        {/* Media box */}
+        <div className="relative overflow-hidden rounded-xl ring-1 ring-indigo-100/70">
+          {/* înălțimi mai mici ca să încapă pe laptop */}
+          <div className="relative w-full h-[200px] sm:h-[260px] lg:h-[320px] xl:h-[360px]">
             {imgSrc ? (
               <img
                 src={imgSrc}
@@ -69,8 +68,6 @@ function AnnouncementCard({ a, onOpen }) {
                 className="
                   absolute inset-0 h-full w-full
                   object-cover object-center
-                  transition-transform duration-500
-                  group-hover:scale-[1.03]
                 "
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
@@ -86,15 +83,15 @@ function AnnouncementCard({ a, onOpen }) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
             {/* Caption */}
-            <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-6">
+            <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-5">
               <h3 className="text-white font-black uppercase tracking-tight leading-tight
-                              text-xl sm:text-2xl lg:text-3xl drop-shadow-md">
+                              text-lg sm:text-xl lg:text-2xl drop-shadow-md">
                 {a.title}
               </h3>
               <span className="mt-1 block text-white/90 text-xs sm:text-sm">
                 {formatDate(a.publishedAt)}
               </span>
-              <div className="mt-2 h-0.5 w-14 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
+              <div className="mt-2 h-0.5 w-12 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
             </div>
           </div>
         </div>
@@ -111,7 +108,8 @@ function AnnouncementCard({ a, onOpen }) {
 }
 
 /* =========================================================
-   CARUSEL – 1 slide vizibil, swipe + săgeți laterale
+   CARUSEL (homepage) – folosește ACELAȘI CARD ca /stiri
+   + fundal albastru discret în jurul cardului
    ========================================================= */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -152,17 +150,17 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       onKeyDown={onKeyDown}
       className="
         relative select-none
-        rounded-[32px] overflow-hidden
+        rounded-[28px] overflow-hidden
         ring-1 ring-indigo-200/60
-        bg-white/80 backdrop-blur-md
-        bg-gradient-to-b from-white via-sky-50/55 to-indigo-50/50
+        bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50
+        backdrop-blur-md
         shadow-[0_14px_44px_rgba(30,58,138,0.12)]
         px-2 sm:px-4 md:px-6 py-4 md:py-6
       "
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți laterale – centrate vertical */}
+      {/* săgeți laterale */}
       {pages.length > 1 && (
         <>
           <button
@@ -202,7 +200,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
 
       {/* pistă carusel */}
       <div
-        className="relative overflow-hidden rounded-[24px]"
+        className="relative overflow-hidden rounded-[20px]"
         onMouseDown={onPointerDown}
         onMouseMove={onPointerMove}
         onMouseUp={onPointerUp}
@@ -242,7 +240,7 @@ const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: 
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
-      <div className="relative h-[240px] sm:h-[320px] lg:h-[420px] xl:h-[480px] bg-gray-200" />
+      <div className="relative h-[200px] sm:h-[260px] lg:h-[320px] xl:h-[360px] bg-gray-200" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
@@ -332,16 +330,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   if (limit) {
     if (state.loading) {
       return (
-        <section className="rounded-[32px] ring-1 ring-indigo-200/60 bg-white/80 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
+        <section className="rounded-[28px] ring-1 ring-indigo-200/60 bg-gradient-to-b from-white via-sky-50/60 to-indigo-50/50 backdrop-blur-md px-3 sm:px-4 md:px-6 py-5 shadow-[0_14px_44px_rgba(30,58,138,0.12)]">
           <SkeletonCard />
         </section>
       );
     }
     if (state.error) {
-      return <div className="rounded-[32px] ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
+      return <div className="rounded-[28px] ring-1 ring-red-200 bg-white p-4 text-red-700">{state.error}</div>;
     }
     if (!items.length) {
-      return <div className="rounded-[32px] ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
+      return <div className="rounded-[28px] ring-1 ring-gray-200 bg-white p-6 text-gray-600">Nu există anunțuri momentan.</div>;
     }
     return <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />;
   }
@@ -366,11 +364,12 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      <div className={`flex ${!enableSearch ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : ''}`}>
+      {/* titlu + search (centrat pe laptop/desktop) */}
+      <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
         {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
 
         {enableSearch && (
-          <div className="w-full sm:w-96 sm:ml-auto relative">
+          <div className="w-full sm:w-[520px] md:w-[560px] mx-auto relative">
             <input
               type="text"
               value={queryInput}

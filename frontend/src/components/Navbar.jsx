@@ -1,4 +1,3 @@
-// src/components/Navbar.jsx
 /* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -82,27 +81,16 @@ const Navbar = () => {
     hidden: { opacity: 0, y: -6 },
     show: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
   };
-  const navListVariants = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.08 } },
-  };
-
-  const mobileItemVariants = {
-    hidden: { opacity: 0, x: 20 },
-    show: { opacity: 1, x: 0, transition: { duration: 0.25 } },
-  };
-  const mobileListVariants = {
-    hidden: {},
-    show: { transition: { staggerChildren: 0.07 } },
-  };
+  const navListVariants = { hidden: {}, show: { transition: { staggerChildren: 0.08 } } };
+  const mobileItemVariants = { hidden: { opacity: 0, x: 20 }, show: { opacity: 1, x: 0, transition: { duration: 0.25 } } };
+  const mobileListVariants = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 overflow-x-clip">
       <div className="w-full backdrop-blur-md bg-white/80 border-b border-gray-100 px-4 md:px-6 lg:px-10 [padding-left:env(safe-area-inset-left)] [padding-right:env(safe-area-inset-right)]">
-        <div className="max-w-[1440px] mx-auto">
+        <div className="max-w-[1440px] mx-auto min-w-0">
           {/* DESKTOP BAR */}
           <div className="hidden md:flex items-center justify-between py-2">
-            {/* LEFT: LOGO */}
             <Link to="/" aria-label="Mergi la pagina principală" className="relative flex items-center">
               <motion.img
                 src={logo}
@@ -114,7 +102,6 @@ const Navbar = () => {
               />
             </Link>
 
-            {/* RIGHT: NAV */}
             <motion.nav
               ref={leftMenuRef}
               className="flex items-center gap-7 font-semibold text-xs md:text-sm lg:text-base tracking-wide uppercase text-gray-800"
@@ -122,7 +109,6 @@ const Navbar = () => {
               initial="hidden"
               animate="show"
             >
-              {/* ECHIPĂ dropdown */}
               <motion.div variants={navItemVariants} className="relative flex items-center">
                 <button
                   type="button"

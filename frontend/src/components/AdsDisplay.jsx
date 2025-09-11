@@ -15,7 +15,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const [isCompact, setIsCompact] = useState(initialCompact);
   const [deviceType, setDeviceType] = useState(initialDevice);
 
-  // inject keyframes
   useEffect(() => {
     const id = "ads-anim-keyframes";
     if (!document.getElementById(id)) {
@@ -40,7 +39,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     }
   }, []);
 
-  // resize
   useEffect(() => {
     const onResize = () => {
       const compact = window.innerWidth < compactUntil;
@@ -52,7 +50,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     return () => window.removeEventListener("resize", onResize);
   }, [compactUntil]);
 
-  // fetch ads
   useEffect(() => {
     const fetchAds = async () => {
       setLoading(true);
@@ -80,7 +77,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
         setCurrentIndex(0);
       } catch (e) {
         console.error("Eroare la încărcarea reclamelor:", e);
-        setAds([]); // fallback
+        setAds([]);
       } finally {
         setLoading(false);
       }
@@ -88,7 +85,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     fetchAds();
   }, [position, deviceType]);
 
-  // preload
   useEffect(() => {
     ads.forEach((ad) => {
       const img = new Image();
@@ -96,7 +92,6 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     });
   }, [ads]);
 
-  // carousel pe mobil
   useEffect(() => {
     if (!isCompact || ads.length <= 1) return;
     const id = setInterval(() => {
@@ -105,31 +100,25 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     return () => clearInterval(id);
   }, [isCompact, ads]);
 
-  // --- LOADING SPINNER ---
   if (loading) {
-    // same dimensions as compact container so layout doesn't jump
     const commonClasses =
       "flex items-center justify-center rounded-xl border border-gray-200 bg-white shadow-md";
     return isCompact ? (
-      <div className={`relative w-full h-28 sm:h-32 md:h-36 ${commonClasses}`} role="status" aria-label="Se încarcă reclamele">
+      <div className={`relative w-full min-w-0 h-28 sm:h-32 md:h-36 ${commonClasses}`} role="status" aria-label="Se încarcă reclamele">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
       </div>
     ) : (
-      <div className={`w-full ${commonClasses} p-6`} role="status" aria-label="Se încarcă reclamele">
+      <div className={`w-full min-w-0 ${commonClasses} p-6`} role="status" aria-label="Se încarcă reclamele">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
       </div>
     );
   }
 
-  // dacă nu sunt ads după încărcare -> nu afișăm nimic
-  if (!ads.length) {
-    return null;
-  }
+  if (!ads.length) return null;
 
-  // === COMPACT (mobil/tabletă) ===
   if (isCompact) {
     return (
-      <div className="relative w-full h-28 sm:h-32 md:h-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
+      <div className="relative w-full min-w-0 h-28 sm:h-32 md:h-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
         {ads.map((ad, i) => {
           const active = i === currentIndex;
           return (
@@ -142,15 +131,13 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
                 active ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
               }`}
               title={ad.title || "Sponsor"}
-              style={{
-                animation: active ? "ads-mobile-zoom 0.7s ease-out" : "none",
-              }}
+              style={{ animation: active ? "ads-mobile-zoom 0.7s ease-out" : "none" }}
             >
               <div className="absolute inset-0 flex items-center justify-center p-1.5">
                 <img
                   src={ad.imageUrl}
                   alt={ad.title || "publicitate"}
-                  className="max-h-full max-w-full object-contain"
+                  className="w-full h-full max-w-full max-h-full object-contain"
                   loading="eager"
                   decoding="async"
                 />
@@ -162,9 +149,8 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     );
   }
 
-  // === DESKTOP (≥1024px) ===
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 min-w-0">
       {ads.map((ad, idx) => (
         <a
           key={ad.id}

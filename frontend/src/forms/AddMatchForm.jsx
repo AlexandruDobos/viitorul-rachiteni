@@ -329,10 +329,10 @@ const AddMatchForm = () => {
     return res.json();
   };
 
-  const fetchPlayers = async () => {
-    const res = await fetch(`${BASE_URL}/app/players`);
+ const fetchPlayers = async () => {
+   const res = await fetch(`${BASE_URL}/app/players?activeOnly=true`);
     if (!res.ok) throw new Error('Nu s-au putut încărca jucătorii.');
-    return res.json();
+    return res.json();,l[]
   };
 
   const fetchMatches = async () => {

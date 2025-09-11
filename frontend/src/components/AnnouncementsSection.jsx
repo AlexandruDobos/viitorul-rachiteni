@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -70,9 +71,9 @@ const SkeletonCard = () => (
 
 /**
  * Props:
- * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare)
+ * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare) + CTA
  * - pageSize: câte pe pagină în modul full (default 4)
- * - title: titlul secțiunii; dacă e falsy (null/""), nu afișăm titlu — lăsăm căutarea pe toată lățimea
+ * - title: titlul secțiunii; este ascuns când enableSearch=true
  * - enableSearch: afișează bara de căutare (server-side via ?q=) — live, cu debounce
  */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
@@ -179,28 +180,33 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     );
   }
 
-  const showPager = !limit && totalPages > 1;
-  const showTitle = Boolean(title);
+  const inLimitMode = Boolean(limit);
+  // ascundem titlul când avem search activ (ai deja titlu mare în bannerul paginii)
+  const showTitle = Boolean(title) && !enableSearch;
+  const showPager = !inLimitMode && totalPages > 1;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header + Search (live). Dacă nu avem titlu, bara de search ocupă toată lățimea. */}
-      <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'w-full'}`}>
+      {/* Header + Search */}
+      <div className={`flex ${showTitle ? 'flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : ''}`}>
         {showTitle && <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>}
 
         {enableSearch && (
-          <div className={`relative 'w-full'}`}>
+          <div className={`${showTitle ? 'sm:ml-auto sm:w-96' : 'w-full'} relative`}>
             <input
-              type="search"
+              type="text"
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Caută după titlu…"
-              className={`h-11 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
+              className="peer h-12 w-full rounded-full border border-gray-300 bg-white pl-10 pr-10 text-sm outline-none ring-blue-600/20 shadow-sm transition
+                         focus:border-blue-600 focus:ring-2"
               aria-label="Caută știri după titlu"
+              inputMode="search"
+              autoComplete="off"
             />
-            {/* icon */}
+            {/* lupa */}
             <svg
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-blue-600"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -209,16 +215,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
               <circle cx="11" cy="11" r="7" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
-            {/* clear */}
+            {/* clear – un singur X controlat de noi */}
             {queryInput && (
               <button
                 type="button"
                 onClick={onClear}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-gray-500 hover:text-gray-700"
+                className="absolute right-2 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-full text-gray-500 hover:text-gray-700"
                 aria-label="Șterge căutarea"
                 title="Șterge"
               >
-              
+                ×
               </button>
             )}
           </div>
@@ -273,7 +279,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
                         )}
 
-                        {/* shine diagonal */}
+                        {/* shine diagonal – păstrat, dar nu contribuie la overflow */}
                         <div
                           className="ann-shine pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
                           style={{

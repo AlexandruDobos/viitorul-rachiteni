@@ -33,7 +33,7 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* ===== CARD =====
-   - pe home (blueFrame=true): fără chenar/ring/shadow, dar ACUM afișează teaserul
+   - pe home (blueFrame=true): fără chenar/ring pentru media; teaser cu card „glass” + umbră
    - pe /stiri: cardul rămâne neschimbat
 */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
@@ -62,9 +62,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
                 src={imgSrc}
                 alt={a.title}
                 className="absolute inset-0 h-full w-full object-cover object-center"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder.png';
-                }}
+                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
@@ -86,20 +84,35 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
           </div>
         </div>
 
-        {/* teaser sub media – ACUM vizibil și pe home */}
-        <div className="p-4">
-          <p className="text-sm sm:text-base text-gray-700">
-            {wordsExcerpt(a.contentText, 36)}
-          </p>
-        </div>
+        {/* teaser sub media */}
+        {blueFrame ? (
+          /* HOME: card „glass” cu glow și umbră */
+          <div className="p-4">
+            <div className="relative group/teaser">
+              {/* glow subtil în spate */}
+              <div className="pointer-events-none absolute -inset-2 rounded-2xl bg-gradient-to-r from-blue-600/20 via-indigo-500/20 to-sky-500/20 blur-md opacity-70 transition-opacity group-hover/teaser:opacity-100" />
+              {/* cardul propriu-zis */}
+              <div className="relative rounded-xl bg-white/90 backdrop-blur-md ring-1 ring-indigo-100/70 shadow-[0_14px_34px_-10px_rgba(30,58,138,0.35)] p-4 transition-transform duration-300 group-hover/teaser:-translate-y-0.5">
+                <p className="text-sm sm:text-base text-gray-700">
+                  {wordsExcerpt(a.contentText, 36)}
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* /stiri: clasic */
+          <div className="p-4">
+            <p className="text-sm sm:text-base text-gray-700">
+              {wordsExcerpt(a.contentText, 36)}
+            </p>
+          </div>
+        )}
       </div>
     </button>
   );
 }
 
-/* ===== CARUSEL – HOME =====
-   FĂRĂ niciun background/chenar – secțiunea e invizibilă.
-*/
+/* ===== CARUSEL – HOME ===== */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -291,8 +304,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, EFFECTIVE_SIZE]);
+  }, [page, EFFECTIVE_SIZE]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (limit || !enableSearch) return;
@@ -303,8 +315,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryInput, enableSearch, limit]);
+  }, [queryInput, enableSearch, limit]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Detaliu
   if (selectedId) {

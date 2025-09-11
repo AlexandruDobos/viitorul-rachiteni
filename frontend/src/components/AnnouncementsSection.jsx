@@ -5,7 +5,7 @@ import { BASE_URL } from '../utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DEFAULT_PAGE_SIZE = 4; // ✅ 4 per pagină
+const DEFAULT_PAGE_SIZE = 4; // 4 per pagină
 const WINDOW = 5;
 
 function formatDate(iso) {
@@ -71,10 +71,10 @@ const SkeletonCard = () => (
 
 /**
  * Props:
- * - limit: when present (e.g., homepage), shows first N items (no pager/search)
- * - pageSize: items per page for full page mode (default 4)
- * - title: section title
- * - enableSearch: show a search bar (server-side via ?q=)
+ * - limit: când există (ex. homepage), afișează primele N elemente (fără search/paginare)
+ * - pageSize: câte pe pagină în modul full (default 4)
+ * - title: titlul secțiunii
+ * - enableSearch: afișează bara de căutare (server-side via ?q=) — live, cu debounce
  */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
@@ -85,7 +85,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [page, setPage] = useState(0); // 0-based
   const [totalPages, setTotalPages] = useState(1);
 
-  // search state (only used if enableSearch)
+  // search state (live)
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
@@ -110,6 +110,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
   }, []);
 
+  // live search (debounced)
+  useEffect(() => {
+    if (!enableSearch) return;
+    const t = setTimeout(() => {
+      setPage(0);
+      setQuery(queryInput.trim());
+    }, 300);
+    return () => clearTimeout(t);
+  }, [queryInput, enableSearch]);
+
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
@@ -117,9 +127,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
         page: String(pageNum),
         size: String(EFFECTIVE_SIZE),
       });
-      if (enableSearch && effectiveQuery.trim()) {
-        params.set('q', effectiveQuery.trim());
-      }
+      if (enableSearch && effectiveQuery) params.set('q', effectiveQuery);
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
@@ -149,12 +157,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [page, totalPages]);
 
-  const onSearchSubmit = (e) => {
-    e?.preventDefault?.();
-    setPage(0);
-    setQuery(queryInput);
-  };
-
   const onClear = () => {
     setQueryInput('');
     setPage(0);
@@ -175,36 +177,44 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header + Search */}
+      {/* Header + Search (live) */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>
 
         {enableSearch && (
-          <form onSubmit={onSearchSubmit} className="flex items-center gap-2">
+          <div className="relative">
             <input
               type="search"
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Caută după titlu…"
-              className="h-11 w-64 max-w-[70vw] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2"
+              className="h-11 w-72 sm:w-80 max-w-[70vw] rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2"
+              aria-label="Caută știri după titlu"
             />
-            <button
-              type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm text-white shadow-sm hover:bg-blue-700"
+            {/* icon */}
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              Caută
-            </button>
-            {query || queryInput ? (
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            {/* clear */}
+            {queryInput && (
               <button
                 type="button"
                 onClick={onClear}
-                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
-                title="Șterge căutarea"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-gray-500 hover:text-gray-700"
+                aria-label="Șterge căutarea"
+                title="Șterge"
               >
-                Reset
+                ×
               </button>
-            ) : null}
-          </form>
+            )}
+          </div>
         )}
       </div>
 
@@ -216,7 +226,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       ) : state.error ? (
         <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-xl p-6 ring-1 ring-gray-200 text-gray-600">Nu există anunțuri momentan.</div>
+        <div className="bg-white rounded-xl p-6 ring-1 ring-gray-200 text-gray-600">
+          {enableSearch && query
+            ? <>Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.</>
+            : 'Nu există anunțuri momentan.'}
+        </div>
       ) : (
         <>
           {/* GRID animat */}

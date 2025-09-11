@@ -1,10 +1,11 @@
+// src/components/AnnouncementsSection.jsx
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useState } from 'react';
 import { BASE_URL } from '../utils/constants';
 import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DEFAULT_PAGE_SIZE = 6;
+const DEFAULT_PAGE_SIZE = 4; // ✅ 4 per pagină
 const WINDOW = 5;
 
 function formatDate(iso) {
@@ -68,7 +69,14 @@ const SkeletonCard = () => (
   </div>
 );
 
-const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' }) => {
+/**
+ * Props:
+ * - limit: when present (e.g., homepage), shows first N items (no pager/search)
+ * - pageSize: items per page for full page mode (default 4)
+ * - title: section title
+ * - enableSearch: show a search bar (server-side via ?q=)
+ */
+const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
   const [items, setItems] = useState([]);
@@ -77,7 +85,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
   const [page, setPage] = useState(0); // 0-based
   const [totalPages, setTotalPages] = useState(1);
 
-  // injectăm o singură dată keyframes pentru “shine”
+  // search state (only used if enableSearch)
+  const [queryInput, setQueryInput] = useState('');
+  const [query, setQuery] = useState('');
+
+  // inject keyframes once for shine effect
   useEffect(() => {
     const id = 'ann-cards-keyframes';
     if (!document.getElementById(id)) {
@@ -98,11 +110,17 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
     }
   }, []);
 
-  const fetchPage = async (pageNum = 0) => {
+  const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
-      const url = `${BASE_URL}/app/announcements/page?page=${pageNum}&size=${EFFECTIVE_SIZE}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams({
+        page: String(pageNum),
+        size: String(EFFECTIVE_SIZE),
+      });
+      if (enableSearch && effectiveQuery.trim()) {
+        params.set('q', effectiveQuery.trim());
+      }
+      const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
       setItems(data.content || []);
@@ -114,11 +132,12 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
     }
   };
 
+  // initial + when page size / page / query changes
   useEffect(() => {
-    fetchPage(page);
+    fetchPage(page, query);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, EFFECTIVE_SIZE]);
+  }, [page, EFFECTIVE_SIZE, query]);
 
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
@@ -130,6 +149,18 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [page, totalPages]);
 
+  const onSearchSubmit = (e) => {
+    e?.preventDefault?.();
+    setPage(0);
+    setQuery(queryInput);
+  };
+
+  const onClear = () => {
+    setQueryInput('');
+    setPage(0);
+    setQuery('');
+  };
+
   if (selectedId) {
     return (
       <AnimatePresence mode="wait">
@@ -140,11 +171,41 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
     );
   }
 
+  const showPager = !limit && totalPages > 1;
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-      {/* Header secțiune */}
-      <div className="flex items-end justify-between">
+      {/* Header + Search */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>
+
+        {enableSearch && (
+          <form onSubmit={onSearchSubmit} className="flex items-center gap-2">
+            <input
+              type="search"
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
+              placeholder="Caută după titlu…"
+              className="h-11 w-64 max-w-[70vw] rounded-xl border border-gray-300 bg-white px-3 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2"
+            />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm text-white shadow-sm hover:bg-blue-700"
+            >
+              Caută
+            </button>
+            {query || queryInput ? (
+              <button
+                type="button"
+                onClick={onClear}
+                className="rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                title="Șterge căutarea"
+              >
+                Reset
+              </button>
+            ) : null}
+          </form>
+        )}
       </div>
 
       {/* Loading / Error / Empty */}
@@ -161,7 +222,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
           {/* GRID animat */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={`page-${page}`}
+              key={`page-${page}-${query || 'all'}`}
               className="grid grid-cols-1 md:grid-cols-2 gap-8"
               variants={gridVariants}
               initial="hidden"
@@ -191,7 +252,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
                           <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
                         )}
 
-                        {/* shine diagonal – rulează doar pe hover (via CSS din useEffect) */}
+                        {/* shine diagonal */}
                         <div
                           className="ann-shine pointer-events-none absolute top-0 bottom-0 w-1/3 -translate-x-full opacity-0"
                           style={{
@@ -231,7 +292,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți' })
           </AnimatePresence>
 
           {/* PAGINARE */}
-          {totalPages > 1 && (
+          {showPager && (
             <AnimatePresence>
               <motion.div
                 className="flex items-center justify-center gap-2 pt-4"

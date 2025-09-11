@@ -1,5 +1,5 @@
-/* eslint-disable no-unused-vars */
 // src/components/Navbar.jsx
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -64,7 +64,7 @@ const Navbar = () => {
   };
 
   const isActive = (path) => location.pathname.startsWith(path);
-  const echipaActive = ['/squad', '/matches', '/results', '/standings'].some((p) =>
+  const echipaActive = ['/stiri', '/squad', '/matches', '/results', '/standings'].some((p) =>
     location.pathname.startsWith(p)
   );
 
@@ -147,6 +147,7 @@ const Navbar = () => {
                       className="absolute top-full mt-2 left-0 w-56 rounded-xl bg-white shadow-lg border overflow-hidden"
                     >
                       <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide text-gray-700">
+                        <li><Link to="/stiri" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">ȘTIRI</Link></li>
                         <li><Link to="/squad" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
                         <li><Link to="/matches" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">MECIURI</Link></li>
                         <li><Link to="/results" onClick={() => setMenuOpen(false)} className="block px-4 py-2 hover:bg-gray-50">REZULTATE</Link></li>
@@ -267,6 +268,7 @@ const Navbar = () => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                       >
+                        <li><Link to="/stiri" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">ȘTIRI</Link></li>
                         <li><Link to="/squad" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">LISTA JUCĂTORI</Link></li>
                         <li><Link to="/matches" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">MECIURI</Link></li>
                         <li><Link to="/results" onClick={handleMobileClose} className="block px-2 py-1 rounded hover:bg-gray-50">REZULTATE</Link></li>

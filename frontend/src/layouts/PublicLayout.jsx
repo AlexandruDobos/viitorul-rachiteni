@@ -1,4 +1,3 @@
-// src/layouts/PublicLayout.jsx
 /* eslint-disable no-unused-vars */
 import React from "react";
 import { Outlet } from "react-router-dom";
@@ -10,36 +9,41 @@ import ScrollToTop from "../components/ScrollToTop";
 
 export default function PublicLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    // ✨ Blochează overflow pe X la nivel de root
+    <div className="min-h-screen flex flex-col bg-white overflow-x-hidden">
       {/* SEO/meta și scroll reset pentru paginile publice */}
       <ScrollToTop />
 
       <Navbar />
 
       {/* spațiu sub navbarul cu logo mare */}
-      <div className="pt-20 lg:pt-28 flex-grow">
+      {/* ✨ Evită orice overflow orizontal și în zona de conținut */}
+      <div className="pt-20 lg:pt-28 flex-grow overflow-x-hidden">
         {/* 1 coloană pe mobil+tabletă; 3 coloane abia de la lg (≥1024px) */}
         <div
           className="
-            mx-auto max-w-[1800px]
+            w-full mx-auto max-w-[1800px]
             grid lg:grid-cols-[220px_minmax(0,1fr)_220px]
             gap-y-6 lg:gap-y-8
             gap-x-6 lg:gap-x-12 xl:gap-x-16
             px-4 sm:px-6 lg:px-10
+            overflow-x-hidden
           "
         >
           {/* Sidebar stânga – doar ≥lg */}
           <aside className="hidden lg:block lg:pr-4">
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
-              <AdsDisplay position="left" />
+              <div className="overflow-x-hidden">
+                <AdsDisplay position="left" />
+              </div>
             </div>
           </aside>
 
           {/* Conținut central */}
-          <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6">
+          <main className="w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6 overflow-x-hidden">
             {/* Ads pe mobil/tabletă (sub lg) */}
-            <div className="lg:hidden mb-5 space-y-3 mt-8">
+            <div className="lg:hidden mb-5 mt-8 space-y-3 overflow-x-hidden">
               <AdsDisplay position="left" />
             </div>
 
@@ -47,7 +51,7 @@ export default function PublicLayout() {
             <Outlet />
 
             {/* Ads jos pe mobil/tabletă */}
-            <div className="lg:hidden mt-6 space-y-3">
+            <div className="lg:hidden mt-6 space-y-3 overflow-x-hidden">
               <AdsDisplay position="right" />
             </div>
           </main>
@@ -56,7 +60,9 @@ export default function PublicLayout() {
           <aside className="hidden lg:block lg:pl-4">
             <div className="lg:sticky lg:top-28 space-y-4">
               <div className="px-1 text-[11px] font-medium text-gray-500">Parteneri</div>
-              <AdsDisplay position="right" />
+              <div className="overflow-x-hidden">
+                <AdsDisplay position="right" />
+              </div>
             </div>
           </aside>
         </div>

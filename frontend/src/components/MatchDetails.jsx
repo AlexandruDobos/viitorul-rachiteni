@@ -66,7 +66,7 @@ function MVPSpotlight({ isFinal, topPlayerId, getPlayerName, getPlayerImg, votes
             </div>
             <div className="text-lg sm:text-2xl font-extrabold text-gray-900 truncate">{name}</div>
             <div className="mt-1 text-xs sm:text-sm text-gray-600">
-              {votes} vot{votes === 1 ? '' : 'uri'} din {total} &middot; {pct}%
+              {votes} vot{votes === 1 ? '' : 'uri'} din {total} · {pct}%
             </div>
 
             <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -86,7 +86,6 @@ export default function MatchDetails() {
   const { matchId } = useParams();
   const navigate = useNavigate();
 
-  // 🔗 folosește AuthContext (fără requests separate pentru auth)
   const { user, loading: authLoading } = useContext(AuthContext);
 
   /* --- STATE --- */
@@ -100,7 +99,6 @@ export default function MatchDetails() {
   const [myVote, setMyVote] = useState(null);
   const [savingVote, setSavingVote] = useState(false);
 
-  // drept de vot = user autentificat (poți schimba să ceară un rol anume)
   const canVote = !!user;
 
   /* --- EFFECT: datele de bază --- */
@@ -111,7 +109,8 @@ export default function MatchDetails() {
         const [resMatch, resStats, resPlayers] = await Promise.all([
           fetch(`${BASE_URL}/app/matches/${matchId}`),
           fetch(`${BASE_URL}/app/matches/player-stats/${matchId}`),
-          fetch(`${BASE_URL}/app/players`),
+          // IMPORTANT: cerem toți jucătorii (activi + inactivi)
+          fetch(`${BASE_URL}/app/players?activeOnly=false`),
         ]);
         const [matchData, statsData, playersData] = await Promise.all([
           resMatch.json(),
@@ -159,7 +158,7 @@ export default function MatchDetails() {
     }
   };
 
-  /* --- EFFECT: votes + myVote (reactiv la matchId și user) --- */
+  /* --- EFFECT: votes + myVote --- */
   useEffect(() => {
     (async () => {
       await loadVotes();
@@ -168,7 +167,7 @@ export default function MatchDetails() {
     const id = setInterval(loadVotes, 30000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, canVote]); // recalculează când se schimbă user-ul (login/logout)
+  }, [matchId, canVote]);
 
   /* --- MEMOs --- */
   const playersById = useMemo(() => {
@@ -191,7 +190,7 @@ export default function MatchDetails() {
     [starterIds, subIds]
   );
 
-  // Tie-break: la egalitate luăm pe primul din buletin (determinist)
+  // Tie-break determinist
   const topPlayerId = useMemo(() => {
     const totals = votesSummary.totals || {};
     let bestId = null;
@@ -218,10 +217,18 @@ export default function MatchDetails() {
     return <p className="text-center text-red-600">Nu s-au găsit detalii despre meci.</p>;
   }
 
-  /* --- Helpers --- */
-  const getPlayerName = (id) => playersById.get(id)?.name ?? `Jucător #${id}`;
-  const getPlayerNumber = (id) => playersById.get(id)?.shirtNumber ?? '-';
-  const getPlayerImg = (id) => playersById.get(id)?.profileImageUrl || '';
+  /* --- Helpers cu FALLBACK pe stats (pentru jucători inactivi) --- */
+  const getPlayerObj   = (id) => playersById.get(id);
+  const getStatObj     = (id) => statsByPlayer.get(id);
+
+  const getPlayerName  = (id) =>
+    (getPlayerObj(id)?.name) ?? (getStatObj(id)?.playerName) ?? `Jucător #${id}`;
+
+  const getPlayerNumber = (id) =>
+    (getPlayerObj(id)?.shirtNumber) ?? (getStatObj(id)?.shirtNumber) ?? '-';
+
+  const getPlayerImg   = (id) =>
+    (getPlayerObj(id)?.profileImageUrl) ?? (getStatObj(id)?.playerProfileImageUrl) ?? '';
 
   const zeroStat = { goals: 0, assists: 0, yellowCards: 0, redCard: false };
   const makeRow = (id, role) => {
@@ -241,7 +248,9 @@ export default function MatchDetails() {
   const starters = starterIds.map((id) => makeRow(id, 'Titular'));
   const subs = subIds.map((id) => makeRow(id, 'Rezervă'));
 
-  const extraIds = matchStats.map((s) => s.playerId).filter((id) => !starterIds.includes(id) && !subIds.includes(id));
+  const extraIds = matchStats
+    .map((s) => s.playerId)
+    .filter((id) => !starterIds.includes(id) && !subIds.includes(id));
   const extras = extraIds.map((id) => makeRow(id, 'Alții'));
 
   const competitionName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
@@ -294,7 +303,7 @@ export default function MatchDetails() {
         </div>
 
         <p className="text-gray-600">
-          {match.date} &middot; {match.kickoffTime} &middot; {match.location}
+          {match.date} · {match.kickoffTime} · {match.location}
         </p>
 
         {(competitionName || seasonLabel) && (
@@ -314,7 +323,6 @@ export default function MatchDetails() {
           </div>
         )}
 
-        {/* CTA / status voting */}
         {isFinal && !canVote && (
           <div className="mt-4 rounded-lg bg-indigo-50 text-indigo-900 px-4 py-3 inline-flex items-center gap-3">
             <Trophy />

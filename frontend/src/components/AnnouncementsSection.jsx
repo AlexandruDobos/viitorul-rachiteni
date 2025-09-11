@@ -195,7 +195,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
               placeholder="Caută după titlu…"
-              className={`h-11 ${showTitle ? 'w-72 sm:w-80' : 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
+              className={`h-11 'w-full'} rounded-2xl border border-gray-300 bg-white pl-9 pr-9 text-sm outline-none ring-blue-600/20 transition focus:border-blue-600 focus:ring-2`}
               aria-label="Caută știri după titlu"
             />
             {/* icon */}
@@ -218,7 +218,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 aria-label="Șterge căutarea"
                 title="Șterge"
               >
-                ×
+              
               </button>
             )}
           </div>

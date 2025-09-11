@@ -1,4 +1,3 @@
-// backend: src/main/java/com/viitorul/app/service/AnnouncementService.java
 package com.viitorul.app.service;
 
 import com.viitorul.app.dto.AnnouncementDTO;
@@ -23,7 +22,6 @@ public class AnnouncementService {
     public AnnouncementDTO createAnnouncement(AnnouncementDTO dto) {
         Announcement entity = AnnouncementDTO.toEntity(dto);
 
-        // fallback: dacă nu vine publishedAt, punem acum
         if (entity.getPublishedAt() == null) {
             entity.setPublishedAt(java.time.OffsetDateTime.now());
         }
@@ -43,23 +41,20 @@ public class AnnouncementService {
                 .map(AnnouncementDTO::fromEntity);
     }
 
-    // ✅ Noua semnătură cu q (căutare după titlu, case-insensitive)
+    /** Paginare + căutare strict pe titlu (case-insensitive) */
     public Page<AnnouncementDTO> getAnnouncementsPage(int page, int size, String q) {
         Pageable pageable = PageRequest.of(page, size);
-
         Page<Announcement> result;
-        if (q != null && !q.trim().isEmpty()) {
-            result = announcementRepository
-                    .findByTitleContainingIgnoreCaseOrderByPublishedAtDesc(q.trim(), pageable);
-        } else {
-            result = announcementRepository
-                    .findAllByOrderByPublishedAtDesc(pageable);
-        }
 
+        if (q != null && !q.trim().isEmpty()) {
+            result = announcementRepository.searchByTitle(q.trim(), pageable);
+        } else {
+            result = announcementRepository.findAllByOrderByPublishedAtDesc(pageable);
+        }
         return result.map(AnnouncementDTO::fromEntity);
     }
 
-    // (opțional) păstrăm și vechea semnătură pentru compatibilitate
+    // compatibilitate (fără q)
     public Page<AnnouncementDTO> getAnnouncementsPage(int page, int size) {
         return getAnnouncementsPage(page, size, "");
     }
@@ -67,13 +62,10 @@ public class AnnouncementService {
     public Optional<AnnouncementDTO> updateAnnouncement(Long id, AnnouncementDTO updatedDto) {
         return announcementRepository.findById(id).map(existing -> {
             Announcement updated = AnnouncementDTO.toEntity(updatedDto);
-            updated.setId(id); // păstrăm ID-ul
-
-            // păstrăm publishedAt-ul existent dacă nu vine în payload
+            updated.setId(id);
             if (updated.getPublishedAt() == null) {
                 updated.setPublishedAt(existing.getPublishedAt());
             }
-
             return AnnouncementDTO.fromEntity(announcementRepository.save(updated));
         });
     }

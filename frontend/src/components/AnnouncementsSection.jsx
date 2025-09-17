@@ -327,9 +327,9 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     const HomeHeading = (
       <div className="mb-3 sm:mb-4 flex justify-center">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
-          <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
+          {/* <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
             Ultimele noutăți
-          </span>
+          </span> */}
         </h2>
       </div>
     );

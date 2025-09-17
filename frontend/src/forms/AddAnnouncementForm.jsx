@@ -54,13 +54,14 @@ import { BASE_URL } from "../utils/constants";
 /* ======================= Image with drag-resize + align (Pointer Events) ======================= */
 const ResizableImage = BaseImage.extend({
   name: "image",
+  // dezactivează drag&drop pe imagine (evită RangeError din plugin-ul de drag)
+  draggable: false,
   addAttributes() {
     return {
       ...this.parent?.(),
       width: {
         default: null,
         parseHTML: (el) => {
-          // width din style sau atribut
           const style = el.getAttribute("style") || "";
           const m = style.match(/width\s*:\s*(\d+)px/i);
           if (m) return parseInt(m[1], 10);
@@ -70,7 +71,7 @@ const ResizableImage = BaseImage.extend({
         renderHTML: (attrs) => {
           const styles = [];
           if (attrs.width) styles.push(`width:${attrs.width}px;`);
-          // includem și alinierea aici ca un singur style final
+          // aliniere serializată în stil (HTML final)
           if (attrs.align === "left") styles.push("float:left;margin:0 1rem .5rem 0;");
           else if (attrs.align === "right") styles.push("float:right;margin:0 0 .5rem 1rem;");
           else if (attrs.align === "center")
@@ -89,7 +90,6 @@ const ResizableImage = BaseImage.extend({
             return "center";
           return null;
         },
-        // NU punem renderHTML aici ca să nu suprascriem style-ul generat la width
       },
     };
   },
@@ -110,14 +110,23 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
     return Math.max(80, Math.min(Math.floor(parentWidth), Math.floor(w)));
   };
 
-  // selectează nodul imagine în editor (ca să devină "active")
+  // selectează nodul imagine (NodeSelection), cu un microtask delay -> evită RangeError la setContent
   const selectThisNode = () => {
     const pos = typeof getPos === "function" ? getPos() : null;
     if (typeof pos !== "number") return;
-    const { state, dispatch } = editor.view;
-    const tr = state.tr.setSelection(NodeSelection.create(state.doc, pos));
-    dispatch(tr);
-    editor.view.focus();
+    requestAnimationFrame(() => {
+      if (!editor?.view) return;
+      const { state, dispatch } = editor.view;
+      try {
+        // gardă: ignoră dacă poziția nu mai e validă
+        if (pos < 0 || pos > state.doc.content.size) return;
+        const tr = state.tr.setSelection(NodeSelection.create(state.doc, pos));
+        dispatch(tr);
+        editor.view.focus();
+      } catch {
+        // ignorăm sigurely dacă documentul tocmai s-a schimbat
+      }
+    });
   };
 
   const onPointerDown = (e) => {
@@ -156,12 +165,12 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
   const align = node.attrs.align;
   const wrapperFloat =
     align === "left"
-      ? { float: "left", margin: "0 1rem .5rem 0" }
+      ? { cssFloat: "left", margin: "0 1rem .5rem 0" }
       : align === "right"
-      ? { float: "right", margin: "0 0 .5rem 1rem" }
+      ? { cssFloat: "right", margin: "0 0 .5rem 1rem" }
       : align === "center"
-      ? { display: "block", marginLeft: "auto", marginRight: "auto" }
-      : {};
+      ? { display: "block", marginLeft: "auto", marginRight: "auto", cssFloat: "none" }
+      : { cssFloat: "none" };
 
   return (
     <NodeViewWrapper
@@ -169,12 +178,8 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
       ref={wrapRef}
       className={`relative my-3 ${selected ? "ring-2 ring-blue-400 rounded-xl" : ""}`}
       contentEditable={false}
-      // un click pe imagine o selectează (fără resize)
       onMouseDown={(e) => {
-        // dacă nu am nimerit mânerul, doar selectăm
-        if (e.target === imgRef.current) {
-          selectThisNode();
-        }
+        if (e.target === imgRef.current) selectThisNode();
       }}
       style={{
         userSelect: isResizing ? "none" : undefined,
@@ -196,7 +201,7 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
           transition: isResizing ? "none" : "width 80ms linear",
         }}
         onLoad={(e) => {
-          // Dacă avem width deja din parseHTML, nu-l suprascriem
+          // nu suprascrie width dacă a venit din parseHTML (editare)
           if (!node.attrs.width && e.currentTarget) {
             const naturalW = e.currentTarget.naturalWidth || 0;
             const initial = clampToParent(naturalW || 600);
@@ -324,20 +329,20 @@ function AddAnnouncementForm({ onSave }) {
     let w = parseInt(attrs.width, 10);
     if (!w || Number.isNaN(w)) w = Math.round(getEditorWidth() * 0.8);
     w = Math.max(80, w + delta);
-    editor.commands.updateAttributes("image", { width: w });
+    editor.chain().focus().updateAttributes("image", { width: w }).run();
   };
 
   const setImagePercent = (pct) => {
     const px = Math.max(80, Math.round((getEditorWidth() * pct) / 100));
-    editor?.commands.updateAttributes("image", { width: px });
+    editor?.chain().focus().updateAttributes("image", { width: px }).run();
   };
 
   const resetImageWidth = () => {
-    editor?.commands.updateAttributes("image", { width: null });
+    editor?.chain().focus().updateAttributes("image", { width: null }).run();
   };
 
   const setImageAlign = (align) => {
-    editor?.commands.updateAttributes("image", { align });
+    editor?.chain().focus().updateAttributes("image", { align }).run();
   };
 
   /* ---------------- API ---------------- */
@@ -478,7 +483,7 @@ function AddAnnouncementForm({ onSave }) {
     setTitle(a.title || "");
     setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
-    // conținutul salvat are width/align în style; parseHTML din extensie le re-citește corect
+    // conținutul salvat are width/align în style; parseHTML le re-citește corect
     editor?.commands.setContent(a.contentHtml || "");
   };
 
@@ -743,16 +748,32 @@ function AddAnnouncementForm({ onSave }) {
                   </ToolButton>
 
                   {/* Aliniere imagine + wrap text */}
-                  <ToolButton title="Poză la stânga (wrap)" onClick={() => setImageAlign("left")} active={editor.getAttributes("image")?.align === "left"}>
+                  <ToolButton
+                    title="Poză la stânga (wrap)"
+                    onClick={() => setImageAlign("left")}
+                    active={editor.getAttributes("image")?.align === "left"}
+                  >
                     <AlignLeft className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton title="Poză centrată" onClick={() => setImageAlign("center")} active={editor.getAttributes("image")?.align === "center"}>
+                  <ToolButton
+                    title="Poză centrată"
+                    onClick={() => setImageAlign("center")}
+                    active={editor.getAttributes("image")?.align === "center"}
+                  >
                     <AlignCenter className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton title="Poză la dreapta (wrap)" onClick={() => setImageAlign("right")} active={editor.getAttributes("image")?.align === "right"}>
+                  <ToolButton
+                    title="Poză la dreapta (wrap)"
+                    onClick={() => setImageAlign("right")}
+                    active={editor.getAttributes("image")?.align === "right"}
+                  >
                     <AlignRight className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton title="Inline (fără aliniere)" onClick={() => setImageAlign(null)} active={!editor.getAttributes("image")?.align}>
+                  <ToolButton
+                    title="Inline (fără aliniere)"
+                    onClick={() => setImageAlign(null)}
+                    active={!editor.getAttributes("image")?.align}
+                  >
                     <Eraser className="h-4 w-4" />
                   </ToolButton>
                 </>

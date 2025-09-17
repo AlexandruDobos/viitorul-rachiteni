@@ -36,10 +36,10 @@ function toAbsoluteUrl(maybeUrl) {
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
-  // fără niciun card alb/ring/shadow – doar container transparent
+  // container transparent – doar frame-ul imaginii rămâne vizibil
   const outerClass = 'relative rounded-2xl';
 
-  // înălțimi imagine (păstrăm aceleași proporții ca înainte)
+  // înălțimi imagine
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -52,46 +52,60 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
       className="group block w-full text-left bg-transparent"
     >
       <div className={outerClass}>
-        {/* Header: TITLU pe centru + DATĂ sub titlu */}
+        {/* Header: TITLU pe centru + DATĂ cu highlight discret */}
         <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
-          <h3 className="
+          <h3
+            className="
               font-black uppercase tracking-tight leading-tight
               text-lg sm:text-2xl md:text-3xl
-              bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent
-            ">
+              bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600
+              bg-clip-text text-transparent
+            "
+          >
             {a.title}
           </h3>
-          <span className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium
-                           text-indigo-700 bg-indigo-50 ring-1 ring-indigo-200/60">
-            {formatDate(a.publishedAt)}
+
+          <span className="mt-2 relative inline-block">
+            <span className="relative z-10 text-xs sm:text-sm font-medium text-slate-600">
+              {formatDate(a.publishedAt)}
+            </span>
+            {/* highlight bar (nu e “etichetă”) */}
+            <span
+              aria-hidden
+              className="
+                absolute inset-x-0 bottom-0 h-1.5 rounded-full
+                bg-gradient-to-r from-amber-200/80 via-orange-200/80 to-rose-200/80
+              "
+            />
           </span>
         </div>
 
-        {/* Media – aici păstrăm SINGURUL chenar vizibil (imaginea) */}
+        {/* Media – singurul frame vizibil */}
         <div className="px-2 sm:px-3 pt-3">
-          <div className={`relative overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)] ${heightClass}`}>
+          <div
+            className={`relative overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)] ${heightClass}`}
+          >
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
                 className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
-                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.png';
+                }}
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-gray-400 bg-gray-100">
                 Fără imagine
               </div>
             )}
-            {/* sheen discret */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
           </div>
         </div>
 
         {/* Teaser – vizibil DOAR pe /stiri, ascuns pe home */}
         <div className={`px-2 sm:px-3 pb-4 sm:pb-5 ${blueFrame ? 'hidden' : ''}`}>
-          <p className="text-sm sm:text-base text-gray-700">
-            {wordsExcerpt(a.contentText, 36)}
-          </p>
+          <p className="text-sm sm:text-base text-gray-700">{wordsExcerpt(a.contentText, 36)}</p>
         </div>
       </div>
     </button>
@@ -290,7 +304,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -302,7 +316,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   // Detaliu
@@ -324,20 +338,10 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   /* ---------- HOMEPAGE ---------- */
   if (limit) {
-    const HomeHeading = (
-      <div className="mb-3 sm:mb-4 flex justify-center">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
-          {/* <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
-            Ultimele noutăți
-          </span> */}
-        </h2>
-      </div>
-    );
-
+    // fără heading “Ultimele noutăți”
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
-          {HomeHeading}
           <SkeletonCard />
         </div>
       );
@@ -345,7 +349,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (state.error) {
       return (
         <div className="max-w-6xl mx-auto">
-          {HomeHeading}
           <div className="text-red-700">{state.error}</div>
         </div>
       );
@@ -353,14 +356,12 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (!items.length) {
       return (
         <div className="max-w-6xl mx-auto">
-          {HomeHeading}
           <div className="text-gray-700">Nu există anunțuri momentan.</div>
         </div>
       );
     }
     return (
       <div className="max-w-6xl mx-auto">
-        {HomeHeading}
         <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />
       </div>
     );
@@ -418,15 +419,23 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
       {state.loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}
+          {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : state.error ? (
-        <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
+        <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">
+          {state.error}
+        </div>
       ) : items.length === 0 ? (
         <div className="bg-white rounded-xl p-6 ring-1 ring-gray-200 text-gray-600">
-          {enableSearch && query
-            ? <>Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.</>
-            : 'Nu există anunțuri momentan.'}
+          {enableSearch && query ? (
+            <>
+              Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.
+            </>
+          ) : (
+            'Nu există anunțuri momentan.'
+          )}
         </div>
       ) : (
         <>
@@ -456,38 +465,77 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 animate="show"
                 exit="exit"
               >
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                        onClick={() => setPage(0)} disabled={page === 0} title="Prima pagină">«</button>
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                        onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => setPage(0)}
+                  disabled={page === 0}
+                  title="Prima pagină"
+                >
+                  «
+                </button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page === 0}
+                  title="Anterior"
+                >
+                  ←
+                </button>
 
                 <>
                   {pageNumbers[0] > 1 && (
                     <>
-                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(0)}>1</button>
+                      <button
+                        className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+                        onClick={() => setPage(0)}
+                      >
+                        1
+                      </button>
                       {pageNumbers[0] > 2 && <span className="px-1 text-sm text-gray-500">…</span>}
                     </>
                   )}
                   {pageNumbers.map((n) => (
-                    <button key={n}
+                    <button
+                      key={n}
                       onClick={() => setPage(n - 1)}
-                      className={`px-3 py-1.5 text-sm rounded-lg border ${n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'}`}>
+                      className={`px-3 py-1.5 text-sm rounded-lg border ${
+                        n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
+                      }`}
+                    >
                       {n}
                     </button>
                   ))}
                   {pageNumbers[pageNumbers.length - 1] < totalPages && (
                     <>
-                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-sm text-gray-500">…</span>}
-                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" onClick={() => setPage(totalPages - 1)}>{totalPages}</button>
+                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                        <span className="px-1 text-sm text-gray-500">…</span>
+                      )}
+                      <button
+                        className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+                        onClick={() => setPage(totalPages - 1)}
+                      >
+                        {totalPages}
+                      </button>
                     </>
                   )}
                 </>
 
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        disabled={page === totalPages - 1} title="Următor">→</button>
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                        onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1} title="Ultima pagină">»</button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page === totalPages - 1}
+                  title="Următor"
+                >
+                  →
+                </button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => setPage(totalPages - 1)}
+                  disabled={page === totalPages - 1}
+                  title="Ultima pagină"
+                >
+                  »
+                </button>
               </motion.div>
             </AnimatePresence>
           )}

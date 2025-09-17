@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 
+/* ---------- utils ---------- */
 function formatDate(iso) {
   try {
     const d = new Date(iso);
@@ -18,6 +19,13 @@ function formatDate(iso) {
   }
 }
 
+function escapeHtml(str = '') {
+  return String(str).replace(/[&<>"']/g, (m) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[m]));
+}
+
+/* ---------- skeleton ---------- */
 const Skeleton = () => (
   <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
     <div className="mb-4 h-4 w-40 bg-gray-200 rounded animate-pulse" />
@@ -37,6 +45,7 @@ const Skeleton = () => (
   </div>
 );
 
+/* ---------- component ---------- */
 const AnnouncementDetail = ({ id, onBack }) => {
   const [item, setItem] = useState(null);
   const [state, setState] = useState({ loading: true, error: null });
@@ -44,16 +53,12 @@ const AnnouncementDetail = ({ id, onBack }) => {
   // Toast
   const [toast, setToast] = useState({ show: false, kind: 'success', text: '' });
   const toastTimer = useRef(null);
-
   const openToast = (text, kind = 'success', ms = 2200) => {
     setToast({ show: true, kind, text });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast((t) => ({ ...t, show: false })), ms);
   };
-
-  useEffect(() => {
-    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
-  }, []);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   useEffect(() => {
     const run = async () => {
@@ -101,10 +106,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   if (state.error) {
     return (
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <button
-          onClick={onBack}
-          className="text-sm text-blue-600 mb-4 hover:underline"
-        >
+        <button onClick={onBack} className="text-sm text-blue-600 mb-4 hover:underline">
           ← Înapoi la anunțuri
         </button>
         <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">
@@ -117,12 +119,23 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   const hasCover = Boolean(item.coverUrl);
 
+  // Fallback: dacă dintr-un motiv HTML-ul e gol, construim din contentText, păstrând line breaks
+  const safeHtml =
+    item.contentHtml && item.contentHtml.trim()
+      ? item.contentHtml
+      : (item.contentText || '')
+          .split(/\n{2,}/)
+          .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
+          .join('');
+
   return (
     <div className="pt-2 md:pt-4">
       {/* Toast */}
       <div
         aria-live="polite"
-        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${
+          toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}
       >
         <div
           className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
@@ -148,27 +161,24 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
       {/* container principal */}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        <button
-          onClick={onBack}
-          className="mb-4 inline-flex items-center gap-1 text-blue-600 hover:underline"
-        >
+        <button onClick={onBack} className="mb-4 inline-flex items-center gap-1 text-blue-600 hover:underline">
           <span>←</span> Înapoi la anunțuri
         </button>
 
         {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HEADER: titlu + dată */}
+          {/* HEADER – stil editorial */}
           <header className="px-5 md:px-8 pt-6 pb-4 text-center">
-            {/* Titlu – font „display”, responsive */}
-            <h1 className="
+            <h1
+              className="
                 font-serif font-extrabold tracking-tight leading-tight
-                text-3xl md:text-4xl lg:text-5xl
+                text-2xl md:text-4xl lg:text-5xl
                 text-slate-900
-              ">
+              "
+            >
               {item.title}
             </h1>
 
-            {/* Dată – centrată, cu linii discrete stânga/dreapta */}
             <div className="mt-3 w-full max-w-[760px] mx-auto flex items-center gap-3">
               <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
               <span className="whitespace-nowrap text-xs md:text-sm font-medium text-slate-600">
@@ -193,15 +203,11 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           )}
 
-          {/* BODY */}
+          {/* BODY – tipografie aerisită + păstrarea spațiilor/newline-urilor */}
           <div className="p-5 md:p-8 lg:p-10">
-            {/* butoane acțiune */}
+            {/* acțiuni */}
             <div className="flex items-center justify-center gap-2 mb-6">
-              <button
-                onClick={copyLink}
-                className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
-                title="Copiază link"
-              >
+              <button onClick={copyLink} className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" title="Copiază link">
                 Copiază link
               </button>
               {hasCover && (
@@ -216,25 +222,25 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* Conținut formatat, aerisit */}
+            {/* Conținut – important: whitespace-pre-wrap pentru a păstra spațiile și Enter-urile */}
             <div
               className="
                 prose md:prose-lg lg:prose-xl
                 max-w-none
-                whitespace-pre-line
+                whitespace-pre-wrap
                 prose-headings:font-semibold
-                prose-p:my-4 md:prose-p:my-5 lg:prose-p:my-6
-                prose-p:leading-7 md:prose-p:leading-8
-                prose-li:my-1.5 md:prose-li:my-2
+                prose-p:my-5 md:prose-p:my-6
+                prose-p:leading-7 md:prose-p:leading-8 lg:prose-p:leading-9
                 prose-a:text-blue-600 hover:prose-a:underline
-                prose-img:rounded-lg prose-img:shadow
+                prose-strong:text-slate-900
+                prose-img:rounded-xl prose-img:shadow
                 prose-ul:list-disc prose-ol:list-decimal
+                prose-li:my-1.5 md:prose-li:my-2
                 prose-blockquote:border-l-4 prose-blockquote:border-gray-300
                 prose-hr:my-8
               "
-              dangerouslySetInnerHTML={{ __html: item.contentHtml }}
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
             />
-            {/* Dacă vrei să păstrezi inclusiv spațiile consecutive, înlocuiește `whitespace-pre-line` cu `whitespace-pre-wrap`. */}
           </div>
         </article>
       </div>

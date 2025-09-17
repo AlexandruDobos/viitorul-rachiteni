@@ -32,7 +32,7 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD – titlul & data SUS, fără chenar suplimentar ===== */
+/* ===== CARD – titlul & data SUS, fără chenare suplimentare ===== */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
@@ -52,32 +52,26 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
       className="group block w-full text-left bg-transparent"
     >
       <div className={outerClass}>
-        {/* Header: TITLU pe centru + DATĂ cu highlight discret */}
+        {/* Header: TITLU pe centru + DATĂ cu separator elegant (fără etichetă) */}
         <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
           <h3
             className="
-              font-black uppercase tracking-tight leading-tight
-              text-lg sm:text-2xl md:text-3xl
-              bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600
-              bg-clip-text text-transparent
+              font-serif font-extrabold uppercase tracking-wide leading-tight
+              text-lg sm:text-2xl md:text-3xl text-slate-900
+              drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]
             "
           >
             {a.title}
           </h3>
 
-          <span className="mt-2 relative inline-block">
-            <span className="relative z-10 text-xs sm:text-sm font-medium text-slate-600">
+          {/* dată cu linii subțiri stânga/dreapta */}
+          <div className="mt-2 w-full max-w-[560px] flex items-center gap-3">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+            <span className="whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
               {formatDate(a.publishedAt)}
             </span>
-            {/* highlight bar (nu e “etichetă”) */}
-            <span
-              aria-hidden
-              className="
-                absolute inset-x-0 bottom-0 h-1.5 rounded-full
-                bg-gradient-to-r from-amber-200/80 via-orange-200/80 to-rose-200/80
-              "
-            />
-          </span>
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+          </div>
         </div>
 
         {/* Media – singurul frame vizibil */}
@@ -112,7 +106,9 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   );
 }
 
-/* ===== CARUSEL – HOME ===== */
+/* ===== CARUSEL – HOME =====
+   Săgețile sunt ACUM poziționate relativ la zona IMAGINII (nu la containerul întreg).
+*/
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -156,45 +152,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți – neschimbate */}
-      {pages.length > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={prev}
-            aria-label="Anterior"
-            disabled={page === 0}
-            className="
-              absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10
-              grid h-10 w-10 place-items-center rounded-full
-              bg-white/95 ring-1 ring-blue-600/30 shadow
-              hover:bg-white disabled:opacity-50
-            "
-          >
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onClick={next}
-            aria-label="Următor"
-            disabled={page === pages.length - 1}
-            className="
-              absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10
-              grid h-10 w-10 place-items-center rounded-full
-              bg-white/95 ring-1 ring-blue-600/30 shadow
-              hover:bg-white disabled:opacity-50
-            "
-          >
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
-            </svg>
-          </button>
-        </>
-      )}
-
-      {/* pistă carusel */}
+      {/* pistă carusel + butoane suprapuse LA MIJLOCUL IMAGINII */}
       <div
         className="relative overflow-hidden rounded-xl"
         onMouseDown={onPointerDown}
@@ -205,6 +163,44 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         onTouchMove={onPointerMove}
         onTouchEnd={onPointerUp}
       >
+        {/* NAV buttons – poziționate relativ la această zonă (imaginea) */}
+        {pages.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Anterior"
+              disabled={page === 0}
+              className="
+                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10
+                grid h-10 w-10 place-items-center rounded-full
+                bg-white/95 ring-1 ring-blue-600/30 shadow
+                hover:bg-white disabled:opacity-50
+              "
+            >
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Următor"
+              disabled={page === pages.length - 1}
+              className="
+                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10
+                grid h-10 w-10 place-items-center rounded-full
+                bg-white/95 ring-1 ring-blue-600/30 shadow
+                hover:bg-white disabled:opacity-50
+              "
+            >
+              <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
+              </svg>
+            </button>
+          </>
+        )}
+
         <div
           className="flex transition-transform duration-500 ease-out"
           style={{

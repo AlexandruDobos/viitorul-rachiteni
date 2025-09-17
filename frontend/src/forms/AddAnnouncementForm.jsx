@@ -2,12 +2,7 @@
 // src/forms/AddAnnouncementForm.jsx
 import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
-import {
-  useEditor,
-  EditorContent,
-  NodeViewWrapper,
-  ReactNodeViewRenderer,
-} from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -51,10 +46,18 @@ import {
 
 import { BASE_URL } from "../utils/constants";
 
-/* ======================= Image with drag-resize + align ======================= */
-const ResizableImage = BaseImage.extend({
+/* ======================= Block Image + align via TextAlign ======================= */
+/**
+ * Facem imaginea block-level, selectabilă, nedrăgabilă. Acceptă:
+ *  - width (px) -> serializează în style
+ *  - textAlign (left/center/right/justify) -> pentru center aplicăm margin auto
+ *    pentru right aplicăm margin-left:auto; pentru left nu e necesar nimic special.
+ * Parsăm din style (inclusiv cazul vechi cu display:block;margin:auto).
+ */
+const ImageBlock = BaseImage.extend({
   name: "image",
-  // IMPORTANT: evităm drag&drop intern (RangeError) și ne asigurăm că poate fi selectată
+  inline: false,
+  group: "block",
   draggable: false,
   selectable: true,
 
@@ -65,174 +68,47 @@ const ResizableImage = BaseImage.extend({
         default: null,
         parseHTML: (el) => {
           const style = el.getAttribute("style") || "";
-          const m = style.match(/width\s*:\s*(\d+)px/i);
-          if (m) return parseInt(m[1], 10);
+          const w = style.match(/width\s*:\s*(\d+)px/i);
+          if (w) return parseInt(w[1], 10);
           const wAttr = el.getAttribute("width");
           return wAttr ? parseInt(wAttr, 10) : null;
         },
         renderHTML: (attrs) => {
+          const out = {};
           const styles = [];
           if (attrs.width) styles.push(`width:${attrs.width}px;`);
-          // serializăm alinierea direct în style
-          if (attrs.align === "left") styles.push("float:left;margin:0 1rem .5rem 0;");
-          else if (attrs.align === "right")
-            styles.push("float:right;margin:0 0 .5rem 1rem;");
-          else if (attrs.align === "center")
-            styles.push("display:block;margin-left:auto;margin-right:auto;");
-          return styles.length ? { style: styles.join("") } : {};
+          // punem display:block pentru a putea centra prin margin auto
+          styles.push("display:block;");
+          // textAlign aplicat pe nodul image (nu pe părinte)
+          if (attrs.textAlign === "center") {
+            styles.push("margin-left:auto;margin-right:auto;");
+          } else if (attrs.textAlign === "right") {
+            styles.push("margin-left:auto;");
+          } else if (attrs.textAlign === "justify") {
+            // pentru imagine justify nu are sens — îl tratăm ca left
+          }
+          if (styles.length) out.style = styles.join("");
+          return out;
         },
       },
       height: { default: null },
-      align: {
-        default: null, // left | center | right | null
+      textAlign: {
+        default: null,
         parseHTML: (el) => {
-          const style = el.getAttribute("style") || "";
-          if (/float\s*:\s*left/i.test(style)) return "left";
-          if (/float\s*:\s*right/i.test(style)) return "right";
-          if (/margin-left\s*:\s*auto/i.test(style) && /margin-right\s*:\s*auto/i.test(style))
+          const style = (el.getAttribute("style") || "").toLowerCase();
+          if (style.includes("margin-left:auto") && style.includes("margin-right:auto")) {
             return "center";
-          return null;
+          }
+          if (style.includes("margin-left:auto")) return "right";
+          // dacă e ceva gen text-align:center direct pe img (rar)
+          const m = style.match(/text-align\s*:\s*(left|center|right|justify)/);
+          return m ? m[1] : null;
         },
+        renderHTML: () => ({}), // stilul e compus în width.renderHTML
       },
     };
   },
-
-  addNodeView() {
-    return ReactNodeViewRenderer(ResizableImageView);
-  },
 });
-
-function ResizableImageView({ node, updateAttributes, selected, editor, getPos }) {
-  const imgRef = useRef(null);
-  const wrapRef = useRef(null);
-  const [isResizing, setIsResizing] = useState(false);
-  const start = useRef({ x: 0, width: 0, pointerId: null });
-
-  const clampToParent = (w) => {
-    const parentWidth =
-      wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
-      window.innerWidth;
-    return Math.max(80, Math.min(Math.floor(parentWidth), Math.floor(w)));
-  };
-
-  // selectează nodul imagine (cu un rAF ca să evităm erori în timpul tranzacțiilor)
-  const selectThisNode = () => {
-    const pos = typeof getPos === "function" ? getPos() : null;
-    if (typeof pos !== "number") return;
-    requestAnimationFrame(() => {
-      if (!editor?.view) return;
-      const { state, dispatch } = editor.view;
-      try {
-        if (pos < 0 || pos > state.doc.content.size) return;
-        const tr = state.tr.setSelection(NodeSelection.create(state.doc, pos));
-        dispatch(tr);
-        editor.view.focus();
-      } catch {
-        // ignorăm dacă documentul tocmai s-a schimbat
-      }
-    });
-  };
-
-  const onPointerDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    selectThisNode();
-    if (!imgRef.current) return;
-    start.current = {
-      x: e.clientX,
-      width: imgRef.current.getBoundingClientRect().width,
-      pointerId: e.pointerId,
-    };
-    setIsResizing(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e) => {
-    if (!isResizing || start.current.pointerId !== e.pointerId) return;
-    const deltaX = e.clientX - start.current.x;
-    const newWidth = clampToParent(start.current.width + deltaX);
-    updateAttributes({ width: newWidth });
-  };
-
-  const onPointerUp = (e) => {
-    if (start.current.pointerId === e.pointerId) {
-      setIsResizing(false);
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {}
-    }
-  };
-
-  const showHandle = selected || isResizing;
-
-  // stilizare live în editor pentru wrap text / centrare
-  const align = node.attrs.align;
-  const wrapperFloat =
-    align === "left"
-      ? { cssFloat: "left", margin: "0 1rem .5rem 0" }
-      : align === "right"
-      ? { cssFloat: "right", margin: "0 0 .5rem 1rem" }
-      : align === "center"
-      ? { display: "block", marginLeft: "auto", marginRight: "auto", cssFloat: "none" }
-      : { cssFloat: "none" };
-
-  return (
-    <NodeViewWrapper
-      as="figure"
-      ref={wrapRef}
-      className={`relative my-3 ${selected ? "ring-2 ring-blue-400 rounded-xl" : ""}`}
-      contentEditable={false}
-      onMouseDown={(e) => {
-        if (e.target === imgRef.current) selectThisNode();
-      }}
-      style={{
-        userSelect: isResizing ? "none" : undefined,
-        ...wrapperFloat,
-        width: node.attrs.width ? `${node.attrs.width}px` : undefined,
-      }}
-    >
-      <img
-        ref={imgRef}
-        src={node.attrs.src}
-        alt={node.attrs.alt || "image"}
-        title={node.attrs.title}
-        draggable={false}
-        className="h-auto rounded-xl border bg-white"
-        style={{
-          display: "block",
-          maxWidth: "100%",
-          width: node.attrs.width ? `${node.attrs.width}px` : undefined,
-          transition: isResizing ? "none" : "width 80ms linear",
-        }}
-        onLoad={(e) => {
-          // nu suprascrie width dacă a venit din parseHTML (editare)
-          if (!node.attrs.width && e.currentTarget) {
-            const naturalW = e.currentTarget.naturalWidth || 0;
-            const initial = clampToParent(naturalW || 600);
-            updateAttributes({ width: initial });
-          }
-        }}
-        onClick={() => selectThisNode()}
-      />
-      {/* mânerul de redimensionare */}
-      <div
-        role="button"
-        aria-label="Redimensionează imagine"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        className={`absolute -bottom-2 -right-2 h-4 w-4 rounded-full border bg-white shadow transition ${
-          showHandle ? "opacity-100 cursor-nwse-resize" : "opacity-0"
-        }`}
-        style={{ touchAction: "none" }}
-      />
-      {showHandle && (
-        <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-blue-300" />
-      )}
-    </NodeViewWrapper>
-  );
-}
 
 /* ============================= Utils ============================= */
 function isoToInputLocal(iso) {
@@ -290,8 +166,9 @@ function AddAnnouncementForm({ onSave }) {
       Underline,
       TextStyle,
       Color,
+      // IMPORTANT: TextAlign trebuie să includă și 'image'
       TextAlign.configure({
-        types: ["heading", "paragraph"],
+        types: ["heading", "paragraph", "image"],
         alignments: ["left", "center", "right", "justify"],
       }),
       Link.configure({
@@ -300,8 +177,8 @@ function AddAnnouncementForm({ onSave }) {
         protocols: ["http", "https", "mailto", "tel", "sms"],
         linkOnPaste: true,
       }),
-      ResizableImage.configure({
-        HTMLAttributes: { class: "max-w-full h-auto rounded-xl" },
+      ImageBlock.configure({
+        HTMLAttributes: { class: "max-w-full h-auto rounded-xl border bg-white" },
       }),
       Placeholder.configure({
         placeholder: "Scrie conținutul anunțului aici…",
@@ -320,18 +197,16 @@ function AddAnnouncementForm({ onSave }) {
   const canUndo = editor?.can().undo() ?? false;
   const canRedo = editor?.can().redo() ?? false;
 
-  /* ------ helper care ACTUALIZEAZĂ SIGUR imaginea din/pe lângă selecție ------ */
+  /* ------ helper care actualizează imaginea lângă/pe selecție (pentru width) ------ */
   const setImageAttrs = (patch) => {
     if (!editor) return false;
-    const { state, view } = editor;
+    const { state } = editor;
     const { selection, doc } = state;
     let pos = null;
 
-    // 1) dacă e NodeSelection pe imagine, folosim direct
     if (selection instanceof NodeSelection && selection.node.type.name === "image") {
       pos = selection.from;
     } else {
-      // 2) încercăm după/înainte de cursor
       const $from = selection.$from;
       const after = $from.nodeAfter;
       const before = $from.nodeBefore;
@@ -340,7 +215,6 @@ function AddAnnouncementForm({ onSave }) {
       } else if (before && before.type.name === "image") {
         pos = $from.pos - before.nodeSize;
       } else {
-        // 3) fallback: căutăm primul node image în jurul selecției
         doc.nodesBetween(
           Math.max(0, selection.from - 1),
           Math.min(doc.content.size, selection.to + 1),
@@ -366,7 +240,7 @@ function AddAnnouncementForm({ onSave }) {
     return true;
   };
 
-  /* --------- helpers pentru lățimea editorului & setare width pe imagine --------- */
+  /* --------- width helpers --------- */
   const getEditorWidth = () => {
     if (!editor?.view?.dom) return 800;
     return Math.max(200, editor.view.dom.clientWidth - 16);
@@ -388,10 +262,6 @@ function AddAnnouncementForm({ onSave }) {
 
   const resetImageWidth = () => {
     setImageAttrs({ width: null });
-  };
-
-  const setImageAlign = (align) => {
-    setImageAttrs({ align });
   };
 
   /* ---------------- API ---------------- */
@@ -535,7 +405,7 @@ function AddAnnouncementForm({ onSave }) {
     setTitle(a.title || "");
     setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
-    // parseHTML din extensie recitește width/align din style, deci se păstrează la re-editare
+    // width și centrare sunt în style pe <img>, parserul din ImageBlock le reia corect
     editor?.commands.setContent(a.contentHtml || "");
   };
 
@@ -740,11 +610,11 @@ function AddAnnouncementForm({ onSave }) {
 
               <Divider />
 
-              {/* ALINIERE TEXT (paragrafe/heading) */}
+              {/* ALINIERE (acum funcționează și pe IMAGINE selectată) */}
               <ToolButton title="Aliniază la stânga" onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })}>
                 <AlignLeft className="h-4 w-4" />
               </ToolButton>
-              <ToolButton title="Centrează text" onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })}>
+              <ToolButton title="Centrează" onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })}>
                 <AlignCenter className="h-4 w-4" />
               </ToolButton>
               <ToolButton title="Aliniază la dreapta" onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })}>
@@ -775,20 +645,8 @@ function AddAnnouncementForm({ onSave }) {
                 )}
               </ToolButton>
 
-              {/* ---- CONTROALE PENTRU IMAGINE ---- */}
-              {(
-                editor?.isActive("image") ||
-                // le arătăm și când cursorul e lipit de o imagine (calculează activarea)
-                (() => {
-                  const sel = editor?.state?.selection;
-                  if (!sel) return false;
-                  const $from = sel.$from;
-                  return (
-                    $from.nodeBefore?.type?.name === "image" ||
-                    $from.nodeAfter?.type?.name === "image"
-                  );
-                })()
-              ) && (
+              {/* CONTROALE DE LĂȚIME PENTRU IMAGINE (fără drag handle) */}
+              {editor && (editor.isActive("image") || editor.isActive({ node: "image" })) && (
                 <>
                   <Divider />
                   <span className="text-xs text-gray-500 px-1">Imagine:</span>
@@ -808,20 +666,6 @@ function AddAnnouncementForm({ onSave }) {
                     <span className="text-[11px] font-medium">100%</span>
                   </ToolButton>
                   <ToolButton title="Auto (resetare lățime)" onClick={resetImageWidth}>
-                    <Eraser className="h-4 w-4" />
-                  </ToolButton>
-
-                  {/* Aliniere imagine + wrap text */}
-                  <ToolButton title="Poză la stânga (wrap)" onClick={() => setImageAlign("left")}>
-                    <AlignLeft className="h-4 w-4" />
-                  </ToolButton>
-                  <ToolButton title="Poză centrată" onClick={() => setImageAlign("center")}>
-                    <AlignCenter className="h-4 w-4" />
-                  </ToolButton>
-                  <ToolButton title="Poză la dreapta (wrap)" onClick={() => setImageAlign("right")}>
-                    <AlignRight className="h-4 w-4" />
-                  </ToolButton>
-                  <ToolButton title="Inline (fără aliniere)" onClick={() => setImageAlign(null)}>
                     <Eraser className="h-4 w-4" />
                   </ToolButton>
                 </>
@@ -884,7 +728,6 @@ function AddAnnouncementForm({ onSave }) {
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="mb-2 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
-          {loadingList && <span className="text-xs text-gray-500">Se încarcă…</span>}
         </div>
 
         {announcements.length === 0 ? (

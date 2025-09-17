@@ -32,14 +32,12 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD – titlul & data SUS, fără chenare suplimentare ===== */
+/* ===== CARD – titlu & dată aliniate cu stilul din AnnouncementDetail ===== */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
-  // container transparent – doar frame-ul imaginii rămâne vizibil
   const outerClass = 'relative rounded-2xl';
 
-  // înălțimi imagine
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -52,19 +50,18 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
       className="group block w-full text-left bg-transparent"
     >
       <div className={outerClass}>
-        {/* Header: TITLU pe centru + DATĂ cu separator elegant (fără etichetă) */}
+        {/* Header: TITLU pe centru + DATĂ cu separator elegant */}
         <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
           <h3
             className="
-              font-serif font-extrabold uppercase tracking-wide leading-tight
+              font-sans font-extrabold uppercase tracking-tight leading-tight
               text-lg sm:text-2xl md:text-3xl text-slate-900
-              drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]
             "
           >
             {a.title}
           </h3>
 
-          {/* dată cu linii subțiri stânga/dreapta */}
+          {/* dată cu linii subțiri stânga/dreapta – la fel ca în AnnouncementDetail */}
           <div className="mt-2 w-full max-w-[560px] flex items-center gap-3">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
             <span className="whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
@@ -107,7 +104,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
 }
 
 /* ===== CARUSEL – HOME =====
-   Săgețile sunt ACUM poziționate relativ la zona IMAGINII (nu la containerul întreg).
+   Săgețile sunt poziționate la mijlocul IMAGINII.
 */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -374,7 +371,14 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
-        {!enableSearch && <h2 className="text-2xl md:text-3xl font-bold">Ultimele noutăți</h2>}
+        {!enableSearch && (
+          <h2 className="
+              font-sans font-extrabold uppercase tracking-tight
+              text-2xl md:text-3xl text-slate-900
+            ">
+            Ultimele noutăți
+          </h2>
+        )}
 
         {enableSearch && (
           <div className="w-full sm:w-[520px] md:w-[560px] mx-auto relative">

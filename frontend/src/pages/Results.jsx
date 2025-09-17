@@ -39,7 +39,7 @@ const Results = () => {
     const fetchMatches = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${BASE_URL}/app/matches`, { credentials: 'include' });
+        const res = await fetch(`${BASE_URL}/app/matches/results`, { credentials: 'include' });
         const data = await res.json();
 
         const finished = Array.isArray(data)

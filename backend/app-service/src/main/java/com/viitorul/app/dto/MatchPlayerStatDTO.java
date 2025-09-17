@@ -18,22 +18,30 @@ public class MatchPlayerStatDTO {
     private boolean redCard;
     private String matchName;
 
+    private String playerName;
+    private Integer shirtNumber;
+    private String playerProfileImageUrl;
+    private Boolean playerActive;
+
     public static MatchPlayerStatDTO toDto(MatchPlayerStat stat) {
         Match match = stat.getMatch();
+        Player p = stat.getPlayer();
         String matchName = match.getHomeTeam().getName() + " - " + match.getAwayTeam().getName();
 
         return MatchPlayerStatDTO.builder()
-                .playerId(stat.getPlayer().getId())
+                .playerId(p.getId())
                 .matchId(match.getId())
                 .goals(stat.getGoals())
                 .assists(stat.getAssists())
                 .yellowCards(stat.getYellowCards())
                 .redCard(stat.isRedCard())
                 .matchName(matchName)
+                .playerName(p.getName())
+                .shirtNumber(p.getShirtNumber())
+                .playerProfileImageUrl(p.getProfileImageUrl())
+                .playerActive(Boolean.TRUE.equals(p.getIsActive()))
                 .build();
     }
-
-
     public MatchPlayerStat toEntity(Match match, Player player) {
         return MatchPlayerStat.builder()
                 .match(match)

@@ -160,6 +160,15 @@ public class MatchService {
         return matchRepository.findAll().stream().map(MatchDTO::toDto).toList();
     }
 
+
+
+    /** Rezultate finalizate, ordonate DESC după dată/oră. */
+    public List<MatchDTO> getResultsDesc() {
+        return matchRepository.findFinishedMatchesDesc().stream()
+                .map(MatchDTO::toDto)
+                .toList();
+    }
+
     public List<MatchPlayerStatDTO> getStatsForPlayer(Long playerId) {
         return statRepository.findByPlayer_Id(playerId).stream()
                 .map(MatchPlayerStatDTO::toDto)

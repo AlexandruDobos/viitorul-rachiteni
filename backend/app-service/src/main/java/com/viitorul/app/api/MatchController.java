@@ -35,6 +35,11 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getNextMatch());
     }
 
+    @GetMapping("/results")
+    public ResponseEntity<List<MatchDTO>> getResultsDesc() {
+        return ResponseEntity.ok(matchService.getResultsDesc());
+    }
+
     @GetMapping("/upcoming")
     public ResponseEntity<List<MatchDTO>> getUpcomingMatches() {
         return ResponseEntity.ok(matchService.getUpcomingMatches());

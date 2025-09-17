@@ -16,4 +16,13 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         ORDER BY m.date ASC, m.kickoffTime ASC
         """)
     List<Match> findUpcomingMatches();
+
+    @Query("""
+        SELECT m FROM Match m
+        WHERE m.active = true
+          AND m.homeGoals IS NOT NULL
+          AND m.awayGoals IS NOT NULL
+        ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
+        """)
+    List<Match> findFinishedMatchesDesc();
 }

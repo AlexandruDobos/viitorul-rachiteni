@@ -22,7 +22,11 @@ const Skeleton = () => (
   <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
     <div className="mb-4 h-4 w-40 bg-gray-200 rounded animate-pulse" />
     <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200">
-      <div className="relative bg-gray-200 aspect-[16/9] animate-pulse" />
+      <div className="px-5 md:px-8 pt-6 pb-4">
+        <div className="h-7 bg-gray-200 rounded mx-auto w-2/3 animate-pulse" />
+        <div className="mt-3 h-4 bg-gray-200 rounded mx-auto w-40 animate-pulse" />
+      </div>
+      <div className="relative bg-gray-200 aspect-[16/9] mx-5 md:mx-8 mb-6 rounded-2xl animate-pulse" />
       <div className="p-5 md:p-8 space-y-3">
         <div className="h-6 bg-gray-200 rounded w-2/3 animate-pulse" />
         <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
@@ -77,7 +81,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
     }
   }, []);
 
-  // ✅ Custom copy (no alert/prompt). Falls back to execCommand if needed.
+  // ✅ copy link
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -163,7 +167,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
         </div>
       </div>
 
-      {/* container lărgit la max-w-6xl pentru a ocupa tot spațiul coloanei centrale */}
+      {/* container principal */}
       <div className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <button
           onClick={onBack}
@@ -172,41 +176,40 @@ const AnnouncementDetail = ({ id, onBack }) => {
           <span>←</span> Înapoi la anunțuri
         </button>
 
-        {/* card pe toată lățimea disponibilă */}
+        {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HERO – imaginea umple complet lățimea cardului */}
-          {hasCover ? (
-            <div className="relative bg-gray-100 aspect-[16/9]">
-              <img
-                src={item.coverUrl}
-                alt={item.title}
-                className="absolute inset-0 w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder.png';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-center">
-                <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold drop-shadow">
-                  {item.title}
-                </h1>
-                <p className="text-white/80 text-xs md:text-sm mt-1">
-                  Publicat: {formatDate(item.publishedAt)}
-                </p>
+          {/* HEADER – exact ca pe cardurile din listă: titlu centrat + dată cu linii */}
+          <header className="px-5 md:px-8 pt-6 pb-3 text-center">
+            <h1 className="font-serif font-extrabold uppercase tracking-wide leading-tight text-2xl md:text-3xl lg:text-4xl text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+              {item.title}
+            </h1>
+            <div className="mt-3 w-full max-w-[680px] mx-auto flex items-center gap-3">
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+              <span className="whitespace-nowrap text-xs md:text-sm font-medium text-slate-600">
+                Publicat: {formatDate(item.publishedAt)}
+              </span>
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
+            </div>
+          </header>
+
+          {/* HERO – imaginea sub titlu, fără overlay; singurul frame vizibil */}
+          {hasCover && (
+            <div className="mx-5 md:mx-8 mb-6">
+              <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)]">
+                <img
+                  src={item.coverUrl}
+                  alt={item.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = '/placeholder.png';
+                  }}
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
               </div>
             </div>
-          ) : (
-            <header className="px-5 md:px-8 pt-6 pb-2 text-center">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
-                {item.title}
-              </h1>
-              <p className="text-gray-500 text-xs md:text-sm mt-1">
-                Publicat: {formatDate(item.publishedAt)}
-              </p>
-            </header>
           )}
 
-          {/* BODY – conținutul folosește întreaga lățime a cardului */}
+          {/* BODY */}
           <div className="p-5 md:p-8 lg:p-10">
             {/* butoane acțiune */}
             <div className="flex items-center justify-center gap-2 mb-6">
@@ -229,7 +232,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* conținut formatat – fără limită de lățime în interiorul cardului */}
+            {/* conținut formatat */}
             <div
               className="
                 prose prose-sm md:prose lg:prose-lg

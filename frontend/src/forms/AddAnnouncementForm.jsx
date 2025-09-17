@@ -51,11 +51,13 @@ import {
 
 import { BASE_URL } from "../utils/constants";
 
-/* ======================= Image with drag-resize + align (Pointer Events) ======================= */
+/* ======================= Image with drag-resize + align ======================= */
 const ResizableImage = BaseImage.extend({
   name: "image",
-  // dezactivează drag&drop pe imagine (evită RangeError din plugin-ul de drag)
+  // IMPORTANT: evităm drag&drop intern (RangeError) și ne asigurăm că poate fi selectată
   draggable: false,
+  selectable: true,
+
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -71,9 +73,10 @@ const ResizableImage = BaseImage.extend({
         renderHTML: (attrs) => {
           const styles = [];
           if (attrs.width) styles.push(`width:${attrs.width}px;`);
-          // aliniere serializată în stil (HTML final)
+          // serializăm alinierea direct în style
           if (attrs.align === "left") styles.push("float:left;margin:0 1rem .5rem 0;");
-          else if (attrs.align === "right") styles.push("float:right;margin:0 0 .5rem 1rem;");
+          else if (attrs.align === "right")
+            styles.push("float:right;margin:0 0 .5rem 1rem;");
           else if (attrs.align === "center")
             styles.push("display:block;margin-left:auto;margin-right:auto;");
           return styles.length ? { style: styles.join("") } : {};
@@ -93,6 +96,7 @@ const ResizableImage = BaseImage.extend({
       },
     };
   },
+
   addNodeView() {
     return ReactNodeViewRenderer(ResizableImageView);
   },
@@ -106,11 +110,12 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
 
   const clampToParent = (w) => {
     const parentWidth =
-      wrapRef.current?.parentElement?.getBoundingClientRect()?.width || window.innerWidth;
+      wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
+      window.innerWidth;
     return Math.max(80, Math.min(Math.floor(parentWidth), Math.floor(w)));
   };
 
-  // selectează nodul imagine (NodeSelection), cu un microtask delay -> evită RangeError la setContent
+  // selectează nodul imagine (cu un rAF ca să evităm erori în timpul tranzacțiilor)
   const selectThisNode = () => {
     const pos = typeof getPos === "function" ? getPos() : null;
     if (typeof pos !== "number") return;
@@ -118,13 +123,12 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
       if (!editor?.view) return;
       const { state, dispatch } = editor.view;
       try {
-        // gardă: ignoră dacă poziția nu mai e validă
         if (pos < 0 || pos > state.doc.content.size) return;
         const tr = state.tr.setSelection(NodeSelection.create(state.doc, pos));
         dispatch(tr);
         editor.view.focus();
       } catch {
-        // ignorăm sigurely dacă documentul tocmai s-a schimbat
+        // ignorăm dacă documentul tocmai s-a schimbat
       }
     });
   };
@@ -161,7 +165,7 @@ function ResizableImageView({ node, updateAttributes, selected, editor, getPos }
 
   const showHandle = selected || isResizing;
 
-  // stilizare wrapper pentru wrap corect în editor
+  // stilizare live în editor pentru wrap text / centrare
   const align = node.attrs.align;
   const wrapperFloat =
     align === "left"
@@ -253,7 +257,6 @@ function formatDateForList(iso) {
 
 /* ====================== Main component ====================== */
 function AddAnnouncementForm({ onSave }) {
-  // ✅ Mobile-only offset under fixed admin top bar
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 1024 : true
   );
@@ -317,6 +320,52 @@ function AddAnnouncementForm({ onSave }) {
   const canUndo = editor?.can().undo() ?? false;
   const canRedo = editor?.can().redo() ?? false;
 
+  /* ------ helper care ACTUALIZEAZĂ SIGUR imaginea din/pe lângă selecție ------ */
+  const setImageAttrs = (patch) => {
+    if (!editor) return false;
+    const { state, view } = editor;
+    const { selection, doc } = state;
+    let pos = null;
+
+    // 1) dacă e NodeSelection pe imagine, folosim direct
+    if (selection instanceof NodeSelection && selection.node.type.name === "image") {
+      pos = selection.from;
+    } else {
+      // 2) încercăm după/înainte de cursor
+      const $from = selection.$from;
+      const after = $from.nodeAfter;
+      const before = $from.nodeBefore;
+      if (after && after.type.name === "image") {
+        pos = $from.pos;
+      } else if (before && before.type.name === "image") {
+        pos = $from.pos - before.nodeSize;
+      } else {
+        // 3) fallback: căutăm primul node image în jurul selecției
+        doc.nodesBetween(
+          Math.max(0, selection.from - 1),
+          Math.min(doc.content.size, selection.to + 1),
+          (node, posHere) => {
+            if (!pos && node.type.name === "image") {
+              pos = posHere;
+              return false;
+            }
+            return true;
+          }
+        );
+      }
+    }
+
+    if (pos == null) return false;
+    const node = editor.state.doc.nodeAt(pos);
+    if (!node || node.type.name !== "image") return false;
+
+    const newAttrs = { ...node.attrs, ...patch };
+    const tr = editor.state.tr.setNodeMarkup(pos, undefined, newAttrs);
+    editor.view.dispatch(tr);
+    editor.view.focus();
+    return true;
+  };
+
   /* --------- helpers pentru lățimea editorului & setare width pe imagine --------- */
   const getEditorWidth = () => {
     if (!editor?.view?.dom) return 800;
@@ -329,20 +378,20 @@ function AddAnnouncementForm({ onSave }) {
     let w = parseInt(attrs.width, 10);
     if (!w || Number.isNaN(w)) w = Math.round(getEditorWidth() * 0.8);
     w = Math.max(80, w + delta);
-    editor.chain().focus().updateAttributes("image", { width: w }).run();
+    setImageAttrs({ width: w });
   };
 
   const setImagePercent = (pct) => {
     const px = Math.max(80, Math.round((getEditorWidth() * pct) / 100));
-    editor?.chain().focus().updateAttributes("image", { width: px }).run();
+    setImageAttrs({ width: px });
   };
 
   const resetImageWidth = () => {
-    editor?.chain().focus().updateAttributes("image", { width: null }).run();
+    setImageAttrs({ width: null });
   };
 
   const setImageAlign = (align) => {
-    editor?.chain().focus().updateAttributes("image", { align }).run();
+    setImageAttrs({ align });
   };
 
   /* ---------------- API ---------------- */
@@ -404,12 +453,14 @@ function AddAnnouncementForm({ onSave }) {
     }
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   };
+
   const addImage = () => {
     if (!editor) return;
     const url = window.prompt("Introdu URL-ul imaginii");
     if (!url) return;
     editor.chain().focus().setImage({ src: url, alt: "image" }).run();
   };
+
   const handleInlineFile = async (e) => {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -426,6 +477,7 @@ function AddAnnouncementForm({ onSave }) {
       setUploadingInline(false);
     }
   };
+
   const clearFormatting = () => {
     editor?.chain().focus().clearNodes().unsetAllMarks().run();
   };
@@ -483,7 +535,7 @@ function AddAnnouncementForm({ onSave }) {
     setTitle(a.title || "");
     setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
-    // conținutul salvat are width/align în style; parseHTML le re-citește corect
+    // parseHTML din extensie recitește width/align din style, deci se păstrează la re-editare
     editor?.commands.setContent(a.contentHtml || "");
   };
 
@@ -688,11 +740,11 @@ function AddAnnouncementForm({ onSave }) {
 
               <Divider />
 
-              {/* ALINIERE TEXT */}
+              {/* ALINIERE TEXT (paragrafe/heading) */}
               <ToolButton title="Aliniază la stânga" onClick={() => editor?.chain().focus().setTextAlign("left").run()} active={editor?.isActive({ textAlign: "left" })}>
                 <AlignLeft className="h-4 w-4" />
               </ToolButton>
-              <ToolButton title="Centrează" onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })}>
+              <ToolButton title="Centrează text" onClick={() => editor?.chain().focus().setTextAlign("center").run()} active={editor?.isActive({ textAlign: "center" })}>
                 <AlignCenter className="h-4 w-4" />
               </ToolButton>
               <ToolButton title="Aliniază la dreapta" onClick={() => editor?.chain().focus().setTextAlign("right").run()} active={editor?.isActive({ textAlign: "right" })}>
@@ -723,8 +775,20 @@ function AddAnnouncementForm({ onSave }) {
                 )}
               </ToolButton>
 
-              {/* ---- CONTROALE IMAGINE când e selectată ---- */}
-              {editor?.isActive("image") && (
+              {/* ---- CONTROALE PENTRU IMAGINE ---- */}
+              {(
+                editor?.isActive("image") ||
+                // le arătăm și când cursorul e lipit de o imagine (calculează activarea)
+                (() => {
+                  const sel = editor?.state?.selection;
+                  if (!sel) return false;
+                  const $from = sel.$from;
+                  return (
+                    $from.nodeBefore?.type?.name === "image" ||
+                    $from.nodeAfter?.type?.name === "image"
+                  );
+                })()
+              ) && (
                 <>
                   <Divider />
                   <span className="text-xs text-gray-500 px-1">Imagine:</span>
@@ -748,32 +812,16 @@ function AddAnnouncementForm({ onSave }) {
                   </ToolButton>
 
                   {/* Aliniere imagine + wrap text */}
-                  <ToolButton
-                    title="Poză la stânga (wrap)"
-                    onClick={() => setImageAlign("left")}
-                    active={editor.getAttributes("image")?.align === "left"}
-                  >
+                  <ToolButton title="Poză la stânga (wrap)" onClick={() => setImageAlign("left")}>
                     <AlignLeft className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton
-                    title="Poză centrată"
-                    onClick={() => setImageAlign("center")}
-                    active={editor.getAttributes("image")?.align === "center"}
-                  >
+                  <ToolButton title="Poză centrată" onClick={() => setImageAlign("center")}>
                     <AlignCenter className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton
-                    title="Poză la dreapta (wrap)"
-                    onClick={() => setImageAlign("right")}
-                    active={editor.getAttributes("image")?.align === "right"}
-                  >
+                  <ToolButton title="Poză la dreapta (wrap)" onClick={() => setImageAlign("right")}>
                     <AlignRight className="h-4 w-4" />
                   </ToolButton>
-                  <ToolButton
-                    title="Inline (fără aliniere)"
-                    onClick={() => setImageAlign(null)}
-                    active={!editor.getAttributes("image")?.align}
-                  >
+                  <ToolButton title="Inline (fără aliniere)" onClick={() => setImageAlign(null)}>
                     <Eraser className="h-4 w-4" />
                   </ToolButton>
                 </>

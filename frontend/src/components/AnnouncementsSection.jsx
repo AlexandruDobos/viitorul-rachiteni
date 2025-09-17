@@ -32,18 +32,17 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD =====
-   - pe home (blueFrame=true): fără chenar/ring/shadow
-   - pe /stiri: cardul rămâne neschimbat
-   * Titlul are ACUM fundal pentru lizibilitate.
-*/
+/* ===== CARD – titlul și data sunt ACUM deasupra imaginii ===== */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
-  const outerClass = blueFrame
-    ? 'relative rounded-xl'
-    : 'relative rounded-[24px] p-2 sm:p-3 bg-white/85 backdrop-blur-md ring-1 ring-indigo-200/60 shadow-[0_10px_30px_rgba(30,58,138,0.12)]';
+  // chenar elegant pentru ambele moduri (home + /stiri)
+  const outerClass =
+    'relative rounded-2xl bg-white/95 backdrop-blur-md ring-1 ring-indigo-200/60 ' +
+    'shadow-[0_10px_30px_rgba(30,58,138,0.12)] hover:shadow-[0_16px_40px_rgba(30,58,138,0.18)] ' +
+    'transition-shadow';
 
+  // înălțimi imagini
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -56,46 +55,40 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
       className="group block w-full text-left"
     >
       <div className={outerClass}>
-        <div className={blueFrame ? 'relative overflow-hidden rounded-xl' : 'relative overflow-hidden rounded-xl ring-1 ring-indigo-100/70'}>
-          <div className={`relative w-full ${heightClass}`}>
+        {/* Header: TITLU + DATĂ (nu mai este în poză) */}
+        <div className="px-4 pt-4 sm:px-5 sm:pt-5">
+          <h3 className="text-gray-900 font-extrabold tracking-tight uppercase leading-tight text-base sm:text-xl lg:text-2xl">
+            {a.title}
+          </h3>
+          <span className="mt-1 block text-gray-500 text-xs sm:text-sm">
+            {formatDate(a.publishedAt)}
+          </span>
+        </div>
+
+        {/* Media */}
+        <div className="px-4 sm:px-5 pt-3">
+          <div className={`relative overflow-hidden rounded-xl ${heightClass}`}>
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
                 }}
               />
             ) : (
-              <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
-            )}
-
-            {/* overlay jos pentru lizibilitate generală */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-
-            {/* Caption */}
-            <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-5">
-              {/* TITLU cu pastilă + accent gradient – lizibil pe orice imagine */}
-              <div className="inline-flex max-w-[95%] flex-col gap-2">
-                <span className="relative inline-block rounded-2xl px-2.5 sm:px-3.5 py-1.5 bg-black/65 text-white ring-1 ring-white/15 backdrop-blur-sm shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
-                  <h3 className="text-white font-black uppercase tracking-tight leading-tight text-base sm:text-xl lg:text-2xl">
-                    {a.title}
-                  </h3>
-                  {/* mic accent gradient sub titlu */}
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-1 w-16 sm:w-20 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
-                </span>
-
-                <span className="block text-white/90 text-xs sm:text-sm">
-                  {formatDate(a.publishedAt)}
-                </span>
+              <div className="absolute inset-0 grid place-items-center text-gray-400 bg-gray-100">
+                Fără imagine
               </div>
-            </div>
+            )}
+            {/* mic “sheen” discret pentru profunzime (nu afectează lizibilitatea) */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
           </div>
         </div>
 
-        {/* teaser sub media – pe home e ascuns */}
-        <div className={`p-4 ${blueFrame ? 'hidden' : ''}`}>
+        {/* Teaser – rămâne ascuns pe home pentru carusel compact */}
+        <div className={`px-4 sm:px-5 pb-4 sm:pb-5 ${blueFrame ? 'hidden' : ''}`}>
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
           </p>
@@ -106,7 +99,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
 }
 
 /* ===== CARUSEL – HOME =====
-   FĂRĂ niciun background/chenar – secțiunea e invizibilă.
+   săgețile de swipe rămân neschimbate
 */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
@@ -238,6 +231,7 @@ const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: 
 const SkeletonCard = () => (
   <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
     <div className="animate-pulse">
+      <div className="h-16 bg-gray-200" />
       <div className="relative h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px] bg-gray-200" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
@@ -264,7 +258,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // 🔧 calcul mereu (evităm hook condițional)
+  // calcul mereu (evităm hook condițional)
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -299,7 +293,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -311,7 +305,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   // Detaliu

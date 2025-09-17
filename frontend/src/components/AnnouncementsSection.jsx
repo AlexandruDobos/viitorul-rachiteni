@@ -33,17 +33,17 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* ===== CARD =====
-   - pe home (blueFrame=true): fără chenar/ring/shadow și fără teaser
+   - pe home (blueFrame=true): fără chenar/ring/shadow
    - pe /stiri: cardul rămâne neschimbat
+   * Titlul are ACUM fundal pentru lizibilitate.
 */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
   const outerClass = blueFrame
-    ? 'relative rounded-xl' // HOME: fără chenar pentru card
+    ? 'relative rounded-xl'
     : 'relative rounded-[24px] p-2 sm:p-3 bg-white/85 backdrop-blur-md ring-1 ring-indigo-200/60 shadow-[0_10px_30px_rgba(30,58,138,0.12)]';
 
-  // Înălțimi mai MARI pe laptop/desktop DOAR pe home
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -71,23 +71,30 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
               <div className="absolute inset-0 grid place-items-center text-gray-400">Fără imagine</div>
             )}
 
-            {/* overlay jos pentru lizibilitate */}
+            {/* overlay jos pentru lizibilitate generală */}
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
             {/* Caption */}
             <div className="absolute left-0 right-0 bottom-0 p-4 sm:p-5">
-              <h3 className="text-white font-black uppercase tracking-tight leading-tight text-lg sm:text-xl lg:text-2xl drop-shadow-md">
-                {a.title}
-              </h3>
-              <span className="mt-1 block text-white/90 text-xs sm:text-sm">
-                {formatDate(a.publishedAt)}
-              </span>
-              <div className="mt-2 h-0.5 w-12 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
+              {/* TITLU cu pastilă + accent gradient – lizibil pe orice imagine */}
+              <div className="inline-flex max-w-[95%] flex-col gap-2">
+                <span className="relative inline-block rounded-2xl px-2.5 sm:px-3.5 py-1.5 bg-black/65 text-white ring-1 ring-white/15 backdrop-blur-sm shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
+                  <h3 className="text-white font-black uppercase tracking-tight leading-tight text-base sm:text-xl lg:text-2xl">
+                    {a.title}
+                  </h3>
+                  {/* mic accent gradient sub titlu */}
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-1 w-16 sm:w-20 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
+                </span>
+
+                <span className="block text-white/90 text-xs sm:text-sm">
+                  {formatDate(a.publishedAt)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* teaser sub media – ASCUNS pe home */}
+        {/* teaser sub media – pe home e ascuns */}
         <div className={`p-4 ${blueFrame ? 'hidden' : ''}`}>
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
@@ -257,7 +264,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // 🔧 FIX: acest hook trebuie să fie ÎNTOTDEAUNA apelat (nu după un return condițional)
+  // 🔧 calcul mereu (evităm hook condițional)
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -292,7 +299,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -304,7 +311,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   // Detaliu
@@ -463,7 +470,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                         onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0} title="Anterior">←</button>
 
-                {/* folosim pageNumbers calculat SUS (mereu apelat) */}
                 <>
                   {pageNumbers[0] > 1 && (
                     <>

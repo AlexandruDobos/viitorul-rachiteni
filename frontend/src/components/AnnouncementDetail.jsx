@@ -187,21 +187,28 @@ const AnnouncementDetail = ({ id, onBack }) => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 text-center">
-                <h1 className="text-white text-2xl md:text-3xl lg:text-4xl font-bold drop-shadow">
-                  {item.title}
-                </h1>
-                <p className="text-white/80 text-xs md:text-sm mt-1">
-                  Publicat pe: {formatDate(item.publishedAt)}
-                </p>
+                {/* TITLU cu fundal lizibil + accent */}
+                <div className="inline-flex max-w-[96%] flex-col items-center gap-2">
+                  <span className="relative inline-block rounded-2xl px-3 sm:px-4 py-1.5 sm:py-2 bg-black/65 text-white ring-1 ring-white/15 backdrop-blur-sm shadow-[0_6px_24px_rgba(0,0,0,0.35)]">
+                    <span className="text-[1.15rem] sm:text-2xl lg:text-3xl font-extrabold uppercase tracking-tight drop-shadow">
+                      {item.title}
+                    </span>
+                    {/* accent bar gradient jos */}
+                    <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 h-1 w-24 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500" />
+                  </span>
+                  <p className="text-white/85 text-xs md:text-sm">
+                    Publicat: {formatDate(item.publishedAt)}
+                  </p>
+                </div>
               </div>
             </div>
           ) : (
             <header className="px-5 md:px-8 pt-6 pb-2 text-center">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+              <h1 className="inline-block rounded-2xl px-3 py-1.5 bg-black/70 text-white ring-1 ring-white/10 backdrop-blur-sm text-2xl md:text-3xl lg:text-4xl font-bold">
                 {item.title}
               </h1>
               <p className="text-gray-500 text-xs md:text-sm mt-1">
-                Publicat pe: {formatDate(item.publishedAt)}
+                Publicat: {formatDate(item.publishedAt)}
               </p>
             </header>
           )}

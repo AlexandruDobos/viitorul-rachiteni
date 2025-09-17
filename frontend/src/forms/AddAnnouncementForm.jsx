@@ -16,6 +16,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import TextAlign from "@tiptap/extension-text-align";
+import { NodeSelection } from "prosemirror-state";
 
 import {
   Bold,
@@ -58,10 +59,18 @@ const ResizableImage = BaseImage.extend({
       ...this.parent?.(),
       width: {
         default: null,
+        parseHTML: (el) => {
+          // width din style sau atribut
+          const style = el.getAttribute("style") || "";
+          const m = style.match(/width\s*:\s*(\d+)px/i);
+          if (m) return parseInt(m[1], 10);
+          const wAttr = el.getAttribute("width");
+          return wAttr ? parseInt(wAttr, 10) : null;
+        },
         renderHTML: (attrs) => {
           const styles = [];
           if (attrs.width) styles.push(`width:${attrs.width}px;`);
-          // mutăm și alinierea în stil pentru serializare
+          // includem și alinierea aici ca un singur style final
           if (attrs.align === "left") styles.push("float:left;margin:0 1rem .5rem 0;");
           else if (attrs.align === "right") styles.push("float:right;margin:0 0 .5rem 1rem;");
           else if (attrs.align === "center")
@@ -70,7 +79,18 @@ const ResizableImage = BaseImage.extend({
         },
       },
       height: { default: null },
-      align: { default: null }, // left | center | right | null
+      align: {
+        default: null, // left | center | right | null
+        parseHTML: (el) => {
+          const style = el.getAttribute("style") || "";
+          if (/float\s*:\s*left/i.test(style)) return "left";
+          if (/float\s*:\s*right/i.test(style)) return "right";
+          if (/margin-left\s*:\s*auto/i.test(style) && /margin-right\s*:\s*auto/i.test(style))
+            return "center";
+          return null;
+        },
+        // NU punem renderHTML aici ca să nu suprascriem style-ul generat la width
+      },
     };
   },
   addNodeView() {
@@ -78,7 +98,7 @@ const ResizableImage = BaseImage.extend({
   },
 });
 
-function ResizableImageView({ node, updateAttributes, selected }) {
+function ResizableImageView({ node, updateAttributes, selected, editor, getPos }) {
   const imgRef = useRef(null);
   const wrapRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
@@ -86,14 +106,24 @@ function ResizableImageView({ node, updateAttributes, selected }) {
 
   const clampToParent = (w) => {
     const parentWidth =
-      wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
-      window.innerWidth;
+      wrapRef.current?.parentElement?.getBoundingClientRect()?.width || window.innerWidth;
     return Math.max(80, Math.min(Math.floor(parentWidth), Math.floor(w)));
+  };
+
+  // selectează nodul imagine în editor (ca să devină "active")
+  const selectThisNode = () => {
+    const pos = typeof getPos === "function" ? getPos() : null;
+    if (typeof pos !== "number") return;
+    const { state, dispatch } = editor.view;
+    const tr = state.tr.setSelection(NodeSelection.create(state.doc, pos));
+    dispatch(tr);
+    editor.view.focus();
   };
 
   const onPointerDown = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    selectThisNode();
     if (!imgRef.current) return;
     start.current = {
       x: e.clientX,
@@ -139,7 +169,18 @@ function ResizableImageView({ node, updateAttributes, selected }) {
       ref={wrapRef}
       className={`relative my-3 ${selected ? "ring-2 ring-blue-400 rounded-xl" : ""}`}
       contentEditable={false}
-      style={{ userSelect: isResizing ? "none" : undefined, ...wrapperFloat, width: node.attrs.width ? `${node.attrs.width}px` : undefined }}
+      // un click pe imagine o selectează (fără resize)
+      onMouseDown={(e) => {
+        // dacă nu am nimerit mânerul, doar selectăm
+        if (e.target === imgRef.current) {
+          selectThisNode();
+        }
+      }}
+      style={{
+        userSelect: isResizing ? "none" : undefined,
+        ...wrapperFloat,
+        width: node.attrs.width ? `${node.attrs.width}px` : undefined,
+      }}
     >
       <img
         ref={imgRef}
@@ -155,12 +196,14 @@ function ResizableImageView({ node, updateAttributes, selected }) {
           transition: isResizing ? "none" : "width 80ms linear",
         }}
         onLoad={(e) => {
+          // Dacă avem width deja din parseHTML, nu-l suprascriem
           if (!node.attrs.width && e.currentTarget) {
             const naturalW = e.currentTarget.naturalWidth || 0;
             const initial = clampToParent(naturalW || 600);
             updateAttributes({ width: initial });
           }
         }}
+        onClick={() => selectThisNode()}
       />
       {/* mânerul de redimensionare */}
       <div
@@ -435,6 +478,7 @@ function AddAnnouncementForm({ onSave }) {
     setTitle(a.title || "");
     setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
+    // conținutul salvat are width/align în style; parseHTML din extensie le re-citește corect
     editor?.commands.setContent(a.contentHtml || "");
   };
 

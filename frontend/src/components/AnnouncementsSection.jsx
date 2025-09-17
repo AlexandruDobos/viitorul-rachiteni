@@ -32,17 +32,14 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD – titlul și data sunt ACUM deasupra imaginii ===== */
+/* ===== CARD – titlul & data SUS, fără chenar suplimentar ===== */
 function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
 
-  // chenar elegant pentru ambele moduri (home + /stiri)
-  const outerClass =
-    'relative rounded-2xl bg-white/95 backdrop-blur-md ring-1 ring-indigo-200/60 ' +
-    'shadow-[0_10px_30px_rgba(30,58,138,0.12)] hover:shadow-[0_16px_40px_rgba(30,58,138,0.18)] ' +
-    'transition-shadow';
+  // fără niciun card alb/ring/shadow – doar container transparent
+  const outerClass = 'relative rounded-2xl';
 
-  // înălțimi imagini
+  // înălțimi imagine (păstrăm aceleași proporții ca înainte)
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
@@ -52,43 +49,46 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
       type="button"
       onClick={() => onOpen?.(a.id)}
       title={a.title}
-      className="group block w-full text-left"
+      className="group block w-full text-left bg-transparent"
     >
       <div className={outerClass}>
-        {/* Header: TITLU + DATĂ (nu mai este în poză) */}
-        <div className="px-4 pt-4 sm:px-5 sm:pt-5">
-          <h3 className="text-gray-900 font-extrabold tracking-tight uppercase leading-tight text-base sm:text-xl lg:text-2xl">
+        {/* Header: TITLU pe centru + DATĂ sub titlu */}
+        <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
+          <h3 className="
+              font-black uppercase tracking-tight leading-tight
+              text-lg sm:text-2xl md:text-3xl
+              bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent
+            ">
             {a.title}
           </h3>
-          <span className="mt-1 block text-gray-500 text-xs sm:text-sm">
+          <span className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs sm:text-sm font-medium
+                           text-indigo-700 bg-indigo-50 ring-1 ring-indigo-200/60">
             {formatDate(a.publishedAt)}
           </span>
         </div>
 
-        {/* Media */}
-        <div className="px-4 sm:px-5 pt-3">
-          <div className={`relative overflow-hidden rounded-xl ${heightClass}`}>
+        {/* Media – aici păstrăm SINGURUL chenar vizibil (imaginea) */}
+        <div className="px-2 sm:px-3 pt-3">
+          <div className={`relative overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)] ${heightClass}`}>
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
                 className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder.png';
-                }}
+                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-gray-400 bg-gray-100">
                 Fără imagine
               </div>
             )}
-            {/* mic “sheen” discret pentru profunzime (nu afectează lizibilitatea) */}
+            {/* sheen discret */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
           </div>
         </div>
 
-        {/* Teaser – rămâne ascuns pe home pentru carusel compact */}
-        <div className={`px-4 sm:px-5 pb-4 sm:pb-5 ${blueFrame ? 'hidden' : ''}`}>
+        {/* Teaser – vizibil DOAR pe /stiri, ascuns pe home */}
+        <div className={`px-2 sm:px-3 pb-4 sm:pb-5 ${blueFrame ? 'hidden' : ''}`}>
           <p className="text-sm sm:text-base text-gray-700">
             {wordsExcerpt(a.contentText, 36)}
           </p>
@@ -98,9 +98,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
   );
 }
 
-/* ===== CARUSEL – HOME =====
-   săgețile de swipe rămân neschimbate
-*/
+/* ===== CARUSEL – HOME ===== */
 function HomeAnnouncementsCarousel({ items, onOpen }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -144,7 +142,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* săgeți */}
+      {/* săgeți – neschimbate */}
       {pages.length > 1 && (
         <>
           <button
@@ -182,7 +180,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
         </>
       )}
 
-      {/* pistă */}
+      {/* pistă carusel */}
       <div
         className="relative overflow-hidden rounded-xl"
         onMouseDown={onPointerDown}
@@ -229,14 +227,13 @@ const itemVariants = {
 const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { delay: 0.1 } }, exit: { opacity: 0 } };
 
 const SkeletonCard = () => (
-  <div className="overflow-hidden rounded-3xl bg-white ring-1 ring-gray-200">
+  <div className="overflow-hidden rounded-3xl">
     <div className="animate-pulse">
-      <div className="h-16 bg-gray-200" />
-      <div className="relative h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px] bg-gray-200" />
+      <div className="h-8 bg-gray-200 rounded mx-2 mt-3" />
+      <div className="relative h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px] bg-gray-200 rounded-2xl mx-2 sm:mx-3 mt-3" />
       <div className="p-5 space-y-4">
         <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
-        <div className="h-4 bg-gray-200 rounded w-1/2" />
       </div>
     </div>
   </div>
@@ -293,7 +290,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -305,7 +302,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   // Detaliu

@@ -39,11 +39,13 @@ import {
   Link2,
   Edit3,
   Trash2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 
 import { BASE_URL } from "../utils/constants";
 
-/* ======================= Image with drag-resize ======================= */
+/* ======================= Image with drag-resize (mouse + touch) ======================= */
 const ResizableImage = BaseImage.extend({
   name: "image",
   addAttributes() {
@@ -68,34 +70,57 @@ function ResizableImageView({ node, updateAttributes, selected }) {
   const [isResizing, setIsResizing] = useState(false);
   const start = useRef({ x: 0, width: 0 });
 
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const begin = (clientX) => {
     if (!imgRef.current) return;
     start.current = {
-      x: e.clientX,
+      x: clientX,
       width: imgRef.current.getBoundingClientRect().width,
     };
     setIsResizing(true);
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
   };
 
-  const onMouseMove = (e) => {
+  const apply = (clientX) => {
     if (!isResizing || !imgRef.current) return;
-    const deltaX = e.clientX - start.current.x;
+    const deltaX = clientX - start.current.x;
     let newWidth = Math.round(start.current.width + deltaX);
     const parentWidth =
       wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
       window.innerWidth;
-    newWidth = Math.max(50, Math.min(newWidth, Math.floor(parentWidth)));
+    newWidth = Math.max(80, Math.min(newWidth, Math.floor(parentWidth)));
     updateAttributes({ width: newWidth });
   };
 
+  /* mouse */
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    begin(e.clientX);
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  };
+  const onMouseMove = (e) => apply(e.clientX);
   const onMouseUp = () => {
     setIsResizing(false);
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
+  };
+
+  /* touch */
+  const onTouchStart = (e) => {
+    if (!e.touches?.length) return;
+    begin(e.touches[0].clientX);
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
+  };
+  const onTouchMove = (e) => {
+    if (!e.touches?.length) return;
+    e.preventDefault();
+    apply(e.touches[0].clientX);
+  };
+  const onTouchEnd = () => {
+    setIsResizing(false);
+    document.removeEventListener("touchmove", onTouchMove);
+    document.removeEventListener("touchend", onTouchEnd);
   };
 
   const showHandle = selected || isResizing;
@@ -128,7 +153,7 @@ function ResizableImageView({ node, updateAttributes, selected }) {
               wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
               naturalW;
             const initial = Math.min(naturalW, parentWidth);
-            updateAttributes({ width: Math.max(50, Math.floor(initial)) });
+            updateAttributes({ width: Math.max(80, Math.floor(initial)) });
           }
         }}
       />
@@ -136,9 +161,11 @@ function ResizableImageView({ node, updateAttributes, selected }) {
         role="button"
         aria-label="Redimensionează imagine"
         onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
         className={`absolute -bottom-2 -right-2 h-4 w-4 rounded-full border bg-white shadow transition ${
           showHandle ? "opacity-100 cursor-nwse-resize" : "opacity-0"
         }`}
+        style={{ touchAction: "none" }}
       />
       {showHandle && (
         <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-blue-300" />
@@ -224,14 +251,36 @@ function AddAnnouncementForm({ onSave }) {
         class:
           "prose prose-slate max-w-none min-h-[280px] rounded-2xl border bg-white p-4 focus:outline-none",
       },
-      handleDOMEvents: {
-        mousedown: () => false,
-      },
     },
   });
 
   const canUndo = editor?.can().undo() ?? false;
   const canRedo = editor?.can().redo() ?? false;
+
+  /* --------- helper pentru lățimea editorului & setare width pe imagine --------- */
+  const getEditorWidth = () => {
+    if (!editor?.view?.dom) return 800;
+    // scădem puțin padding-ul interior
+    return Math.max(200, editor.view.dom.clientWidth - 16);
+  };
+
+  const nudgeImageWidth = (delta) => {
+    if (!editor) return;
+    const attrs = editor.getAttributes("image") || {};
+    let w = parseInt(attrs.width, 10);
+    if (!w || Number.isNaN(w)) w = Math.round(getEditorWidth() * 0.8);
+    w = Math.max(80, w + delta);
+    editor.commands.updateAttributes("image", { width: w });
+  };
+
+  const setImagePercent = (pct) => {
+    const px = Math.max(80, Math.round((getEditorWidth() * pct) / 100));
+    editor?.commands.updateAttributes("image", { width: px });
+  };
+
+  const resetImageWidth = () => {
+    editor?.commands.updateAttributes("image", { width: null });
+  };
 
   /* ---------------- API ---------------- */
   const fetchAnnouncements = async () => {
@@ -592,6 +641,32 @@ function AddAnnouncementForm({ onSave }) {
                 )}
               </ToolButton>
 
+              {/* ---- CONTROALE IMAGINE: apar doar când o imagine este selectată ---- */}
+              {editor?.isActive("image") && (
+                <>
+                  <Divider />
+                  <span className="text-xs text-gray-500 px-1">Imagine:</span>
+                  <ToolButton title="Micșorează" onClick={() => nudgeImageWidth(-60)}>
+                    <ZoomOut className="h-4 w-4" />
+                  </ToolButton>
+                  <ToolButton title="Mărește" onClick={() => nudgeImageWidth(60)}>
+                    <ZoomIn className="h-4 w-4" />
+                  </ToolButton>
+                  <ToolButton title="50% lățime" onClick={() => setImagePercent(50)}>
+                    <span className="text-[11px] font-medium">50%</span>
+                  </ToolButton>
+                  <ToolButton title="75% lățime" onClick={() => setImagePercent(75)}>
+                    <span className="text-[11px] font-medium">75%</span>
+                  </ToolButton>
+                  <ToolButton title="100% lățime" onClick={() => setImagePercent(100)}>
+                    <span className="text-[11px] font-medium">100%</span>
+                  </ToolButton>
+                  <ToolButton title="Auto (reset)" onClick={resetImageWidth}>
+                    <Eraser className="h-4 w-4" />
+                  </ToolButton>
+                </>
+              )}
+
               <Divider />
 
               <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-2 py-1">
@@ -714,7 +789,7 @@ function ToolButton({ children, onClick, active, disabled, title }) {
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-gray-700 transition ${
+      className={`inline-flex h-9 min-w-9 px-0.5 items-center justify-center rounded-xl border text-gray-700 transition ${
         active ? "bg-blue-50 border-blue-300" : "bg-white hover:bg-gray-50"
       } disabled:opacity-40`}
     >

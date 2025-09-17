@@ -119,7 +119,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   const hasCover = Boolean(item.coverUrl);
 
-  // Fallback: dacă, dintr-un motiv, HTML-ul e gol, construim din contentText (păstrăm line breaks)
+  // Fallback: dacă HTML-ul e gol, construim din contentText (păstrăm line breaks)
   const safeHtml =
     item.contentHtml && item.contentHtml.trim()
       ? item.contentHtml
@@ -130,9 +130,10 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
-      {/* CSS mic pentru a păstra paragrafele goale (Enter dublu) ca spații vizibile */}
+      {/* CSS: păstrăm spațiile + imaginile respectă lățimea setată în editor */}
       <style>{`
-        .richtext p:empty::before { content: "\\00a0"; } /* spațiu pentru p gol */
+        .richtext p:empty::before { content: "\\00a0"; }
+        .richtext img { height: auto; max-width: 100%; }
       `}</style>
 
       {/* Toast */}
@@ -191,7 +192,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           </header>
 
-          {/* HERO – singurul “chenar” vizibil rămâne la imagine */}
+          {/* HERO */}
           {hasCover && (
             <div className="mx-5 md:mx-8 mb-6">
               <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)]">
@@ -206,7 +207,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           )}
 
-          {/* BODY – tipografie aerisită */}
+          {/* BODY */}
           <div className="p-5 md:p-8 lg:p-10">
             {/* acțiuni */}
             <div className="flex items-center justify-center gap-2 mb-6">
@@ -225,7 +226,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* Conținut – identic ca ritm cu editorul (paragrafe aerisite, responsive) */}
+            {/* Conținut */}
             <div
               className="
                 richtext

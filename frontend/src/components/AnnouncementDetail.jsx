@@ -130,7 +130,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
-      {/* CSS: păstrăm spațiile + imaginile respectă lățimea setată în editor */}
+      {/* CSS pentru conținut – imaginile respectă width-ul salvat */}
       <style>{`
         .richtext p:empty::before { content: "\\00a0"; }
         .richtext img { height: auto; max-width: 100%; }
@@ -171,7 +171,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
         {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HEADER – font ca pe pagina principală (sans, uppercase, tracking) */}
+          {/* HEADER – font ca pe pagina principală */}
           <header className="px-5 md:px-8 pt-6 pb-4 text-center">
             <h1
               className="
@@ -182,7 +182,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
               {item.title}
             </h1>
 
-            {/* dată – centrată, cu linii discrete stânga/dreapta */}
             <div className="mt-3 w-full max-w-[760px] mx-auto flex items-center gap-3">
               <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
               <span className="whitespace-nowrap text-xs md:text-sm font-medium text-slate-600">
@@ -209,7 +208,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
           {/* BODY */}
           <div className="p-5 md:p-8 lg:p-10">
-            {/* acțiuni */}
             <div className="flex items-center justify-center gap-2 mb-6">
               <button onClick={copyLink} className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50" title="Copiază link">
                 Copiază link
@@ -226,7 +224,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* Conținut */}
             <div
               className="
                 richtext

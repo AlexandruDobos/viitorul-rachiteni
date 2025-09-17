@@ -45,7 +45,7 @@ import {
 
 import { BASE_URL } from "../utils/constants";
 
-/* ======================= Image with drag-resize (mouse + touch) ======================= */
+/* ======================= Image with drag-resize (Pointer Events) ======================= */
 const ResizableImage = BaseImage.extend({
   name: "image",
   addAttributes() {
@@ -68,59 +68,44 @@ function ResizableImageView({ node, updateAttributes, selected }) {
   const imgRef = useRef(null);
   const wrapRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
-  const start = useRef({ x: 0, width: 0 });
+  const start = useRef({ x: 0, width: 0, pointerId: null });
 
-  const begin = (clientX) => {
-    if (!imgRef.current) return;
-    start.current = {
-      x: clientX,
-      width: imgRef.current.getBoundingClientRect().width,
-    };
-    setIsResizing(true);
-  };
-
-  const apply = (clientX) => {
-    if (!isResizing || !imgRef.current) return;
-    const deltaX = clientX - start.current.x;
-    let newWidth = Math.round(start.current.width + deltaX);
+  const clampToParent = (w) => {
     const parentWidth =
       wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
       window.innerWidth;
-    newWidth = Math.max(80, Math.min(newWidth, Math.floor(parentWidth)));
+    return Math.max(80, Math.min(Math.floor(parentWidth), Math.floor(w)));
+  };
+
+  const onPointerDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!imgRef.current) return;
+    start.current = {
+      x: e.clientX,
+      width: imgRef.current.getBoundingClientRect().width,
+      pointerId: e.pointerId,
+    };
+    setIsResizing(true);
+    // capturăm toate mișcările pe acest mâner
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e) => {
+    if (!isResizing || start.current.pointerId !== e.pointerId) return;
+    const deltaX = e.clientX - start.current.x;
+    const newWidth = clampToParent(start.current.width + deltaX);
+    // actualizare imediată a atributului width (re-renderează node view)
     updateAttributes({ width: newWidth });
   };
 
-  /* mouse */
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    begin(e.clientX);
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
-  };
-  const onMouseMove = (e) => apply(e.clientX);
-  const onMouseUp = () => {
-    setIsResizing(false);
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
-  };
-
-  /* touch */
-  const onTouchStart = (e) => {
-    if (!e.touches?.length) return;
-    begin(e.touches[0].clientX);
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
-    document.addEventListener("touchend", onTouchEnd);
-  };
-  const onTouchMove = (e) => {
-    if (!e.touches?.length) return;
-    e.preventDefault();
-    apply(e.touches[0].clientX);
-  };
-  const onTouchEnd = () => {
-    setIsResizing(false);
-    document.removeEventListener("touchmove", onTouchMove);
-    document.removeEventListener("touchend", onTouchEnd);
+  const onPointerUp = (e) => {
+    if (start.current.pointerId === e.pointerId) {
+      setIsResizing(false);
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch {}
+    }
   };
 
   const showHandle = selected || isResizing;
@@ -140,28 +125,31 @@ function ResizableImageView({ node, updateAttributes, selected }) {
         src={node.attrs.src}
         alt={node.attrs.alt || "image"}
         title={node.attrs.title}
+        draggable={false}
         className="h-auto rounded-xl border bg-white"
         style={{
           display: "block",
           maxWidth: "100%",
           width: node.attrs.width ? `${node.attrs.width}px` : undefined,
+          // feedback vizual ușor la redimensionare
+          transition: isResizing ? "none" : "width 80ms linear",
         }}
         onLoad={(e) => {
           if (!node.attrs.width && e.currentTarget) {
             const naturalW = e.currentTarget.naturalWidth || 0;
-            const parentWidth =
-              wrapRef.current?.parentElement?.getBoundingClientRect()?.width ||
-              naturalW;
-            const initial = Math.min(naturalW, parentWidth);
-            updateAttributes({ width: Math.max(80, Math.floor(initial)) });
+            const initial = clampToParent(naturalW || 600);
+            updateAttributes({ width: initial });
           }
         }}
       />
+      {/* mânerul de redimensionare */}
       <div
         role="button"
         aria-label="Redimensionează imagine"
-        onMouseDown={onMouseDown}
-        onTouchStart={onTouchStart}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
         className={`absolute -bottom-2 -right-2 h-4 w-4 rounded-full border bg-white shadow transition ${
           showHandle ? "opacity-100 cursor-nwse-resize" : "opacity-0"
         }`}
@@ -257,10 +245,9 @@ function AddAnnouncementForm({ onSave }) {
   const canUndo = editor?.can().undo() ?? false;
   const canRedo = editor?.can().redo() ?? false;
 
-  /* --------- helper pentru lățimea editorului & setare width pe imagine --------- */
+  /* --------- helpers pentru lățimea editorului & setare width pe imagine --------- */
   const getEditorWidth = () => {
     if (!editor?.view?.dom) return 800;
-    // scădem puțin padding-ul interior
     return Math.max(200, editor.view.dom.clientWidth - 16);
   };
 

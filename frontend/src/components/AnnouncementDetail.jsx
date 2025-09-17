@@ -119,7 +119,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   const hasCover = Boolean(item.coverUrl);
 
-  // Fallback: dacă dintr-un motiv HTML-ul e gol, construim din contentText, păstrând line breaks
+  // Fallback: dacă, dintr-un motiv, HTML-ul e gol, construim din contentText (păstrăm line breaks)
   const safeHtml =
     item.contentHtml && item.contentHtml.trim()
       ? item.contentHtml
@@ -130,12 +130,15 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
+      {/* CSS mic pentru a păstra paragrafele goale (Enter dublu) ca spații vizibile */}
+      <style>{`
+        .richtext p:empty::before { content: "\\00a0"; } /* spațiu pentru p gol */
+      `}</style>
+
       {/* Toast */}
       <div
         aria-live="polite"
-        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${
-          toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-        }`}
+        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         <div
           className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
@@ -167,18 +170,18 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
         {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HEADER – stil editorial */}
+          {/* HEADER – font ca pe pagina principală (sans, uppercase, tracking) */}
           <header className="px-5 md:px-8 pt-6 pb-4 text-center">
             <h1
               className="
-                font-serif font-extrabold tracking-tight leading-tight
-                text-2xl md:text-4xl lg:text-5xl
-                text-slate-900
+                font-sans font-extrabold uppercase tracking-tight leading-tight
+                text-2xl md:text-3xl lg:text-4xl text-slate-900
               "
             >
               {item.title}
             </h1>
 
+            {/* dată – centrată, cu linii discrete stânga/dreapta */}
             <div className="mt-3 w-full max-w-[760px] mx-auto flex items-center gap-3">
               <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
               <span className="whitespace-nowrap text-xs md:text-sm font-medium text-slate-600">
@@ -188,7 +191,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           </header>
 
-          {/* HERO – singurul „chenar” vizibil rămâne la imagine */}
+          {/* HERO – singurul “chenar” vizibil rămâne la imagine */}
           {hasCover && (
             <div className="mx-5 md:mx-8 mb-6">
               <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)]">
@@ -203,7 +206,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           )}
 
-          {/* BODY – tipografie aerisită + păstrarea spațiilor/newline-urilor */}
+          {/* BODY – tipografie aerisită */}
           <div className="p-5 md:p-8 lg:p-10">
             {/* acțiuni */}
             <div className="flex items-center justify-center gap-2 mb-6">
@@ -222,20 +225,20 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* Conținut – important: whitespace-pre-wrap pentru a păstra spațiile și Enter-urile */}
+            {/* Conținut – identic ca ritm cu editorul (paragrafe aerisite, responsive) */}
             <div
               className="
+                richtext
                 prose md:prose-lg lg:prose-xl
                 max-w-none
-                whitespace-pre-wrap
                 prose-headings:font-semibold
+                prose-strong:font-semibold
                 prose-p:my-5 md:prose-p:my-6
                 prose-p:leading-7 md:prose-p:leading-8 lg:prose-p:leading-9
+                prose-li:my-1.5 md:prose-li:my-2
                 prose-a:text-blue-600 hover:prose-a:underline
-                prose-strong:text-slate-900
                 prose-img:rounded-xl prose-img:shadow
                 prose-ul:list-disc prose-ol:list-decimal
-                prose-li:my-1.5 md:prose-li:my-2
                 prose-blockquote:border-l-4 prose-blockquote:border-gray-300
                 prose-hr:my-8
               "

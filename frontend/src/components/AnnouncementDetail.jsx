@@ -23,7 +23,7 @@ const Skeleton = () => (
     <div className="mb-4 h-4 w-40 bg-gray-200 rounded animate-pulse" />
     <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200">
       <div className="px-5 md:px-8 pt-6 pb-4">
-        <div className="h-7 bg-gray-200 rounded mx-auto w-2/3 animate-pulse" />
+        <div className="h-8 bg-gray-200 rounded mx-auto w-2/3 animate-pulse" />
         <div className="mt-3 h-4 bg-gray-200 rounded mx-auto w-40 animate-pulse" />
       </div>
       <div className="relative bg-gray-200 aspect-[16/9] mx-5 md:mx-8 mb-6 rounded-2xl animate-pulse" />
@@ -41,7 +41,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   const [item, setItem] = useState(null);
   const [state, setState] = useState({ loading: true, error: null });
 
-  // Toast state
+  // Toast
   const [toast, setToast] = useState({ show: false, kind: 'success', text: '' });
   const toastTimer = useRef(null);
 
@@ -52,9 +52,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   };
 
   useEffect(() => {
-    return () => {
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-    };
+    return () => { if (toastTimer.current) clearTimeout(toastTimer.current); };
   }, []);
 
   useEffect(() => {
@@ -74,14 +72,9 @@ const AnnouncementDetail = ({ id, onBack }) => {
   }, [id]);
 
   const shareUrl = useMemo(() => {
-    try {
-      return window.location.href;
-    } catch {
-      return '';
-    }
+    try { return window.location.href; } catch { return ''; }
   }, []);
 
-  // ✅ copy link
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -129,9 +122,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
       {/* Toast */}
       <div
         aria-live="polite"
-        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${
-          toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-        }`}
+        className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         <div
           className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
@@ -141,24 +132,12 @@ const AnnouncementDetail = ({ id, onBack }) => {
           }`}
         >
           {toast.kind === 'success' ? (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <path d="M22 4 12 14.01l-3-3" />
             </svg>
           ) : (
-            <svg
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <path d="M15 9l-6 6M9 9l6 6" />
             </svg>
@@ -178,12 +157,19 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
         {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HEADER – exact ca pe cardurile din listă: titlu centrat + dată cu linii */}
-          <header className="px-5 md:px-8 pt-6 pb-3 text-center">
-            <h1 className="font-serif font-extrabold uppercase tracking-wide leading-tight text-2xl md:text-3xl lg:text-4xl text-slate-900 drop-shadow-[0_1px_0_rgba(255,255,255,0.35)]">
+          {/* HEADER: titlu + dată */}
+          <header className="px-5 md:px-8 pt-6 pb-4 text-center">
+            {/* Titlu – font „display”, responsive */}
+            <h1 className="
+                font-serif font-extrabold tracking-tight leading-tight
+                text-3xl md:text-4xl lg:text-5xl
+                text-slate-900
+              ">
               {item.title}
             </h1>
-            <div className="mt-3 w-full max-w-[680px] mx-auto flex items-center gap-3">
+
+            {/* Dată – centrată, cu linii discrete stânga/dreapta */}
+            <div className="mt-3 w-full max-w-[760px] mx-auto flex items-center gap-3">
               <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
               <span className="whitespace-nowrap text-xs md:text-sm font-medium text-slate-600">
                 Publicat: {formatDate(item.publishedAt)}
@@ -192,7 +178,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
             </div>
           </header>
 
-          {/* HERO – imaginea sub titlu, fără overlay; singurul frame vizibil */}
+          {/* HERO – singurul „chenar” vizibil rămâne la imagine */}
           {hasCover && (
             <div className="mx-5 md:mx-8 mb-6">
               <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)]">
@@ -200,9 +186,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
                   src={item.coverUrl}
                   alt={item.title}
                   className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = '/placeholder.png';
-                  }}
+                  onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
               </div>
@@ -232,19 +216,25 @@ const AnnouncementDetail = ({ id, onBack }) => {
               )}
             </div>
 
-            {/* conținut formatat */}
+            {/* Conținut formatat, aerisit */}
             <div
               className="
-                prose prose-sm md:prose lg:prose-lg
+                prose md:prose-lg lg:prose-xl
                 max-w-none
+                whitespace-pre-line
                 prose-headings:font-semibold
+                prose-p:my-4 md:prose-p:my-5 lg:prose-p:my-6
+                prose-p:leading-7 md:prose-p:leading-8
+                prose-li:my-1.5 md:prose-li:my-2
                 prose-a:text-blue-600 hover:prose-a:underline
                 prose-img:rounded-lg prose-img:shadow
                 prose-ul:list-disc prose-ol:list-decimal
                 prose-blockquote:border-l-4 prose-blockquote:border-gray-300
+                prose-hr:my-8
               "
               dangerouslySetInnerHTML={{ __html: item.contentHtml }}
             />
+            {/* Dacă vrei să păstrezi inclusiv spațiile consecutive, înlocuiește `whitespace-pre-line` cu `whitespace-pre-wrap`. */}
           </div>
         </article>
       </div>

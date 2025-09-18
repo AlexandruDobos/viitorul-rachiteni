@@ -1,13 +1,22 @@
 /* eslint-disable no-unused-vars */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
-import AnnouncementDetail from './AnnouncementDetail';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_PAGE_SIZE = 4;
 const WINDOW = 5;
 
 /* ===== utilitare ===== */
+const slugify = (s = '') =>
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+
 function formatDate(iso) {
   try {
     return new Date(iso).toLocaleString('ro-RO', {
@@ -33,22 +42,17 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* ===== CARD – titlu & dată aliniate cu stilul din AnnouncementDetail ===== */
-function AnnouncementCard({ a, onOpen, blueFrame = false }) {
+function AnnouncementCard({ a, blueFrame = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
+  const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
 
   const outerClass = 'relative rounded-2xl';
-
   const heightClass = blueFrame
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
 
   return (
-    <button
-      type="button"
-      onClick={() => onOpen?.(a.id)}
-      title={a.title}
-      className="group block w-full text-left bg-transparent"
-    >
+    <Link to={href} title={a.title} className="group block w-full text-left bg-transparent">
       <div className={outerClass}>
         {/* Header: TITLU pe centru + DATĂ cu separator elegant */}
         <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
@@ -80,6 +84,7 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
               <img
                 src={imgSrc}
                 alt={a.title}
+                loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
@@ -99,14 +104,14 @@ function AnnouncementCard({ a, onOpen, blueFrame = false }) {
           <p className="text-sm sm:text-base text-gray-700">{wordsExcerpt(a.contentText, 36)}</p>
         </div>
       </div>
-    </button>
+    </Link>
   );
 }
 
 /* ===== CARUSEL – HOME =====
    Săgețile sunt poziționate la mijlocul IMAGINII.
 */
-function HomeAnnouncementsCarousel({ items, onOpen }) {
+function HomeAnnouncementsCarousel({ items }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
 
@@ -211,7 +216,7 @@ function HomeAnnouncementsCarousel({ items, onOpen }) {
               className="flex-shrink-0 px-1 sm:px-2"
               style={{ width: `${slidePct}%` }}
             >
-              <AnnouncementCard a={a} onOpen={onOpen} blueFrame />
+              <AnnouncementCard a={a} blueFrame />
             </div>
           ))}
         </div>
@@ -252,7 +257,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   const [items, setItems] = useState([]);
   const [state, setState] = useState({ loading: false, error: null });
-  const [selectedId, setSelectedId] = useState(null);
 
   // paginare /stiri
   const [page, setPage] = useState(0);
@@ -312,23 +316,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
-  // Detaliu
-  if (selectedId) {
-    return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`detail-${selectedId}`}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -6 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
-        >
-          <AnnouncementDetail id={selectedId} onBack={() => setSelectedId(null)} />
-        </motion.div>
-      </AnimatePresence>
-    );
-  }
-
   /* ---------- HOMEPAGE ---------- */
   if (limit) {
     // fără heading “Ultimele noutăți”
@@ -355,7 +342,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
     return (
       <div className="max-w-6xl mx-auto">
-        <HomeAnnouncementsCarousel items={items.slice(0, limit)} onOpen={setSelectedId} />
+        <HomeAnnouncementsCarousel items={items.slice(0, limit)} />
       </div>
     );
   }
@@ -450,7 +437,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             >
               {items.map((a) => (
                 <motion.div key={a.id} variants={itemVariants} layout>
-                  <AnnouncementCard a={a} onOpen={setSelectedId} />
+                  <AnnouncementCard a={a} />
                 </motion.div>
               ))}
             </motion.div>

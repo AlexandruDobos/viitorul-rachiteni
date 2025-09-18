@@ -1,11 +1,56 @@
 <!doctype html>
-<html lang="en">
+<html lang="ro">
   <head>
     <meta charset="UTF-8" />
     <link id="app-favicon" rel="icon" type="image/png" href="/favicon.png" />
-    <title>Se încarcă…</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <!-- ===== SEO defaults (vor fi suprascrise din rute) ===== -->
+    <title id="meta-title">ACS Viitorul Răchiteni – Știri, rezultate, program</title>
+    <meta id="meta-desc" name="description" content="Site-ul oficial ACS Viitorul Răchiteni: știri, rezultate, programul meciurilor, lotul și informații despre club." />
+    <meta name="keywords" content="Viitorul Răchiteni, ACS Viitorul Răchiteni, fotbal Răchiteni, rezultate fotbal, program meciuri, clasament, știri fotbal" />
+    <meta name="robots" content="index, follow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link id="canonical-link" rel="canonical" href="/" />
+
+    <!-- Open Graph defaults -->
+    <meta property="og:site_name" content="ACS Viitorul Răchiteni" />
+    <meta id="og-type" property="og:type" content="website" />
+    <meta id="og-title" property="og:title" content="ACS Viitorul Răchiteni – Știri, rezultate, program" />
+    <meta id="og-desc" property="og:description" content="Site-ul oficial ACS Viitorul Răchiteni: știri, rezultate, programul meciurilor, lotul și informații despre club." />
+    <meta id="og-url" property="og:url" content="/" />
+    <meta id="og-image" property="og:image" content="/favicon.png" />
+
+    <!-- Twitter Card defaults -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta id="tw-title" name="twitter:title" content="ACS Viitorul Răchiteni – Știri, rezultate, program" />
+    <meta id="tw-desc" name="twitter:description" content="Site-ul oficial ACS Viitorul Răchiteni: știri, rezultate, programul meciurilor, lotul și informații despre club." />
+    <meta id="tw-image" name="twitter:image" content="/favicon.png" />
+    <meta name="theme-color" content="#0ea5e9" />
+
+    <!-- JSON-LD: Organization + WebSite (static) -->
+    <script type="application/ld+json">
+      {
+        "@context":"https://schema.org",
+        "@type":"Organization",
+        "name":"ACS Viitorul Răchiteni",
+        "url":"/",
+        "logo":"/favicon.png",
+        "sameAs":[]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context":"https://schema.org",
+        "@type":"WebSite",
+        "name":"ACS Viitorul Răchiteni",
+        "url":"/",
+        "potentialAction":{
+          "@type":"SearchAction",
+          "target":"/stiri?q={query}",
+          "query-input":"required name=query"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

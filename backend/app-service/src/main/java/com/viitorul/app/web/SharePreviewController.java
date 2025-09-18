@@ -17,74 +17,111 @@ public class SharePreviewController {
 
     private final AnnouncementRepository announcementRepository;
 
+    /** Domeniul public (frontend) pe care vrei ca utilizatorii să ajungă. */
+    private static final String FRONTEND_ORIGIN = "https://www.viitorulrachiteni.ro";
+
     @GetMapping(value = "/stiri/{id}", produces = MediaType.TEXT_HTML_VALUE)
-    public ResponseEntity<String> shareStire(
-            @PathVariable Long id,
-            HttpServletRequest req
-    ) {
+    public ResponseEntity<String> shareStireNoSlug(@PathVariable Long id) {
+        return buildShareStire(id);
+    }
+
+    @GetMapping(value = "/stiri/{id}/{slug}", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> shareStireWithSlug(@PathVariable Long id, @PathVariable String slug) {
+        return buildShareStire(id);
+    }
+
+    private ResponseEntity<String> buildShareStire(Long id) {
         Optional<Announcement> opt = announcementRepository.findById(id);
         if (opt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("<!doctype html><meta charset='utf-8'><title>404</title><meta name='robots' content='noindex'>");
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+                    .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
+                    .body("""
+                          <!doctype html>
+                          <html lang="ro"><head>
+                            <meta charset="utf-8">
+                            <title>404</title>
+                            <meta name="robots" content="noindex">
+                          </head><body>404</body></html>
+                          """);
         }
 
         Announcement a = opt.get();
-        String origin = getOrigin(req); // la fel ca în SitemapController
-        String slug   = slugify(a.getTitle());
-        String url    = origin + "/stiri/" + a.getId() + "/" + slug;
 
-        String img = a.getCoverUrl() != null && !a.getCoverUrl().isBlank()
-                ? a.getCoverUrl()
-                : origin + "/og-default.jpg"; // pune o imagine fallback în frontend/static
+        String slug   = slugify(a.getTitle());
+        String url    = FRONTEND_ORIGIN + "/stiri/" + a.getId() + "/" + slug;
+
+        // Imagine OG (prefer CDNs absolute); dacă e relativă, prefixeaz-o cu frontend
+        String cover = (a.getCoverUrl() != null && !a.getCoverUrl().isBlank())
+                ? a.getCoverUrl().trim()
+                : FRONTEND_ORIGIN + "/og-default.jpg";
+        if (!cover.startsWith("http://") && !cover.startsWith("https://")) {
+            cover = FRONTEND_ORIGIN + (cover.startsWith("/") ? cover : "/" + cover);
+        }
 
         String title = esc(a.getTitle());
-        String desc  = esc(excerpt(a.getContentText() != null ? a.getContentText() : a.getTitle(), 180));
+        String desc  = esc(excerpt(
+                (a.getContentText() != null && !a.getContentText().isBlank()) ? a.getContentText() : a.getTitle(),
+                180
+        ));
 
         String html = """
-        <!doctype html>
-        <html lang="ro"><head>
-          <meta charset="utf-8">
-          <title>%s</title>
-          <meta name="robots" content="index,follow">
-          <link rel="canonical" href="%s">
+                <!doctype html>
+                <html lang="ro"><head>
+                  <meta charset="utf-8">
+                  <title>%1$s</title>
+                  <meta name="robots" content="index,follow">
+                  <link rel="canonical" href="%2$s">
 
-          <meta property="og:type" content="article">
-          <meta property="og:site_name" content="ACS Viitorul Răchiteni">
-          <meta property="og:title" content="%s">
-          <meta property="og:description" content="%s">
-          <meta property="og:url" content="%s">
-          <meta property="og:image" content="%s">
+                  <!-- Open Graph -->
+                  <meta property="og:type" content="article">
+                  <meta property="og:site_name" content="ACS Viitorul Răchiteni">
+                  <meta property="og:locale" content="ro_RO">
+                  <meta property="og:title" content="%1$s">
+                  <meta property="og:description" content="%3$s">
+                  <meta property="og:url" content="%2$s">
+                  <meta property="og:image" content="%4$s">
+                  <meta property="og:image:secure_url" content="%4$s">
 
-          <meta name="twitter:card" content="summary_large_image">
-          <meta name="twitter:title" content="%s">
-          <meta name="twitter:description" content="%s">
-          <meta name="twitter:image" content="%s">
+                  <!-- Twitter -->
+                  <meta name="twitter:card" content="summary_large_image">
+                  <meta name="twitter:title" content="%1$s">
+                  <meta name="twitter:description" content="%3$s">
+                  <meta name="twitter:image" content="%4$s">
 
-          <meta http-equiv="refresh" content="0;url=%s">
-        </head>
-        <body>
-          <p>Redirecționare către <a href="%s">%s</a>…</p>
-        </body></nhtml>
-        """.formatted(title, url, title, desc, url, img, title, desc, img, url, url, title);
+                  <!-- Redirect utilizatori către pagina publică -->
+                  <meta http-equiv="refresh" content="0;url=%2$s">
+                </head>
+                <body>
+                  <p>Redirecționare către <a href="%2$s">%1$s</a>…</p>
+                </body></html>
+                """.formatted(title, url, desc, cover);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0")
+                .header(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8")
                 .body(html);
     }
 
-    /* helpers */
-    private static String esc(String s) { return s == null ? "" : s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("\"","&quot;"); }
-    private static String excerpt(String s, int n) { s = s == null ? "" : s.trim().replaceAll("\\s+"," "); return s.length()<=n? s : s.substring(0,n-1) + "…"; }
-    private static String slugify(String s){ if(s==null)return ""; String n=java.text.Normalizer.normalize(s.toLowerCase(), java.text.Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+",""); return n.replaceAll("[^a-z0-9]+","-").replaceAll("(^-|-$)",""); }
-    private static String getOrigin(HttpServletRequest req){
-        String proto = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
-        String host  = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getServerName());
-        String port  = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).orElse("");
-        if (host.contains(":")) return proto + "://" + host;
-        if (port.isBlank() || ("http".equalsIgnoreCase(proto) && "80".equals(port))
-                || ("https".equalsIgnoreCase(proto) && "443".equals(port))) {
-            return proto + "://" + host;
-        }
-        return proto + "://" + host + ":" + port;
+    /* -------- helpers -------- */
+
+    private static String esc(String s) {
+        return s == null ? "" :
+                s.replace("&","&amp;")
+                        .replace("<","&lt;")
+                        .replace(">","&gt;")
+                        .replace("\"","&quot;");
+    }
+
+    private static String excerpt(String s, int n) {
+        s = (s == null ? "" : s).trim().replaceAll("\\s+"," ");
+        return s.length() <= n ? s : s.substring(0, n - 1) + "…";
+    }
+
+    private static String slugify(String s) {
+        if (s == null) return "";
+        String n = java.text.Normalizer.normalize(s.toLowerCase(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+","");
+        return n.replaceAll("[^a-z0-9]+","-").replaceAll("(^-|-$)","");
     }
 }

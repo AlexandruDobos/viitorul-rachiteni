@@ -1,3 +1,4 @@
+// src/main/java/com/viitorul/app/web/SitemapController.java
 package com.viitorul.app.web;
 
 import com.viitorul.app.entity.Announcement;
@@ -10,8 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
@@ -20,6 +20,7 @@ import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/app")
 public class SitemapController {
 
     private final AnnouncementRepository announcementRepository;
@@ -28,8 +29,7 @@ public class SitemapController {
 
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap(HttpServletRequest req) {
-        String origin = req.getScheme() + "://" + req.getServerName()
-                + ((req.getServerPort() == 80 || req.getServerPort() == 443) ? "" : ":" + req.getServerPort());
+        final String origin = getOrigin(req);
 
         List<String> entries = new ArrayList<>();
 
@@ -76,7 +76,7 @@ public class SitemapController {
         }
 
         StringBuilder xml = new StringBuilder();
-        xml.append(""" 
+        xml.append("""
                 <?xml version="1.0" encoding="UTF-8"?>
                 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
                 """);
@@ -87,6 +87,8 @@ public class SitemapController {
                 .header(HttpHeaders.CONTENT_TYPE, "application/xml; charset=UTF-8")
                 .body(xml.toString());
     }
+
+    // ===== helpers =====
 
     private static void add(List<String> list, String loc, String lastmod, String freq, String pri) {
         StringBuilder sb = new StringBuilder();
@@ -100,8 +102,7 @@ public class SitemapController {
     }
 
     private static String lastmod(LocalDate d) {
-        if (d == null) return null;
-        return d.format(DateTimeFormatter.ISO_DATE);
+        return d == null ? null : d.format(DateTimeFormatter.ISO_DATE);
     }
 
     private static String escape(String s) {
@@ -114,5 +115,23 @@ public class SitemapController {
         String nfd = java.text.Normalizer.normalize(s.toLowerCase(), java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
         return nfd.replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", "");
+    }
+
+    /** Respectă reverse proxy / Cloudflare pentru https + host corect */
+    private static String getOrigin(HttpServletRequest req) {
+        String proto = Optional.ofNullable(req.getHeader("X-Forwarded-Proto")).orElse(req.getScheme());
+        String host = Optional.ofNullable(req.getHeader("X-Forwarded-Host")).orElse(req.getServerName());
+        String port = Optional.ofNullable(req.getHeader("X-Forwarded-Port")).orElse("");
+
+        // dacă host deja are port, păstrează-l
+        if (host.contains(":")) return proto + "://" + host;
+
+        // dacă nu avem port sau e standard, nu-l include
+        if (port.isBlank()
+                || ("http".equalsIgnoreCase(proto) && "80".equals(port))
+                || ("https".equalsIgnoreCase(proto) && "443".equals(port))) {
+            return proto + "://" + host;
+        }
+        return proto + "://" + host + ":" + port;
     }
 }

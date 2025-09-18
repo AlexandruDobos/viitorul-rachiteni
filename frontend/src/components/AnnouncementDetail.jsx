@@ -77,11 +77,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   }, [id]);
 
   const shareUrl = useMemo(() => {
-    try {
-      return `${window.location.origin}/share/stiri/${id}`;
-    } catch {
-      return '';
-    }
+    return `https://api.viitorulrachiteni.ro/share/stiri/${id}`;
   }, [id]);
 
 
@@ -148,8 +144,8 @@ const AnnouncementDetail = ({ id, onBack }) => {
       >
         <div
           className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${toast.kind === 'success'
-              ? 'bg-emerald-600 text-white ring-emerald-500/60'
-              : 'bg-red-600 text-white ring-red-500/60'
+            ? 'bg-emerald-600 text-white ring-emerald-500/60'
+            : 'bg-red-600 text-white ring-red-500/60'
             }`}
         >
           {toast.kind === 'success' ? (

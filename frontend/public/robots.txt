@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.viitorulrachiteni.ro/sitemap.xml
+Sitemap: https://www.viitorulrachiteni.ro/api/app/sitemap.xml

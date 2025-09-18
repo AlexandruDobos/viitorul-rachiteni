@@ -76,7 +76,10 @@ const AnnouncementDetail = ({ id, onBack }) => {
     run();
   }, [id]);
 
-  const shareUrl = useMemo(() => `https://www.viitorulrachiteni.ro/share/stiri/${id}`, [id]);
+  const shareUrl = useMemo(() => {
+    return `https://api.viitorulrachiteni.ro/share/stiri/${id}`;
+  }, [id]);
+
 
   const copyLink = async () => {
     try {

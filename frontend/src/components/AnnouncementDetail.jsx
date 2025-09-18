@@ -77,8 +77,13 @@ const AnnouncementDetail = ({ id, onBack }) => {
   }, [id]);
 
   const shareUrl = useMemo(() => {
-    try { return window.location.href; } catch { return ''; }
-  }, []);
+    try {
+      return `${window.location.origin}/share/stiri/${id}`;
+    } catch {
+      return '';
+    }
+  }, [id]);
+
 
   const copyLink = async () => {
     try {
@@ -124,9 +129,9 @@ const AnnouncementDetail = ({ id, onBack }) => {
     item.contentHtml && item.contentHtml.trim()
       ? item.contentHtml
       : (item.contentText || '')
-          .split(/\n{2,}/)
-          .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
-          .join('');
+        .split(/\n{2,}/)
+        .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
+        .join('');
 
   return (
     <div className="pt-2 md:pt-4">
@@ -142,11 +147,10 @@ const AnnouncementDetail = ({ id, onBack }) => {
         className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         <div
-          className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
-            toast.kind === 'success'
+          className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${toast.kind === 'success'
               ? 'bg-emerald-600 text-white ring-emerald-500/60'
               : 'bg-red-600 text-white ring-red-500/60'
-          }`}
+            }`}
         >
           {toast.kind === 'success' ? (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">

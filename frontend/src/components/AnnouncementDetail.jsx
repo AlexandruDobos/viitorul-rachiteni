@@ -130,10 +130,10 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
   return (
     <div className="pt-2 md:pt-4">
-      {/* CSS pentru conținut – imaginile respectă width-ul salvat */}
+      {/* CSS pentru conținut – fix: img block + respectă width/align inline */}
       <style>{`
         .richtext p:empty::before { content: "\\00a0"; }
-        .richtext img { height: auto; max-width: 100%; }
+        .richtext img { display:block; height:auto; max-width:100%; }
       `}</style>
 
       {/* Toast */}
@@ -171,7 +171,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
 
         {/* card */}
         <article className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
-          {/* HEADER – font ca pe pagina principală */}
+          {/* HEADER */}
           <header className="px-5 md:px-8 pt-6 pb-4 text-center">
             <h1
               className="

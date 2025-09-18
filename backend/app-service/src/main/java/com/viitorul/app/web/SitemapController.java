@@ -52,7 +52,7 @@ public class SitemapController {
         for (Announcement a : announcementRepository.findAll()) {
             String slug = slugify(a.getTitle());
             String url = origin + "/stiri/" + a.getId() + "/" + slug;
-            String lastmod = lastmodClamp(a.getPublishedAt());
+            String lastmod = lastmodClamp(a.getPublishedAt().toLocalDate());
             add(entries, url, lastmod, "weekly", "0.6");
         }
 

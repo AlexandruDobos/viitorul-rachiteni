@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +25,7 @@ public class AnnouncementService {
         Announcement entity = AnnouncementDTO.toEntity(dto);
 
         if (entity.getPublishedAt() == null) {
-            entity.setPublishedAt(java.time.OffsetDateTime.now());
+            entity.setPublishedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
 
         return AnnouncementDTO.fromEntity(announcementRepository.save(entity));
@@ -41,15 +43,16 @@ public class AnnouncementService {
                 .map(AnnouncementDTO::fromEntity);
     }
 
-    /** Paginare + căutare strict pe titlu (case-insensitive) */
+    /** Paginare publică + căutare pe titlu, dar doar știri publicate până ACUM */
     public Page<AnnouncementDTO> getAnnouncementsPage(int page, int size, String q) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Announcement> result;
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 
+        Page<Announcement> result;
         if (q != null && !q.trim().isEmpty()) {
-            result = announcementRepository.searchByTitle(q.trim(), pageable);
+            result = announcementRepository.searchPublishedByTitle(q.trim(), now, pageable);
         } else {
-            result = announcementRepository.findAllByOrderByPublishedAtDesc(pageable);
+            result = announcementRepository.findByPublishedAtLessThanEqualOrderByPublishedAtDesc(now, pageable);
         }
         return result.map(AnnouncementDTO::fromEntity);
     }

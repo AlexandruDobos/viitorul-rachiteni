@@ -6,13 +6,43 @@ import Footer from "../components/Footer";
 import AdsDisplay from "../components/AdsDisplay";
 import CookieBanner from "../components/CookieBanner";
 import ScrollToTop from "../components/ScrollToTop";
-
+import JsonLd from "../components/JsonLD";
 export default function PublicLayout() {
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <ScrollToTop />
       <Navbar />
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": ["SportsTeam", "Organization"],
+        "name": "ACS Viitorul Răchiteni",
+        "url": "https://viitorulrachiteni.ro/",
+        "logo": "https://viitorulrachiteni.ro/logo-512.png",
+        "image": "https://viitorulrachiteni.ro/logo-512.png",
+        "sport": "Football",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Răchiteni",
+          "addressRegion": "Iași",
+          "addressCountry": "RO"
+        },
+        "sameAs": [
+          "https://www.facebook.com/…",
+          "https://www.instagram.com/…"
+        ]
+      }} />
 
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "url": "https://viitorulrachiteni.ro/",
+        "name": "ACS Viitorul Răchiteni",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://viitorulrachiteni.ro/stiri?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }} />
       <div className="pt-20 lg:pt-28 flex-grow">
         <div
           className="

@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-
+import JsonLd from './JsonLD';
 const PositionChip = ({ children }) => (
   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/70 text-white">
     {children}
@@ -90,6 +90,18 @@ const PlayerDetails = () => {
 
   return (
     <div className="px-4 max-w-[1000px] mx-auto">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": player.name,
+        "image": player.profileImageUrl || undefined,
+        "memberOf": {
+          "@type": "SportsTeam",
+          "name": "ACS Viitorul Răchiteni",
+          "sport": "Football"
+        },
+        "url": window.location.href
+      }} />
       {/* Buton înapoi */}
       <button
         onClick={() => navigate(-1)}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { BASE_URL } from '../utils/constants';
 import logo from '../assets/logo.png';
-
+import JsonLd from '../components/JsonLD';
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 const MAX_MSG = 1000;
 
@@ -79,6 +79,12 @@ const Contact = () => {
 
   return (
     <div className="px-4">
+      <JsonLd data={{
+        "@context": "https://schema.org",
+        "@type": "ContactPage",
+        "name": "Contact ACS Viitorul Răchiteni",
+        "url": "https://viitorulrachiteni.ro/contact"
+      }} />
       <div className="mx-auto max-w-5xl overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200">
         {/* HERO în culorile site-ului */}
         <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 px-6 py-7 text-white">
@@ -163,10 +169,9 @@ const Contact = () => {
                     placeholder={UI.messagePlaceholder}
                     aria-invalid={invalid.message || undefined}
                     className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                      ${
-                        invalid.message
-                          ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                          : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                      ${invalid.message
+                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                       }`}
                   />
                   <div className="pointer-events-none absolute bottom-1 right-2 text-[11px] text-gray-400">
@@ -193,10 +198,9 @@ const Contact = () => {
                   placeholder={UI.nameLabel}
                   aria-invalid={invalid.name || undefined}
                   className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                    ${
-                      invalid.name
-                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                    ${invalid.name
+                      ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                      : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                     }`}
                 />
                 {invalid.name && (
@@ -222,10 +226,9 @@ const Contact = () => {
                     placeholder="email@exemplu.com"
                     aria-invalid={invalid.email || undefined}
                     className={`w-full rounded-xl border px-3 py-2 shadow-sm outline-none transition
-                      ${
-                        invalid.email
-                          ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
-                          : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
+                      ${invalid.email
+                        ? 'border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/30'
+                        : 'border-gray-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25'
                       }`}
                   />
                   {invalid.email && (

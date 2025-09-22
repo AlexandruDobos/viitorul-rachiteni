@@ -5,7 +5,7 @@ import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
 import AuthContext from '../context/AuthContext';
-
+import JsonLd from './JsonLD';
 /* UI mici */
 const Badge = ({ children, className = '' }) => (
   <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${className}`}>
@@ -15,7 +15,7 @@ const Badge = ({ children, className = '' }) => (
 const cellHL = (cond, base, active) => (cond ? active : base);
 const Trophy = (props) => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" {...props}>
-    <path d="M6 2a1 1 0 0 0-1 1v2H3a1 1 0 0 0-1 1c0 3.314 2.686 6 6 6 .9 1.198 2.236 2.07 3.777 2.38V17H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2.777v-2.62C13.764 13.07 15.1 12.198 16 11c3.314 0 6-2.686 6-6a1 1 0 0 0-1-1h-2V3a1 1 0 0 0-1-1H6Zm1 2h10v1a1 1 0 0 0 1 1h1.938c-.48 1.94-2.2 3.368-4.224 3.484A1 1 0 0 0 15 10c-1.022 1.704-2.877 3-5 3s-3.978-1.296-5-3a1 1 0 0 0-.714-.516C2.262 7.368.542 5.94.062 4H2a1 1 0 0 0 1-1V4h4Z"/>
+    <path d="M6 2a1 1 0 0 0-1 1v2H3a1 1 0 0 0-1 1c0 3.314 2.686 6 6 6 .9 1.198 2.236 2.07 3.777 2.38V17H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2.777v-2.62C13.764 13.07 15.1 12.198 16 11c3.314 0 6-2.686 6-6a1 1 0 0 0-1-1h-2V3a1 1 0 0 0-1-1H6Zm1 2h10v1a1 1 0 0 0 1 1h1.938c-.48 1.94-2.2 3.368-4.224 3.484A1 1 0 0 0 15 10c-1.022 1.704-2.877 3-5 3s-3.978-1.296-5-3a1 1 0 0 0-.714-.516C2.262 7.368.542 5.94.062 4H2a1 1 0 0 0 1-1V4h4Z" />
   </svg>
 );
 
@@ -139,7 +139,7 @@ export default function MatchDetails() {
           totalVotes: Number(data?.totalVotes || 0),
         });
       }
-    } catch {}
+    } catch { }
   };
 
   /* --- My vote loader --- */
@@ -218,16 +218,16 @@ export default function MatchDetails() {
   }
 
   /* --- Helpers cu FALLBACK pe stats (pentru jucători inactivi) --- */
-  const getPlayerObj   = (id) => playersById.get(id);
-  const getStatObj     = (id) => statsByPlayer.get(id);
+  const getPlayerObj = (id) => playersById.get(id);
+  const getStatObj = (id) => statsByPlayer.get(id);
 
-  const getPlayerName  = (id) =>
+  const getPlayerName = (id) =>
     (getPlayerObj(id)?.name) ?? (getStatObj(id)?.playerName) ?? `Jucător #${id}`;
 
   const getPlayerNumber = (id) =>
     (getPlayerObj(id)?.shirtNumber) ?? (getStatObj(id)?.shirtNumber) ?? '-';
 
-  const getPlayerImg   = (id) =>
+  const getPlayerImg = (id) =>
     (getPlayerObj(id)?.profileImageUrl) ?? (getStatObj(id)?.playerProfileImageUrl) ?? '';
 
   const zeroStat = { goals: 0, assists: 0, yellowCards: 0, redCard: false };
@@ -258,7 +258,47 @@ export default function MatchDetails() {
 
   const isFinal = match.homeGoals != null && match.awayGoals != null;
   const showVoteColumn = isFinal && canVote;
-
+  /* ---------- JSON-LD (SportsEvent) ---------- */
+  const toIso = (d, t) => {
+    try {
+      if (!d) return undefined;
+      const time = t ? t : '00:00';
+      const dt = new Date(`${d}T${time}`);
+      return isNaN(dt.getTime()) ? d : dt.toISOString();
+    } catch { return undefined; }
+  };
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://viitorulrachiteni.ro';
+  const startDateIso = toIso(match.date, match.kickoffTime);
+  const scoreText = isFinal ? `${match.homeGoals}-${match.awayGoals}` : undefined;
+  const jsonLdData = {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${match.homeTeamName} vs ${match.awayTeamName}`,
+    sport: 'Soccer',
+    startDate: startDateIso,
+    eventStatus: isFinal ? 'https://schema.org/EventCompleted' : 'https://schema.org/EventScheduled',
+    isAccessibleForFree: true,
+    url: `${origin}/matches/${matchId}`,
+    location: match.location ? { '@type': 'Place', name: match.location, address: match.location } : undefined,
+    homeTeam: {
+      '@type': 'SportsTeam',
+      name: match.homeTeamName,
+      logo: match.homeTeamLogo ? { '@type': 'ImageObject', url: match.homeTeamLogo } : undefined,
+    },
+    awayTeam: {
+      '@type': 'SportsTeam',
+      name: match.awayTeamName,
+      logo: match.awayTeamLogo ? { '@type': 'ImageObject', url: match.awayTeamLogo } : undefined,
+    },
+    organizer: { '@type': 'SportsOrganization', name: 'ACS Viitorul Răchiteni', url: origin + '/' },
+    superEvent: competitionName ? { '@type': 'SportsEvent', name: competitionName } : undefined,
+    additionalProperty: [
+      scoreText ? { '@type': 'PropertyValue', name: 'score', value: scoreText } : null,
+      isFinal ? { '@type': 'PropertyValue', name: 'homeGoals', value: String(match.homeGoals ?? '') } : null,
+      isFinal ? { '@type': 'PropertyValue', name: 'awayGoals', value: String(match.awayGoals ?? '') } : null,
+      seasonLabel ? { '@type': 'PropertyValue', name: 'season', value: seasonLabel } : null,
+    ].filter(Boolean),
+  };
   /* --- Vote --- */
   const handleVote = async (playerId) => {
     try {
@@ -284,6 +324,8 @@ export default function MatchDetails() {
   /* --- Render --- */
   return (
     <div className="px-4 max-w-[1100px] mx-auto">
+      {/* JSON-LD */}
+      <JsonLd data={jsonLdData} />
       <button onClick={() => navigate(-1)} className="mb-4 text-blue-600 font-medium hover:underline">
         ← Înapoi
       </button>

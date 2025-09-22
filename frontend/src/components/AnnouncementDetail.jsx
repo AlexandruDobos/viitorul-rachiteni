@@ -1,6 +1,7 @@
 // components/AnnouncementDetail.jsx
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
+import JsonLd from './JsonLD';
 
 /* ---------- utils ---------- */
 function formatDate(iso) {
@@ -80,7 +81,6 @@ const AnnouncementDetail = ({ id, onBack }) => {
     return `https://api.viitorulrachiteni.ro/share/stiri/${id}`;
   }, [id]);
 
-
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
@@ -125,12 +125,55 @@ const AnnouncementDetail = ({ id, onBack }) => {
     item.contentHtml && item.contentHtml.trim()
       ? item.contentHtml
       : (item.contentText || '')
-        .split(/\n{2,}/)
-        .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
-        .join('');
+          .split(/\n{2,}/)
+          .map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br/>')}</p>`)
+          .join('');
+
+  /* === JSON-LD: NewsArticle === */
+  const origin =
+    typeof window !== 'undefined' ? window.location.origin : 'https://viitorulrachiteni.ro';
+  const canonicalUrl = `${origin}/stiri/${id}`; // dacă ai route dedicată; altfel rămâne OK și ca referință canonică
+  const description =
+    (item.excerpt || item.contentText || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 300);
+
+  const jsonLdData = {
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: item.title,
+    inLanguage: 'ro-RO',
+    articleSection: 'Știri',
+    isAccessibleForFree: true,
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': canonicalUrl,
+    },
+    url: canonicalUrl,
+    datePublished: item.publishedAt,
+    dateModified: item.updatedAt || item.publishedAt,
+    image: hasCover ? [item.coverUrl] : undefined,
+    description,
+    articleBody: item.contentText || undefined,
+    author: {
+      '@type': 'Organization',
+      name: 'ACS Viitorul Răchiteni',
+      url: origin + '/',
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'ACS Viitorul Răchiteni',
+      url: origin + '/',
+      // Adaugă un logo absolut dacă ai unul public: ex. `${origin}/logo.png`
+    },
+  };
 
   return (
     <div className="pt-2 md:pt-4">
+      {/* JSON-LD */}
+      <JsonLd data={jsonLdData} />
+
       {/* CSS pentru conținut – fix: img block + respectă width/align inline */}
       <style>{`
         .richtext p:empty::before { content: "\\00a0"; }
@@ -143,10 +186,11 @@ const AnnouncementDetail = ({ id, onBack }) => {
         className={`pointer-events-none fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] transition-all ${toast.show ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
       >
         <div
-          className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${toast.kind === 'success'
-            ? 'bg-emerald-600 text-white ring-emerald-500/60'
-            : 'bg-red-600 text-white ring-red-500/60'
-            }`}
+          className={`pointer-events-auto flex items-center gap-3 rounded-xl px-4 py-3 shadow-lg ring-1 ${
+            toast.kind === 'success'
+              ? 'bg-emerald-600 text-white ring-emerald-500/60'
+              : 'bg-red-600 text-white ring-red-500/60'
+          }`}
         >
           {toast.kind === 'success' ? (
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2">

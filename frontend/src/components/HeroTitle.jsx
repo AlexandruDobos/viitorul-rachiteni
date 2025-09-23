@@ -1,30 +1,17 @@
 /* eslint-disable no-unused-vars */
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 
 const PILL_LABELS = ['Echipă', 'Comunitate', 'Pasiune'];
-const DELAY_STEP = 800; // ms
 
 export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
-  const [visibleCount, setVisibleCount] = useState(0);
-
-  useEffect(() => {
-    const timers = PILL_LABELS.map((_, i) =>
-      setTimeout(() => setVisibleCount((c) => c + 1), (i + 1) * DELAY_STEP)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, []);
-
   return (
     <div
       className="relative mx-auto mb-6 mt-2 max-w-4xl px-2 overflow-x-clip overflow-y-visible"
       // isolate paint/layout so this header doesn’t push siblings during anims
       style={{ contain: 'layout paint' }}
     >
-      {/* decorative glow */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 flex justify-center">
-        <div className="h-16 md:h-20 w-full max-w-[640px] bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 blur-2xl opacity-30 rounded-full" />
-      </div>
+      {/* Fără background/glow decorativ */}
 
       <div className="flex items-center justify-center">
         <motion.h1
@@ -33,7 +20,6 @@ export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
           className="text-center font-extrabold tracking-tight text-2xl md:text-3xl lg:text-4xl"
-          // hint the compositor to keep this on the GPU
           style={{ willChange: 'transform, opacity' }}
         >
           <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent drop-shadow-[0_1px_1px_rgba(0,0,0,0.25)]">
@@ -45,30 +31,26 @@ export default function HeroTitle({ text = 'ACS VIITORUL RĂCHITENI' }) {
       <motion.div
         initial={{ scaleX: 0 }}                 // transform-only
         animate={{ scaleX: 1 }}
-        transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
+        transition={{ delay: 0.2, duration: 0.45, ease: 'easeOut' }}
         className="origin-left mx-auto mt-2 h-1 w-40 md:w-56 rounded-full bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500"
         aria-hidden="true"
         style={{ willChange: 'transform' }}
       />
 
-      {/* reserve row height; pills have fixed min-width so no reflow when text/fonts swap */}
+      {/* Pastile statice (fără animații) – min-width pentru stabilitate/CLS */}
       <div className="mx-auto mt-3 flex flex-wrap items-center justify-center gap-2 min-h-[32px]">
-        {PILL_LABELS.slice(0, visibleCount).map((label, idx) => (
-          <motion.span
+        {PILL_LABELS.map((label) => (
+          <span
             key={label}
-            initial={{ opacity: 0, y: 10, scale: 0.98 }} // subtle transform-only
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ delay: idx * 0.12, duration: 0.35, ease: 'easeOut' }}
             className="
               inline-flex items-center justify-center
               px-3 py-1 rounded-full text-[11px] md:text-sm font-semibold text-white shadow-md
               bg-gradient-to-r from-blue-600 to-indigo-500 ring-1 ring-indigo-400/40
               min-w-[88px] md:min-w-[96px]
             "
-            style={{ willChange: 'transform, opacity' }}
           >
             {label}
-          </motion.span>
+          </span>
         ))}
       </div>
     </div>

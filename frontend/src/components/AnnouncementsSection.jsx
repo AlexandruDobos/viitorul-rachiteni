@@ -170,19 +170,28 @@ function HomeAnnouncementsCarousel({ items }) {
       >
         {pages.length > 1 && (
           <>
+            {/* Săgeți – „glassy”, vizibile, 44px touch target */}
             <button
               type="button"
               onClick={prev}
               aria-label="Anterior"
               disabled={page === 0}
               className="
-                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10
-                grid h-10 w-10 place-items-center rounded-full
-                bg-white/95 ring-1 ring-blue-600/30 shadow
-                hover:bg-white disabled:opacity-50
+                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 disabled:opacity-50
+                transition
               "
             >
-              <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
               </svg>
             </button>
@@ -192,13 +201,21 @@ function HomeAnnouncementsCarousel({ items }) {
               aria-label="Următor"
               disabled={page === pages.length - 1}
               className="
-                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10
-                grid h-10 w-10 place-items-center rounded-full
-                bg-white/95 ring-1 ring-blue-600/30 shadow
-                hover:bg-white disabled:opacity-50
+                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 disabled:opacity-50
+                transition
               "
             >
-              <svg width="22" height="22" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
               </svg>
             </button>
@@ -304,7 +321,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -316,7 +333,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   /* ---------- HOMEPAGE ---------- */

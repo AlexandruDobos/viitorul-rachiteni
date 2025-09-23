@@ -28,8 +28,7 @@ function PlayerCard({ p }) {
       <div className="relative aspect-[3/4] overflow-hidden rounded-2xl ring-1 ring-gray-200 bg-gray-100">
         {nr != null && (
           <span
-            className="absolute left-2 top-2 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-semibold
-                       bg-indigo-600/90 text-white shadow-sm"
+            className="absolute left-2 top-2 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-semibold bg-indigo-600/90 text-white shadow-sm"
           >
             #{nr}
           </span>
@@ -39,7 +38,7 @@ function PlayerCard({ p }) {
           <img
             src={img}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
             width={600}
             height={800}
@@ -67,9 +66,7 @@ function PlayerCard({ p }) {
 }
 
 /* carusel pe pagini: tel=1, tablet=2, laptop+=4 per cadru */
-export default function PlayersCarousel({
-  title = "JUCĂTORI",
-}) {
+export default function PlayersCarousel({ title = "JUCĂTORI" }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -178,23 +175,19 @@ export default function PlayersCarousel({
       </div>
 
       {/* Carusel pe „pagini” */}
-      <div
-        className="relative overflow-hidden"
-      >
+      <div className="relative overflow-hidden">
         {/* fade edges */}
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent z-10" />
 
-        {/* Butoane prev/next (touch target ≥ 44px) */}
+        {/* Butoane prev/next: vizibile DOAR pe mobil; ascunse pe md+ */}
         {pages.length > 1 && (
           <>
             <button
               type="button"
               onClick={() => goTo(page - 1)}
               aria-label="Anterior"
-              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white
-                         md:opacity-0 md:hover:opacity-100 md:focus:opacity-100 transition
-                         h-11 w-11 grid place-items-center"
+              className="md:hidden absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white h-11 w-11 grid place-items-center"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
@@ -204,9 +197,7 @@ export default function PlayersCarousel({
               type="button"
               onClick={() => goTo(page + 1)}
               aria-label="Următor"
-              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white
-                         md:opacity-0 md:hover:opacity-100 md:focus:opacity-100 transition
-                         h-11 w-11 grid place-items-center"
+              className="md:hidden absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white h-11 w-11 grid place-items-center"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
@@ -251,7 +242,7 @@ export default function PlayersCarousel({
           )}
         </div>
 
-        {/* Pager (buline) — hit area ≥ 44px, aria-current pentru cea activă */}
+        {/* Pager (buline) — hit area ≥ 44px, semantic tabs pentru a11y */}
         {pages.length > 1 && (
           <div className="mt-4 flex justify-center gap-1.5" role="tablist" aria-label="Paginare carusel jucători">
             {pages.map((_, i) => {
@@ -260,8 +251,9 @@ export default function PlayersCarousel({
                 <button
                   type="button"
                   key={i}
+                  role="tab"
                   aria-label={`Pagina ${i + 1}`}
-                  aria-current={active ? "page" : undefined}
+                  aria-selected={active}
                   onClick={() => goTo(i)}
                   className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/70 rounded-full"
                   title={`Pagina ${i + 1}`}

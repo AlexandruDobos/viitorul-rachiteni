@@ -24,15 +24,14 @@ const Badge = ({ children, className = '' }) => (
 
 const cellHL = (cond, base, active) => (cond ? `${base} ${active}` : base);
 
-// ——— helper: alege un nume afișabil din ce primim de la API
+// Nume afișabil, indiferent cum vine din API
 const getDisplayName = (p = {}) => {
-  const tryConcat = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
+  const joined = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
   return (
     (typeof p.name === 'string' && p.name.trim()) ||
     (typeof p.fullName === 'string' && p.fullName.trim()) ||
     (typeof p.displayName === 'string' && p.displayName.trim()) ||
-    (tryConcat || '') ||
-    'Jucător'
+    (joined || '').trim()
   );
 };
 
@@ -50,7 +49,7 @@ const PlayerDetails = () => {
       try {
         const [resPlayer, resStats] = await Promise.all([
           fetch(`${BASE_URL}/app/players/${playerId}`),
-          fetch(`${BASE_URL}/app/matches/player/${playerId}/stats`)
+          fetch(`${BASE_URL}/app/matches/player/${playerId}/stats`),
         ]);
         const dataPlayer = await resPlayer.json();
         const dataStats = await resStats.json();
@@ -67,8 +66,8 @@ const PlayerDetails = () => {
   }, [playerId]);
 
   const toggleExpand = (matchId) => {
-    setExpandedMatchIds(prev =>
-      prev.includes(matchId) ? prev.filter(id => id !== matchId) : [...prev, matchId]
+    setExpandedMatchIds((prev) =>
+      prev.includes(matchId) ? prev.filter((id) => id !== matchId) : [...prev, matchId]
     );
   };
 
@@ -95,7 +94,8 @@ const PlayerDetails = () => {
     );
   }
 
-  const name = getDisplayName(player);
+  const displayName =
+    getDisplayName(player) || `Jucător${player.shirtNumber ? ` #${player.shirtNumber}` : ''}`;
   const img = player.profileImageUrl;
   const pos = player.position;
   const nr = player.shirtNumber;
@@ -104,39 +104,32 @@ const PlayerDetails = () => {
     <div className="px-4 max-w-[1000px] mx-auto">
       <JsonLd
         data={{
-          "@context": "https://schema.org",
-          "@type": "Person",
-          "name": name,
-          "image": player.profileImageUrl || undefined,
-          "memberOf": {
-            "@type": "SportsTeam",
-            "name": "ACS Viitorul Răchiteni",
-            "sport": "Football"
+          '@context': 'https://schema.org',
+          '@type': 'Person',
+          name: displayName,
+          image: player.profileImageUrl || undefined,
+          memberOf: {
+            '@type': 'SportsTeam',
+            name: 'ACS Viitorul Răchiteni',
+            sport: 'Football',
           },
-          "url": window.location.href
+          url: window.location.href,
         }}
       />
 
       {/* Buton înapoi */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-4 text-blue-600 font-medium hover:underline"
-      >
+      <button onClick={() => navigate(-1)} className="mb-4 text-blue-600 font-medium hover:underline">
         ← Înapoi
       </button>
 
-      {/* Card info jucător – layout pentru POZĂ PORTRET */}
+      {/* Card info jucător */}
       <div className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-gray-200">
         <div className="p-4 md:p-6 md:flex md:items-start md:gap-6">
-          {/* Col stânga – portret înalt */}
+          {/* Col stânga – portret */}
           <div className="md:w-64 lg:w-72">
             <div className="relative w-full aspect-[3/4] bg-gray-100 rounded-xl overflow-hidden">
               {img ? (
-                <img
-                  src={img}
-                  alt={name}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
+                <img src={img} alt={displayName} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="absolute inset-0 grid place-items-center text-gray-400">
                   <div className="text-5xl">👤</div>
@@ -147,28 +140,24 @@ const PlayerDetails = () => {
               <div className="absolute top-2 left-2 flex items-center gap-2">
                 {nr != null && <NumberBadge>#{nr}</NumberBadge>}
               </div>
-              <div className="absolute top-2 right-2">
-                {pos && <PositionChip>{pos}</PositionChip>}
-              </div>
+              <div className="absolute top-2 right-2">{pos && <PositionChip>{pos}</PositionChip>}</div>
             </div>
           </div>
 
           {/* Col dreapta – detalii + sumar */}
           <div className="mt-4 md:mt-0 md:flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold">{name}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{displayName}</h1>
             <p className="text-gray-600 mt-1">
-              {pos ? `${pos}` : ''}{nr != null ? ` • #${nr}` : ''}
+              {pos ? `${pos}` : ''}
+              {nr != null ? ` • #${nr}` : ''}
             </p>
 
-            {/* sumar scurt statistici */}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Badge className="bg-green-100 text-green-800">Goluri: {totals.g}</Badge>
               <Badge className="bg-sky-100 text-sky-800">Assisturi: {totals.a}</Badge>
               <Badge className="bg-yellow-100 text-yellow-800">Galbene: {totals.y}</Badge>
               <Badge className="bg-red-100 text-red-800">Roșii: {totals.r}</Badge>
             </div>
-
-            {/* poți adăuga aici info extra (vârstă, înălțime, etc.) */}
           </div>
         </div>
       </div>
@@ -197,10 +186,7 @@ const PlayerDetails = () => {
                   {stats.map((stat) => (
                     <tr key={stat.matchId} className="border-t hover:bg-gray-50">
                       <td className="px-3 py-2">
-                        <Link
-                          to={`/matches/${stat.matchId}`}
-                          className="text-blue-600 hover:underline"
-                        >
+                        <Link to={`/matches/${stat.matchId}`} className="text-blue-600 hover:underline">
                           {stat.matchName || `Meci #${stat.matchId}`}
                         </Link>
                       </td>
@@ -260,46 +246,51 @@ const PlayerDetails = () => {
                   {expandedMatchIds.includes(stat.matchId) && (
                     <div className="p-4 text-sm grid grid-cols-2 gap-x-4 gap-y-2">
                       <div className="text-gray-600">Goluri:</div>
-                      <div className={cellHL(
-                        (stat.goals || 0) > 0,
-                        'font-medium text-right',
-                        'bg-green-100 text-green-900 font-semibold rounded px-2 py-0.5 inline-block'
-                      )}>
+                      <div
+                        className={cellHL(
+                          (stat.goals || 0) > 0,
+                          'font-medium text-right',
+                          'bg-green-100 text-green-900 font-semibold rounded px-2 py-0.5 inline-block'
+                        )}
+                      >
                         {stat.goals ?? 0}
                       </div>
 
                       <div className="text-gray-600">Assisturi:</div>
-                      <div className={cellHL(
-                        (stat.assists || 0) > 0,
-                        'font-medium text-right',
-                        'bg-sky-100 text-sky-900 font-semibold rounded px-2 py-0.5 inline-block'
-                      )}>
+                      <div
+                        className={cellHL(
+                          (stat.assists || 0) > 0,
+                          'font-medium text-right',
+                          'bg-sky-100 text-sky-900 font-semibold rounded px-2 py-0.5 inline-block'
+                        )}
+                      >
                         {stat.assists ?? 0}
                       </div>
 
                       <div className="text-gray-600">Galbene:</div>
-                      <div className={cellHL(
-                        (stat.yellowCards || 0) > 0,
-                        'font-medium text-right',
-                        'bg-yellow-100 text-yellow-900 font-semibold rounded px-2 py-0.5 inline-block'
-                      )}>
+                      <div
+                        className={cellHL(
+                          (stat.yellowCards || 0) > 0,
+                          'font-medium text-right',
+                          'bg-yellow-100 text-yellow-900 font-semibold rounded px-2 py-0.5 inline-block'
+                        )}
+                      >
                         {stat.yellowCards ?? 0}
                       </div>
 
                       <div className="text-gray-600">Roșu:</div>
-                      <div className={cellHL(
-                        !!stat.redCard,
-                        'font-medium text-right',
-                        'bg-red-100 text-red-900 font-semibold rounded px-2 py-0.5 inline-block'
-                      )}>
+                      <div
+                        className={cellHL(
+                          !!stat.redCard,
+                          'font-medium text-right',
+                          'bg-red-100 text-red-900 font-semibold rounded px-2 py-0.5 inline-block'
+                        )}
+                      >
                         {stat.redCard ? '1' : '0'}
                       </div>
 
                       <div className="col-span-2 mt-3">
-                        <Link
-                          to={`/matches/${stat.matchId}`}
-                          className="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-                        >
+                        <Link to={`/matches/${stat.matchId}`} className="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
                           Detalii meci
                         </Link>
                       </div>

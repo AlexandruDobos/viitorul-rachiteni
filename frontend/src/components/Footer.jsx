@@ -19,14 +19,6 @@ const SocialIcon = ({ href, label, children }) => (
 export default function Footer() {
   const year = new Date().getFullYear();
 
-  // Google Maps
-  const MAP_LAT = 47.039275;
-  const MAP_LNG = 26.9022791;
-  const MAP_NAME = "Stadion AS Viitorul Răchiteni";
-  const MAP_LINK =
-    "https://www.google.com/maps/place/Stadion+AS+Viitorul+Rachiteni/@47.0408353,26.8979189,15.04z/data=!4m6!3m5!1s0x40cab9007ab923ef:0xd9579ff8e5789606!8m2!3d47.039275!4d26.9022791!16s%2Fg%2F11ldxsbz9_?entry=ttu";
-  const MAP_EMBED_SRC = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=16&output=embed`;
-
   // Social links from settings
   const [links, setLinks] = useState({
     facebookUrl: "",
@@ -152,7 +144,7 @@ export default function Footer() {
               </Link>
             </div>
 
-            {/* Contact + map */}
+            {/* Contact (fără hartă) */}
             <div className="w-full max-w-sm">
               <h3 className="text-sm font-semibold text-gray-900">Contact</h3>
               <ul className="mt-3 space-y-2 text-sm text-gray-700/90">
@@ -164,25 +156,6 @@ export default function Footer() {
                 </li>
                 <li>Răchiteni, Iași</li>
               </ul>
-
-              <div className="mt-4 rounded-xl overflow-hidden ring-1 ring-indigo-100 shadow-sm max-w-[300px] mx-auto lg:mx-0">
-                <iframe
-                  title={`Hartă Google – ${MAP_NAME}`}
-                  src={MAP_EMBED_SRC}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-40 md:h-48"
-                />
-              </div>
-              <a
-                href={MAP_LINK}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 inline-block text-[11px] text-blue-700 hover:underline"
-              >
-                Deschide în Google Maps
-              </a>
             </div>
           </div>
 

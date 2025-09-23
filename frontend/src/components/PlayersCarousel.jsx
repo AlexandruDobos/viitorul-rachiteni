@@ -28,7 +28,8 @@ function PlayerCard({ p }) {
       <div className="relative aspect-[3/4] overflow-hidden rounded-2xl ring-1 ring-gray-200 bg-gray-100">
         {nr != null && (
           <span
-            className="absolute left-2 top-2 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-semibold bg-indigo-600/90 text-white shadow-sm"
+            className="absolute left-2 top-2 z-10 rounded-md px-1.5 py-0.5 text-[11px] font-semibold
+                       bg-indigo-600/90 text-white shadow-sm"
           >
             #{nr}
           </span>
@@ -38,10 +39,11 @@ function PlayerCard({ p }) {
           <img
             src={img}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover"
-            loading="lazy"
             width={600}
             height={800}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center">
@@ -98,7 +100,7 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
       else setPerPage(4);                  // ≥ lg
     };
     compute();
-    window.addEventListener("resize", compute);
+    window.addEventListener("resize", compute, { passive: true });
     return () => window.removeEventListener("resize", compute);
   }, []);
 
@@ -142,25 +144,17 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
     el.scrollTo({ left: el.clientWidth * clamped, behavior: "smooth" });
   };
 
-  /* actualizează pagina curentă când utilizatorul derulează manual (swipe/drag) */
-  const onScroll = () => {
+  /* actualizează pagina curentă (listener PASSIVE) */
+  useEffect(() => {
     const el = railRef.current;
     if (!el) return;
-    const idx = Math.round(el.scrollLeft / el.clientWidth);
-    if (idx !== page) setPage(idx);
-  };
-
-  /* navigare cu tastatura pe slider (←/→) */
-  const onKeyDown = (e) => {
-    if (pages.length <= 1) return;
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      goTo(page - 1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      goTo(page + 1);
-    }
-  };
+    const onScroll = () => {
+      const idx = Math.round(el.scrollLeft / el.clientWidth);
+      setPage((p) => (p === idx ? p : idx));
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [pages.length]);
 
   return (
     <section className="mt-10">
@@ -180,14 +174,20 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent z-10" />
 
-        {/* Butoane prev/next: vizibile DOAR pe mobil; ascunse pe md+ */}
+        {/* Butoane prev/next — vizibile pe toate rezoluțiile, hit area ≥ 44px */}
         {pages.length > 1 && (
           <>
             <button
               type="button"
               onClick={() => goTo(page - 1)}
               aria-label="Anterior"
-              className="md:hidden absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white h-11 w-11 grid place-items-center"
+              className="
+                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 transition
+              "
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
@@ -197,7 +197,13 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
               type="button"
               onClick={() => goTo(page + 1)}
               aria-label="Următor"
-              className="md:hidden absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 shadow ring-1 ring-gray-200 hover:bg-white h-11 w-11 grid place-items-center"
+              className="
+                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 transition
+              "
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
@@ -209,19 +215,10 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
         {/* RAIL – fiecare „pagină” ocupă 100% lățime și are 1/2/4 carduri */}
         <div
           ref={railRef}
-          onScroll={onScroll}
-          onKeyDown={onKeyDown}
-          tabIndex={0}
-          aria-roledescription="carousel"
-          aria-label="Carusel jucători"
-          className="no-scrollbar relative flex overflow-x-auto scroll-smooth snap-x snap-mandatory focus:outline-none"
-          style={{ willChange: "scroll-position" }}
+          className="no-scrollbar relative flex overflow-x-auto scroll-smooth snap-x snap-mandatory"
         >
           {loading ? (
-            <div className="mx-auto my-10 flex items-center gap-2 text-gray-500">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-              Se încarcă jucătorii…
-            </div>
+            <div className="mx-auto my-10 text-gray-500">Se încarcă jucătorii…</div>
           ) : pages.length === 0 ? (
             <div className="mx-auto my-8 text-gray-500">Nu există jucători de afișat.</div>
           ) : (
@@ -242,7 +239,7 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
           )}
         </div>
 
-        {/* Pager (buline) — hit area ≥ 44px, semantic tabs pentru a11y */}
+        {/* Pager (buline) — hit area ≥ 44px, aria-current pentru cea activă */}
         {pages.length > 1 && (
           <div className="mt-4 flex justify-center gap-1.5" role="tablist" aria-label="Paginare carusel jucători">
             {pages.map((_, i) => {
@@ -251,9 +248,8 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
                 <button
                   type="button"
                   key={i}
-                  role="tab"
                   aria-label={`Pagina ${i + 1}`}
-                  aria-selected={active}
+                  aria-current={active ? "page" : undefined}
                   onClick={() => goTo(i)}
                   className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/70 rounded-full"
                   title={`Pagina ${i + 1}`}

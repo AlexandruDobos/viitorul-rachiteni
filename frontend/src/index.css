@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* === Base defaults ca fallback (nu deranjează clasele Tailwind) === */
+@layer base {
+  html { color: #0f172a; background-color: #ffffff; } /* text-slate-900, bg-white */
+  body { color: inherit; background-color: inherit; }
+  ::selection { background: #bfdbfe; color: #0f172a; } /* highlight vizibil */
+}

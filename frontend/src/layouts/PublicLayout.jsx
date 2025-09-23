@@ -9,7 +9,7 @@ import ScrollToTop from "../components/ScrollToTop";
 import JsonLd from "../components/JsonLD";
 export default function PublicLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-white text-slate-900">
       <ScrollToTop />
       <Navbar />
       <JsonLd data={{

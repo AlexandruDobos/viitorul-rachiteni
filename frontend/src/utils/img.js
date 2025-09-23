@@ -1,39 +1,38 @@
 // src/utils/img.js
-const CF_HOSTS = ['cdn.viitorulrachiteni.ro', 'www.viitorulrachiteni.ro', 'viitorulrachiteni.ro'];
 
-/**
- * Generează URL optimizat cu Cloudflare Image Resizing (dacă hostul e pe CF).
- * Fallback: întoarce URL-ul original.
- * @param {string} url - imaginea originală
- * @param {object} o   - { w, q, fmt } width, quality, format ('auto' recomandat)
- */
-export function cfImg(url, { w = 720, q = 75, fmt = 'auto' } = {}) {
-  try {
-    if (!url) return url;
-    const u = new URL(url, window.location.origin);
+// Construiește URL-ul pentru Cloudflare Image Resizing.
+// Exemplu rezultat:
+//   /cdn-cgi/image/width=960,quality=75,format=auto/https://cdn.viitorulrachiteni.ro/poza.jpg
+export function cfImg(url, opts = {}) {
+  if (!url) return "";
 
-    // dacă e deja resizată, nu mai adăugăm încă o dată
-    if (u.pathname.startsWith('/cdn-cgi/image/')) return url;
+  const u = String(url);
 
-    // aplică doar dacă e pe unul din hosturile noastre
-    if (!CF_HOSTS.includes(u.hostname)) return url;
+  // Nu atinge date/blob sau imagini deja „resized”
+  if (/^(data:|blob:)/i.test(u) || u.includes("/cdn-cgi/image/")) return u;
 
-    // Cloudflare: /cdn-cgi/image/width=...,quality=...,format=auto/<restul>
-    const ops = [
-      `width=${Math.round(w)}`,
-      `quality=${Math.min(Math.max(q, 40), 90)}`,
-      `format=${fmt}` // 'auto' sau 'webp'/'avif'
-    ].join(',');
+  // Cloudflare acceptă „remote image” absolută după transformări
+  // (dacă primești un path relativ, îl facem absolut relativ la origin)
+  const absolute = /^https?:\/\//i.test(u) ? u : `${window?.location?.origin || ""}${u}`;
 
-    return `${u.origin}/cdn-cgi/image/${ops}${u.pathname}${u.search}`;
-  } catch {
-    return url;
-  }
+  const {
+    w, h, q = 75, fmt = "auto", fit, sharpen = false,
+  } = opts;
+
+  const params = [];
+  if (w) params.push(`width=${w}`);
+  if (h) params.push(`height=${h}`);
+  if (fit) params.push(`fit=${fit}`);
+  else if (w && h) params.push("fit=cover");
+
+  params.push(`quality=${q}`);
+  params.push(`format=${fmt}`);
+  if (sharpen) params.push("sharpen=1");
+
+  return `/cdn-cgi/image/${params.join(",")}/${encodeURI(absolute)}`;
 }
 
-/**
- * Construiește srcset pentru câteva lățimi standard.
- */
-export function buildSrcSet(url, widths = [360, 540, 720, 960, 1200], q = 75, fmt = 'auto') {
-  return widths.map(w => `${cfImg(url, { w, q, fmt })} ${w}w`).join(', ');
+// Generează srcset pentru diverse lățimi
+export function buildSrcSet(url, widths = [360, 540, 720, 960, 1280], q = 75, fmt = "auto") {
+  return widths.map((w) => `${cfImg(url, { w, q, fmt })} ${w}w`).join(", ");
 }

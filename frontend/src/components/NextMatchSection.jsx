@@ -6,6 +6,9 @@ import { motion } from "framer-motion";
 
 const pad = (n) => String(n).padStart(2, "0");
 
+// ⬇️ folosim aceleași clase pentru a rezerva spațiu în ambele stări (loading + loaded)
+const CARD_MIN_H = "min-h-[360px] sm:min-h-[380px] md:min-h-[420px] lg:min-h-[440px]";
+
 function useCountdown(targetDate) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -48,6 +51,11 @@ function TeamBlock({ name, logo, align = "center" }) {
           <motion.img
             src={logo}
             alt={name}
+            // ⬇️ dimensiuni intrinseci + contain → previne CLS când se încarcă imaginea
+            width={128}
+            height={128}
+            loading="eager"
+            decoding="async"
             className="relative z-[1] mx-auto h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32 object-contain drop-shadow"
             initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -79,6 +87,7 @@ function TimePill({ value, label }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
+      {/* ⬇️ min-w păstrat → cifrele nu schimbă lățimea când se actualizează */}
       <div className="min-w-[64px] rounded-2xl bg-white px-3 py-2 text-2xl md:text-3xl font-extrabold text-gray-900 shadow ring-1 ring-black/5">
         {value}
       </div>
@@ -131,7 +140,8 @@ export default function NextMatchSection() {
   if (loading) {
     return (
       <section className="my-8">
-        <div className="mx-auto max-w-5xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        {/* ⬇️ rezervăm aceeași înălțime ca în cardul final → fără sărituri */}
+        <div className={`mx-auto max-w-5xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ${CARD_MIN_H}`}>
           <div className="flex items-center gap-3 text-gray-600">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
             Se încarcă următorul meci…
@@ -150,11 +160,14 @@ export default function NextMatchSection() {
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="
+        className={`
           relative mx-auto max-w-5xl overflow-hidden rounded-3xl
           border border-white/10
           bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600
-        "
+          ${CARD_MIN_H}
+        `}
+        // ⬇️ izolează layout-ul intern; reduce efectele asupra restului paginii
+        style={{ contain: "layout paint" }}
       >
         {/* conținutul este deasupra fundalului albastru */}
         <div className="relative z-10 rounded-3xl p-6 md:p-8">

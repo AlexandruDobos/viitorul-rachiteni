@@ -41,8 +41,8 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD – titlu & dată aliniate cu stilul din AnnouncementDetail ===== */
-function AnnouncementCard({ a, blueFrame = false, isLCP = false }) {
+/* ===== CARD ===== */
+function AnnouncementCard({ a, blueFrame = false, isLCP = false, headingLevel = 3 }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
   const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
 
@@ -51,21 +51,23 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false }) {
     ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
     : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
 
+  // clamp între 1–6
+  const Tag = `h${Math.min(6, Math.max(1, headingLevel))}`;
+
   return (
     <Link to={href} title={a.title} className="group block w-full text-left bg-transparent">
       <div className={outerClass}>
-        {/* Header: TITLU pe centru + DATĂ cu separator elegant */}
+        {/* Header: TITLU + DATĂ */}
         <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
-          <h3
+          <Tag
             className="
               font-sans font-extrabold uppercase tracking-tight leading-tight
               text-lg sm:text-2xl md:text-3xl text-slate-900
             "
           >
             {a.title}
-          </h3>
+          </Tag>
 
-          {/* dată cu linii subțiri stânga/dreapta – la fel ca în AnnouncementDetail */}
           <div className="mt-2 w-full max-w-[560px] flex items-center gap-3">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
             <span className="whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
@@ -75,7 +77,7 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false }) {
           </div>
         </div>
 
-        {/* Media – singurul frame vizibil */}
+        {/* Media */}
         <div className="px-2 sm:px-3 pt-3">
           <div
             className={`relative overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)] ${heightClass}`}
@@ -84,10 +86,8 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false }) {
               <img
                 src={imgSrc}
                 alt={a.title}
-                /** Rezervă raport 16:9 (ajută la stabilitatea layout-ului chiar dacă avem și înălțimi fixe) */
                 width={960}
                 height={540}
-                /** LCP: primul card e eager + prioritar, restul lazy */
                 loading={isLCP ? 'eager' : 'lazy'}
                 fetchpriority={isLCP ? 'high' : 'auto'}
                 decoding="async"
@@ -114,9 +114,7 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false }) {
   );
 }
 
-/* ===== CARUSEL – HOME =====
-   Săgețile sunt poziționate la mijlocul IMAGINII.
-*/
+/* ===== CARUSEL – HOME ===== */
 function HomeAnnouncementsCarousel({ items }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -160,7 +158,6 @@ function HomeAnnouncementsCarousel({ items }) {
       style={{ touchAction: 'pan-y' }}
       aria-label="Anunțuri"
     >
-      {/* pistă carusel + butoane suprapuse LA MIJLOCUL IMAGINII */}
       <div
         className="relative overflow-hidden rounded-xl"
         onMouseDown={onPointerDown}
@@ -171,7 +168,6 @@ function HomeAnnouncementsCarousel({ items }) {
         onTouchMove={onPointerMove}
         onTouchEnd={onPointerUp}
       >
-        {/* NAV buttons – poziționate relativ la această zonă (imaginea) */}
         {pages.length > 1 && (
           <>
             <button
@@ -222,8 +218,8 @@ function HomeAnnouncementsCarousel({ items }) {
               className="flex-shrink-0 px-1 sm:px-2"
               style={{ width: `${slidePct}%` }}
             >
-              {/* LCP pe HOME: primul slide */}
-              <AnnouncementCard a={a} blueFrame isLCP={i === 0} />
+              {/* Home: folosește <h2> în card pentru ierarhie corectă */}
+              <AnnouncementCard a={a} blueFrame isLCP={i === 0} headingLevel={2} />
             </div>
           ))}
         </div>
@@ -308,7 +304,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
   useEffect(() => {
@@ -320,12 +316,11 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       fetchPage(0, newQ);
     }, 300);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
   /* ---------- HOMEPAGE ---------- */
   if (limit) {
-    // fără heading “Ultimele noutăți”
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
@@ -444,8 +439,8 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             >
               {items.map((a, idx) => (
                 <motion.div key={a.id} variants={itemVariants} layout>
-                  {/* LCP pe /stiri: primul card din prima pagină */}
-                  <AnnouncementCard a={a} isLCP={page === 0 && idx === 0} />
+                  {/* /stiri: folosește <h3> în card pentru că există deja <h2> de secțiune */}
+                  <AnnouncementCard a={a} isLCP={page === 0 && idx === 0} headingLevel={3} />
                 </motion.div>
               ))}
             </motion.div>

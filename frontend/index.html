@@ -4,8 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="index, follow" />
+    <meta name="color-scheme" content="light dark" />
+    <meta http-equiv="x-dns-prefetch-control" content="on">
 
-    <!-- ===== Favicons (din /public) ===== -->
+    <!-- ===== Resource Hints: CDN + API (ajută LCP/latency) ===== -->
+    <!-- CDN imagini -->
+    <link rel="dns-prefetch" href="https://cdn.viitorulrachiteni.ro">
+    <link rel="preconnect" href="https://cdn.viitorulrachiteni.ro" crossorigin>
+    <!-- API (ajustează dacă ai alt domeniu pentru backend) -->
+    <link rel="dns-prefetch" href="https://api.viitorulrachiteni.ro">
+    <link rel="preconnect" href="https://api.viitorulrachiteni.ro" crossorigin>
+
+    <!-- (opțional) dacă folosești hărți DOAR pe pagina de contact, NU preconecta aici.
+         Dacă însă chiar ai nevoie pe prima pagină, decomentează:
+    <link rel="dns-prefetch" href="https://maps.googleapis.com">
+    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin>
+    -->
+
+    <!-- ===== Favicons ===== -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -37,7 +53,6 @@
       content="Site-ul oficial ACS Viitorul Răchiteni: știri, rezultate, programul meciurilor, lotul și informații despre club."
     />
     <meta id="og-url" property="og:url" content="https://viitorulrachiteni.ro/" />
-    <!-- Înlocuiește imaginea dacă ai un banner dedicat OG -->
     <meta id="og-image" property="og:image" content="https://viitorulrachiteni.ro/og-default.jpg" />
     <meta property="og:image:alt" content="ACS Viitorul Răchiteni" />
 
@@ -51,7 +66,7 @@
     />
     <meta id="tw-image" name="twitter:image" content="https://viitorulrachiteni.ro/og-default.jpg" />
 
-    <!-- ===== JSON-LD: Organization + WebSite (statice) ===== -->
+    <!-- ===== JSON-LD: Organization + WebSite ===== -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -75,9 +90,26 @@
         }
       }
     </script>
+
+    <!-- ===== Module preload pentru entry (reduce „network dependency tree”) ===== -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+
+    <!-- ===== Webfonts (dacă le adaugi): setează swap pentru a evita CLS) =====
+    <style>
+      @font-face {
+        font-family: 'ClubSans';
+        src: url('/fonts/ClubSans.woff2') format('woff2');
+        font-weight: 100 900;
+        font-display: swap; /* important pentru CLS */
+      }
+    </style>
+    -->
   </head>
+
   <body>
     <div id="root"></div>
+
+    <!-- Entry point SPA -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

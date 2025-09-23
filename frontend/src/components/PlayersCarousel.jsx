@@ -164,9 +164,7 @@ export default function PlayersCarousel({
       </div>
 
       {/* Carusel pe „pagini” */}
-      <div
-        className="relative overflow-x-hidden overflow-y-visible"
-      >
+      <div className="relative overflow-x-hidden overflow-y-visible">
         {/* fade edges */}
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent z-10" />
@@ -178,8 +176,8 @@ export default function PlayersCarousel({
               type="button"
               onClick={() => goTo(page - 1)}
               aria-label="Anterior"
-              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200 hover:bg-white
-                         h-11 w-11 grid place-items-center"
+              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200
+                         h-11 w-11 grid place-items-center text-gray-700 hover:text-gray-900 hover:bg-white"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
@@ -189,8 +187,8 @@ export default function PlayersCarousel({
               type="button"
               onClick={() => goTo(page + 1)}
               aria-label="Următor"
-              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200 hover:bg-white
-                         h-11 w-11 grid place-items-center"
+              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200
+                         h-11 w-11 grid place-items-center text-gray-700 hover:text-gray-900 hover:bg-white"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />

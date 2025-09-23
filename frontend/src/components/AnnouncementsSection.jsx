@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cfImg, buildSrcSet } from '../utils/img'; // <— ADĂUGAT
 
 const DEFAULT_PAGE_SIZE = 4;
 const WINDOW = 5;
@@ -42,8 +43,13 @@ function toAbsoluteUrl(maybeUrl) {
 }
 
 /* ===== CARD – titlu & dată aliniate cu stilul din AnnouncementDetail ===== */
-function AnnouncementCard({ a, blueFrame = false }) {
-  const imgSrc = toAbsoluteUrl(a.coverUrl);
+function AnnouncementCard({ a, blueFrame = false, isLCP = false }) { // <— isLCP ADĂUGAT
+  const raw = toAbsoluteUrl(a.coverUrl);
+  const imgSrc = raw ? cfImg(raw, { w: 960, q: 75, fmt: 'auto' }) : null;              // <— OPTIM
+  const imgSrcSet = raw ? buildSrcSet(raw, [360, 540, 720, 960, 1280], 75, 'auto') : ''; // <— OPTIM
+  const sizes = blueFrame
+    ? '100vw'
+    : '(min-width:1024px) 43vw, (min-width:768px) 50vw, 100vw'; // <— OPTIM
   const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
 
   const outerClass = 'relative rounded-2xl';
@@ -65,7 +71,7 @@ function AnnouncementCard({ a, blueFrame = false }) {
             {a.title}
           </h3>
 
-          {/* dată cu linii subțiri stânga/dreapta – la fel ca în AnnouncementDetail */}
+        {/* dată cu linii subțiri stânga/dreapta – la fel ca în AnnouncementDetail */}
           <div className="mt-2 w-full max-w-[560px] flex items-center gap-3">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
             <span className="whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
@@ -83,11 +89,17 @@ function AnnouncementCard({ a, blueFrame = false }) {
             {imgSrc ? (
               <img
                 src={imgSrc}
+                srcSet={imgSrcSet}        // <— OPTIM
+                sizes={sizes}              // <— OPTIM
+                width={960} height={540}   // <— STABILIZEAZĂ LAYOUT (16:9)
                 alt={a.title}
-                loading="lazy"
+                loading={isLCP ? 'eager' : 'lazy'}          // <— LCP
+                fetchpriority={isLCP ? 'high' : 'auto'}     // <— LCP
+                decoding="async"
                 className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
                 onError={(e) => {
                   e.currentTarget.src = '/placeholder.png';
+                  e.currentTarget.removeAttribute('srcset');
                 }}
               />
             ) : (
@@ -216,7 +228,7 @@ function HomeAnnouncementsCarousel({ items }) {
               className="flex-shrink-0 px-1 sm:px-2"
               style={{ width: `${slidePct}%` }}
             >
-              <AnnouncementCard a={a} blueFrame />
+              <AnnouncementCard a={a} blueFrame isLCP={i === 0} /> {/* <— LCP pe HOME pentru primul slide */}
             </div>
           ))}
         </div>
@@ -435,9 +447,9 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
               animate="show"
               exit="exit"
             >
-              {items.map((a) => (
+              {items.map((a, idx) => (
                 <motion.div key={a.id} variants={itemVariants} layout>
-                  <AnnouncementCard a={a} />
+                  <AnnouncementCard a={a} isLCP={page === 0 && idx === 0} /> {/* <— LCP pe /stiri: primul card */}
                 </motion.div>
               ))}
             </motion.div>

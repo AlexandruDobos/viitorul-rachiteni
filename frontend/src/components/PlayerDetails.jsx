@@ -3,6 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import JsonLd from './JsonLD';
+
 const PositionChip = ({ children }) => (
   <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-black/70 text-white">
     {children}
@@ -22,6 +23,18 @@ const Badge = ({ children, className = '' }) => (
 );
 
 const cellHL = (cond, base, active) => (cond ? `${base} ${active}` : base);
+
+// ——— helper: alege un nume afișabil din ce primim de la API
+const getDisplayName = (p = {}) => {
+  const tryConcat = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
+  return (
+    (typeof p.name === 'string' && p.name.trim()) ||
+    (typeof p.fullName === 'string' && p.fullName.trim()) ||
+    (typeof p.displayName === 'string' && p.displayName.trim()) ||
+    (tryConcat || '') ||
+    'Jucător'
+  );
+};
 
 const PlayerDetails = () => {
   const { playerId } = useParams();
@@ -50,7 +63,6 @@ const PlayerDetails = () => {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [playerId]);
 
@@ -83,25 +95,28 @@ const PlayerDetails = () => {
     );
   }
 
-  const name = player.name ?? 'Jucător';
+  const name = getDisplayName(player);
   const img = player.profileImageUrl;
   const pos = player.position;
   const nr = player.shirtNumber;
 
   return (
     <div className="px-4 max-w-[1000px] mx-auto">
-      <JsonLd data={{
-        "@context": "https://schema.org",
-        "@type": "Person",
-        "name": player.name,
-        "image": player.profileImageUrl || undefined,
-        "memberOf": {
-          "@type": "SportsTeam",
-          "name": "ACS Viitorul Răchiteni",
-          "sport": "Football"
-        },
-        "url": window.location.href
-      }} />
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Person",
+          "name": name,
+          "image": player.profileImageUrl || undefined,
+          "memberOf": {
+            "@type": "SportsTeam",
+            "name": "ACS Viitorul Răchiteni",
+            "sport": "Football"
+          },
+          "url": window.location.href
+        }}
+      />
+
       {/* Buton înapoi */}
       <button
         onClick={() => navigate(-1)}

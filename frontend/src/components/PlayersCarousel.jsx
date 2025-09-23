@@ -39,11 +39,8 @@ function PlayerCard({ p }) {
           <img
             src={img}
             alt={name}
-            width={600}
-            height={800}
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
             loading="lazy"
-            decoding="async"
-            className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
           <div className="absolute inset-0 grid place-items-center">
@@ -58,7 +55,7 @@ function PlayerCard({ p }) {
       </div>
 
       {/* eticheta cu numele (click trece prin ea către Link) */}
-      <div className="pointer-events-none absolute left-1/2 -bottom-3 -translate-x-1/2">
+      <div className="pointer-events-none absolute left-1/2 -bottom-3 -translate-x-1/2 z-20">
         <div className="rounded-xl bg-white px-4 py-2 text-center text-sm font-medium shadow ring-1 ring-gray-200">
           {name}
         </div>
@@ -68,7 +65,10 @@ function PlayerCard({ p }) {
 }
 
 /* carusel pe pagini: tel=1, tablet=2, laptop+=4 per cadru */
-export default function PlayersCarousel({ title = "JUCĂTORI" }) {
+export default function PlayersCarousel({
+  title = "JUCĂTORI",
+  autoPlayMs = 3500,
+}) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -76,6 +76,8 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
   const [page, setPage] = useState(0);
 
   const railRef = useRef(null);
+  const autoplayRef = useRef(null);
+  const pausedRef = useRef(false);
 
   /* injectăm CSS ca să ascundem scrollbar-ul */
   useEffect(() => {
@@ -100,7 +102,7 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
       else setPerPage(4);                  // ≥ lg
     };
     compute();
-    window.addEventListener("resize", compute, { passive: true });
+    window.addEventListener("resize", compute);
     return () => window.removeEventListener("resize", compute);
   }, []);
 
@@ -109,8 +111,10 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
     (async () => {
       try {
         setLoading(true);
+        // cerem explicit doar activii
         const res = await fetch(`${BASE_URL}/app/players?activeOnly=true`);
         const data = await res.json();
+        // filtrăm defensiv dacă backend-ul ar returna totuși și inactivi
         const onlyActive = (Array.isArray(data) ? data : []).filter(
           (p) => p.isActive !== false
         );
@@ -131,6 +135,7 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
     for (let i = 0; i < players.length; i += perPage) {
       out.push(players.slice(i, i + perPage));
     }
+    // după schimbarea layout-ului, sari la prima pagină validă
     if (page > out.length - 1) setPage(0);
     return out;
   }, [players, perPage]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -144,17 +149,40 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
     el.scrollTo({ left: el.clientWidth * clamped, behavior: "smooth" });
   };
 
-  /* actualizează pagina curentă (listener PASSIVE) */
-  useEffect(() => {
+  /* actualizează pagina curentă când utilizatorul derulează manual (swipe/drag) */
+  const onScroll = () => {
     const el = railRef.current;
     if (!el) return;
-    const onScroll = () => {
-      const idx = Math.round(el.scrollLeft / el.clientWidth);
-      setPage((p) => (p === idx ? p : idx));
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [pages.length]);
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== page) setPage(idx);
+  };
+
+  /* autoplay – sare din pagină în pagină, se oprește la interacțiune */
+  const startAuto = () => {
+    stopAuto();
+    autoplayRef.current = window.setInterval(() => {
+      if (pausedRef.current || pages.length <= 1) return;
+      goTo((page + 1) % pages.length);
+    }, autoPlayMs);
+  };
+  const stopAuto = () => {
+    if (autoplayRef.current) window.clearInterval(autoplayRef.current);
+  };
+
+  useEffect(() => {
+    startAuto();
+    return stopAuto;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pages.length, page, autoPlayMs]);
+
+  const pause = () => {
+    pausedRef.current = true;
+    stopAuto();
+  };
+  const resume = () => {
+    pausedRef.current = false;
+    startAuto();
+  };
 
   return (
     <section className="mt-10">
@@ -169,43 +197,37 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
       </div>
 
       {/* Carusel pe „pagini” */}
-      <div className="relative overflow-hidden">
+      <div
+        className="relative overflow-x-hidden overflow-y-visible"
+        onMouseEnter={pause}
+        onMouseLeave={resume}
+        onTouchStart={pause}
+        onTouchEnd={resume}
+      >
         {/* fade edges */}
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent z-10" />
 
-        {/* Butoane prev/next — vizibile pe toate rezoluțiile, hit area ≥ 44px */}
+        {/* Butoane prev/next */}
         {pages.length > 1 && (
           <>
             <button
-              type="button"
               onClick={() => goTo(page - 1)}
               aria-label="Anterior"
-              className="
-                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
-                h-11 w-11 grid place-items-center rounded-full
-                bg-white/70 backdrop-blur-md text-gray-800
-                ring-1 ring-white/60 shadow-md
-                hover:bg-white/90 transition
-              "
+              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow ring-1 ring-gray-200 hover:bg-white
+                         transition h-11 w-11 grid place-items-center"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
               </svg>
             </button>
             <button
-              type="button"
               onClick={() => goTo(page + 1)}
               aria-label="Următor"
-              className="
-                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
-                h-11 w-11 grid place-items-center rounded-full
-                bg-white/70 backdrop-blur-md text-gray-800
-                ring-1 ring-white/60 shadow-md
-                hover:bg-white/90 transition
-              "
+              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow ring-1 ring-gray-200 hover:bg-white
+                         transition h-11 w-11 grid place-items-center"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
               </svg>
             </button>
@@ -215,19 +237,21 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
         {/* RAIL – fiecare „pagină” ocupă 100% lățime și are 1/2/4 carduri */}
         <div
           ref={railRef}
-          className="no-scrollbar relative flex overflow-x-auto scroll-smooth snap-x snap-mandatory"
+          onScroll={onScroll}
+          className="no-scrollbar relative flex overflow-x-auto overflow-y-visible scroll-smooth snap-x snap-mandatory"
         >
           {loading ? (
-            <div className="mx-auto my-10 text-gray-500">Se încarcă jucătorii…</div>
+            <div className="mx-auto my-10 flex items-center gap-2 text-gray-500">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+              Se încarcă jucătorii…
+            </div>
           ) : pages.length === 0 ? (
             <div className="mx-auto my-8 text-gray-500">Nu există jucători de afișat.</div>
           ) : (
             pages.map((chunk, idx) => (
               <div
                 key={idx}
-                className="w-full flex-shrink-0 snap-center px-2 sm:px-3 py-4"
-                role="group"
-                aria-label={`Pagina ${idx + 1} din ${pages.length}`}
+                className="w-full flex-shrink-0 snap-center px-2 sm:px-3 pt-4 pb-8"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {chunk.map((p) => (
@@ -239,33 +263,21 @@ export default function PlayersCarousel({ title = "JUCĂTORI" }) {
           )}
         </div>
 
-        {/* Pager (buline) — hit area ≥ 44px, aria-current pentru cea activă */}
+        {/* Pager (buline) */}
         {pages.length > 1 && (
-          <div className="mt-4 flex justify-center gap-1.5" role="tablist" aria-label="Paginare carusel jucători">
-            {pages.map((_, i) => {
-              const active = i === page;
-              return (
-                <button
-                  type="button"
-                  key={i}
-                  aria-label={`Pagina ${i + 1}`}
-                  aria-current={active ? "page" : undefined}
-                  onClick={() => goTo(i)}
-                  className="relative inline-flex items-center justify-center min-w-[44px] min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/70 rounded-full"
-                  title={`Pagina ${i + 1}`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={[
-                      "block h-2.5 w-2.5 rounded-full transition",
-                      active
-                        ? "bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 shadow ring-1 ring-indigo-400/40"
-                        : "bg-gray-300 hover:bg-gray-400",
-                    ].join(" ")}
-                  />
-                </button>
-              );
-            })}
+          <div className="mt-4 flex justify-center gap-2">
+            {pages.map((_, i) => (
+              <button
+                key={i}
+                aria-label={`Pagina ${i + 1}`}
+                onClick={() => goTo(i)}
+                className={`h-2.5 w-2.5 rounded-full transition
+                  ${i === page
+                    ? "bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 shadow ring-1 ring-indigo-400/40"
+                    : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+              />
+            ))}
           </div>
         )}
       </div>

@@ -39,7 +39,7 @@ function PlayerCard({ p }) {
           <img
             src={img}
             alt={name}
-            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="absolute inset-0 h-full w-full object-cover"
             loading="lazy"
           />
         ) : (
@@ -54,9 +54,9 @@ function PlayerCard({ p }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
       </div>
 
-      {/* eticheta cu numele (click trece prin ea către Link) */}
+      {/* eticheta cu numele */}
       <div className="pointer-events-none absolute left-1/2 -bottom-3 -translate-x-1/2 z-20">
-        <div className="rounded-xl bg-white px-4 py-2 text-center text-sm font-medium shadow ring-1 ring-gray-200">
+        <div className="rounded-xl bg-white px-4 py-2 text-center text-sm font-medium text-gray-900 shadow ring-1 ring-gray-200 whitespace-nowrap">
           {name}
         </div>
       </div>
@@ -67,7 +67,6 @@ function PlayerCard({ p }) {
 /* carusel pe pagini: tel=1, tablet=2, laptop+=4 per cadru */
 export default function PlayersCarousel({
   title = "JUCĂTORI",
-  autoPlayMs = 3500,
 }) {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,8 +75,6 @@ export default function PlayersCarousel({
   const [page, setPage] = useState(0);
 
   const railRef = useRef(null);
-  const autoplayRef = useRef(null);
-  const pausedRef = useRef(false);
 
   /* injectăm CSS ca să ascundem scrollbar-ul */
   useEffect(() => {
@@ -102,7 +99,7 @@ export default function PlayersCarousel({
       else setPerPage(4);                  // ≥ lg
     };
     compute();
-    window.addEventListener("resize", compute);
+    window.addEventListener("resize", compute, { passive: true });
     return () => window.removeEventListener("resize", compute);
   }, []);
 
@@ -111,10 +108,8 @@ export default function PlayersCarousel({
     (async () => {
       try {
         setLoading(true);
-        // cerem explicit doar activii
         const res = await fetch(`${BASE_URL}/app/players?activeOnly=true`);
         const data = await res.json();
-        // filtrăm defensiv dacă backend-ul ar returna totuși și inactivi
         const onlyActive = (Array.isArray(data) ? data : []).filter(
           (p) => p.isActive !== false
         );
@@ -135,7 +130,6 @@ export default function PlayersCarousel({
     for (let i = 0; i < players.length; i += perPage) {
       out.push(players.slice(i, i + perPage));
     }
-    // după schimbarea layout-ului, sari la prima pagină validă
     if (page > out.length - 1) setPage(0);
     return out;
   }, [players, perPage]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -157,36 +151,9 @@ export default function PlayersCarousel({
     if (idx !== page) setPage(idx);
   };
 
-  /* autoplay – sare din pagină în pagină, se oprește la interacțiune */
-  const startAuto = () => {
-    stopAuto();
-    autoplayRef.current = window.setInterval(() => {
-      if (pausedRef.current || pages.length <= 1) return;
-      goTo((page + 1) % pages.length);
-    }, autoPlayMs);
-  };
-  const stopAuto = () => {
-    if (autoplayRef.current) window.clearInterval(autoplayRef.current);
-  };
-
-  useEffect(() => {
-    startAuto();
-    return stopAuto;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pages.length, page, autoPlayMs]);
-
-  const pause = () => {
-    pausedRef.current = true;
-    stopAuto();
-  };
-  const resume = () => {
-    pausedRef.current = false;
-    startAuto();
-  };
-
   return (
     <section className="mt-10">
-      {/* Titlu + underline în paleta clubului */}
+      {/* Titlu + underline */}
       <div className="text-center mb-4">
         <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">
           <span className="bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 bg-clip-text text-transparent">
@@ -199,35 +166,33 @@ export default function PlayersCarousel({
       {/* Carusel pe „pagini” */}
       <div
         className="relative overflow-x-hidden overflow-y-visible"
-        onMouseEnter={pause}
-        onMouseLeave={resume}
-        onTouchStart={pause}
-        onTouchEnd={resume}
       >
         {/* fade edges */}
         <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-white to-transparent z-10" />
         <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white to-transparent z-10" />
 
-        {/* Butoane prev/next */}
+        {/* Butoane prev/next — mereu vizibile */}
         {pages.length > 1 && (
           <>
             <button
+              type="button"
               onClick={() => goTo(page - 1)}
               aria-label="Anterior"
-              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow ring-1 ring-gray-200 hover:bg-white
-                         transition h-11 w-11 grid place-items-center"
+              className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200 hover:bg-white
+                         h-11 w-11 grid place-items-center"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
               </svg>
             </button>
             <button
+              type="button"
               onClick={() => goTo(page + 1)}
               aria-label="Următor"
-              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow ring-1 ring-gray-200 hover:bg-white
-                         transition h-11 w-11 grid place-items-center"
+              className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/95 p-2 shadow ring-1 ring-gray-200 hover:bg-white
+                         h-11 w-11 grid place-items-center"
             >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
               </svg>
             </button>
@@ -262,24 +227,6 @@ export default function PlayersCarousel({
             ))
           )}
         </div>
-
-        {/* Pager (buline) */}
-        {pages.length > 1 && (
-          <div className="mt-4 flex justify-center gap-2">
-            {pages.map((_, i) => (
-              <button
-                key={i}
-                aria-label={`Pagina ${i + 1}`}
-                onClick={() => goTo(i)}
-                className={`h-2.5 w-2.5 rounded-full transition
-                  ${i === page
-                    ? "bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 shadow ring-1 ring-indigo-400/40"
-                    : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
     </section>
   );

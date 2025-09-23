@@ -3,6 +3,8 @@ import { api } from "../utils/constants";
 
 const FADE_MS = 700;
 const INTERVAL_MS = 3500;
+// întârziem autoplayul inițial pentru a proteja LCP
+const AUTOSTART_DELAY_MS = 10000;
 
 const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const initialCompact =
@@ -14,6 +16,9 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isCompact, setIsCompact] = useState(initialCompact);
   const [deviceType, setDeviceType] = useState(initialDevice);
+
+  // NOU: controlăm când e permis autoplay (după interacțiune/scroll sau după 10s)
+  const [allowAuto, setAllowAuto] = useState(false);
 
   useEffect(() => {
     const id = "ads-anim-keyframes";
@@ -92,13 +97,27 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     });
   }, [ads]);
 
+  // NOU: permitem autoplay-ul doar după interacțiune/scroll sau după 10s
   useEffect(() => {
-    if (!isCompact || ads.length <= 1) return;
+    const enable = () => setAllowAuto(true);
+    window.addEventListener("pointerdown", enable, { once: true, passive: true });
+    window.addEventListener("scroll", enable, { once: true, passive: true });
+    const t = setTimeout(enable, AUTOSTART_DELAY_MS);
+    return () => {
+      window.removeEventListener("pointerdown", enable);
+      window.removeEventListener("scroll", enable);
+      clearTimeout(t);
+    };
+  }, []);
+
+  // Autoplay pe mobil DOAR când e permis
+  useEffect(() => {
+    if (!isCompact || ads.length <= 1 || !allowAuto) return;
     const id = setInterval(() => {
       setCurrentIndex((idx) => (idx + 1) % ads.length);
     }, INTERVAL_MS);
     return () => clearInterval(id);
-  }, [isCompact, ads]);
+  }, [isCompact, ads, allowAuto]);
 
   if (loading) {
     const commonClasses =
@@ -116,6 +135,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
 
   if (!ads.length) return null;
 
+  // === COMPACT (mobil/tabletă) ===
   if (isCompact) {
     return (
       <div className="relative w-full min-w-0 h-28 sm:h-32 md:h-36 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-md">
@@ -138,8 +158,10 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
                   src={ad.imageUrl}
                   alt={ad.title || "publicitate"}
                   className="w-full h-full max-w-full max-h-full object-contain"
-                  loading="eager"
+                  // NOU: nu mai împingem LCP
+                  loading="lazy"
                   decoding="async"
+                  fetchpriority="low"
                 />
               </div>
             </a>
@@ -149,6 +171,7 @@ const AdsDisplay = ({ position, compactUntil = 1024 }) => {
     );
   }
 
+  // === DESKTOP (≥1024px) ===
   return (
     <div className="flex flex-col gap-3 min-w-0">
       {ads.map((ad, idx) => (

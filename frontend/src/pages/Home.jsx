@@ -1,9 +1,80 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import AnnouncementsSection from '../components/AnnouncementsSection';
 import { Link } from 'react-router-dom';
+import { BASE_URL } from '../utils/constants';
+
+const API_ORIGIN = (() => {
+  try {
+    return new URL(BASE_URL).origin;
+  } catch {
+    return BASE_URL || '';
+  }
+})();
+
+/** Insert a <link rel="preconnect"> once per origin */
+function preconnect(origin, cross = true) {
+  if (!origin) return;
+  const id = `preconnect-${origin}`;
+  if (document.getElementById(id)) return;
+  const link = document.createElement('link');
+  link.id = id;
+  link.rel = 'preconnect';
+  link.href = origin;
+  if (cross) link.crossOrigin = 'anonymous';
+  document.head.appendChild(link);
+}
+
+/** Idle-callback with fallback for older browsers */
+function onIdle(cb, timeout = 1500) {
+  const ric =
+    window.requestIdleCallback ||
+    ((fn) => setTimeout(() => fn({ timeRemaining: () => 0 }), timeout));
+  return ric(cb, { timeout });
+}
 
 const Home = () => {
+  // --- Network pre-warm and parallel fetches -----------------------------
+  useEffect(() => {
+    // 1) Preconnect to API (reduces handshake/TLS time in waterfall)
+    preconnect(API_ORIGIN);
+
+    // 2) Start critical data fetches IN PARALLEL (no auth/status wait)
+    //    Even if components refetch, connections + caches are warm.
+    const ac = new AbortController();
+    const q = new URLSearchParams({ page: '0', size: '4' });
+
+    // Start both without awaiting each other
+    fetch(`${BASE_URL}/app/announcements/page?${q.toString()}`, {
+      signal: ac.signal,
+      credentials: 'include',
+    }).catch(() => {});
+
+    fetch(`${BASE_URL}/app/matches/next`, {
+      signal: ac.signal,
+      credentials: 'include',
+    }).catch(() => {});
+
+    // 3) Defer NON-critical endpoints (ads / social) to idle time
+    const device = window.matchMedia('(max-width: 1023px)').matches
+      ? 'MOBILE'
+      : 'DESKTOP';
+
+    const idleId = onIdle(() => {
+      // Fire-and-forget; ignore errors intentionally
+      fetch(`${BASE_URL}/app/ads?device=${device}`, { credentials: 'include' }).catch(() => {});
+      fetch(`${BASE_URL}/app/social`, { credentials: 'include' }).catch(() => {});
+    });
+
+    return () => {
+      ac.abort();
+      // cancelIdleCallback fallback: clearTimeout is okay for our shim
+      (window.cancelIdleCallback || clearTimeout)(idleId);
+    };
+  }, []);
+
+  // -----------------------------------------------------------------------
+
   return (
     <div className="pt-20">
       <div className="max-w-7xl mx-auto px-4">

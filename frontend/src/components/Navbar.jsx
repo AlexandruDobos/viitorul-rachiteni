@@ -7,18 +7,22 @@ import { BASE_URL } from '../utils/constants';
 import AuthContext from '../context/AuthContext';
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);       // ECHIPĂ
+  const [accountOpen, setAccountOpen] = useState(false); // CONTUL MEU
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [echipaOpen, setEchipaOpen] = useState(false);
+  const [accountMobileOpen, setAccountMobileOpen] = useState(false);
 
   const { user, loading, setUser, checkAuth } = useContext(AuthContext);
   const leftMenuRef = useRef(null);
+  const accountMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (leftMenuRef.current && !leftMenuRef.current.contains(e.target)) setMenuOpen(false);
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target)) setAccountOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -29,6 +33,7 @@ const Navbar = () => {
       if (window.innerWidth >= 768) {
         setShowMobileMenu(false);
         setEchipaOpen(false);
+        setAccountMobileOpen(false);
       }
     };
     window.addEventListener('resize', onResize);
@@ -38,8 +43,10 @@ const Navbar = () => {
   useEffect(() => {
     checkAuth?.();
     setMenuOpen(false);
+    setAccountOpen(false);
     setShowMobileMenu(false);
     setEchipaOpen(false);
+    setAccountMobileOpen(false);
   }, [location, checkAuth]);
 
   useEffect(() => {
@@ -60,6 +67,7 @@ const Navbar = () => {
   const handleMobileClose = () => {
     setShowMobileMenu(false);
     setEchipaOpen(false);
+    setAccountMobileOpen(false);
   };
 
   const isActive = (path) => location.pathname.startsWith(path);
@@ -87,7 +95,6 @@ const Navbar = () => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 overflow-x-clip">
-      {/* Bare: am mărit padding-ul pe mobil și am adăugat safe-area insets */}
       <div className="
           w-full backdrop-blur-md bg-white/80 border-b border-gray-100
           px-5 md:px-6 lg:px-10
@@ -109,13 +116,13 @@ const Navbar = () => {
             </Link>
 
             <motion.nav
-              ref={leftMenuRef}
               className="flex items-center gap-7 font-semibold text-xs md:text-sm lg:text-base tracking-wide uppercase text-gray-800"
               variants={navListVariants}
               initial="hidden"
               animate="show"
             >
-              <motion.div variants={navItemVariants} className="relative flex items-center">
+              {/* ECHIPĂ */}
+              <motion.div variants={navItemVariants} className="relative flex items-center" ref={leftMenuRef}>
                 <button
                   type="button"
                   onClick={() => setMenuOpen((v) => !v)}
@@ -149,6 +156,7 @@ const Navbar = () => {
                 </AnimatePresence>
               </motion.div>
 
+              {/* DONAȚII */}
               <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/donations" className="group relative pb-1 hover:text-gray-900">
                   DONAȚII
@@ -156,6 +164,7 @@ const Navbar = () => {
                 </Link>
               </motion.div>
 
+              {/* CONTACT */}
               <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
                   CONTACT
@@ -163,12 +172,51 @@ const Navbar = () => {
                 </Link>
               </motion.div>
 
-              <motion.div variants={navItemVariants} className="flex items-center">
+              {/* CONTUL MEU / LOGIN */}
+              <motion.div variants={navItemVariants} className="relative flex items-center" ref={accountMenuRef}>
                 {isAuthenticated ? (
-                  <button onClick={handleLogout} className="group relative pb-1 text-gray-700 hover:text-red-600">
-                    LOGOUT
-                    <span className="absolute -bottom-1 left-0 h-0.5 w-full origin-left scale-x-0 rounded-full transition-transform group-hover:scale-x-100 bg-red-500/70" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setAccountOpen((v) => !v)}
+                      className={`group relative flex items-center gap-1 pb-1 ${isActive('/profile') ? 'text-gray-900' : 'hover:text-gray-900'}`}
+                      aria-haspopup="true"
+                      aria-expanded={accountOpen}
+                    >
+                      <span>CONTUL MEU</span>
+                      <span className={`text-xs transition-transform ${accountOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <Underline active={isActive('/profile')} />
+                    </button>
+
+                    <AnimatePresence>
+                      {accountOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          className="absolute top-full mt-2 right-0 w-56 rounded-xl bg-white shadow-lg border overflow-hidden"
+                        >
+                          <ul className="flex flex-col text-xs md:text-sm uppercase tracking-wide text-gray-700">
+                            <li>
+                              <Link to="/profile" onClick={() => setAccountOpen(false)} className="block px-4 py-2 hover:bg-gray-50">
+                                PROFIL
+                              </Link>
+                            </li>
+                            <li>
+                              <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="w-full text-left block px-4 py-2 hover:bg-gray-50 text-red-600"
+                              >
+                                LOGOUT
+                              </button>
+                            </li>
+                          </ul>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
                 ) : (
                   <Link to="/login" className="group relative pb-1 hover:text-gray-900">
                     LOGIN
@@ -179,7 +227,7 @@ const Navbar = () => {
             </motion.nav>
           </div>
 
-          {/* MOBILE BAR — padding mărit și hit-area mai mare */}
+          {/* MOBILE BAR */}
           <div className="md:hidden flex items-center justify-between py-4">
             <Link to="/" onClick={handleMobileClose} aria-label="Mergi la pagina principală" className="flex-shrink-0">
               <motion.img
@@ -245,6 +293,7 @@ const Navbar = () => {
                 initial="hidden"
                 animate="show"
               >
+                {/* ECHIPĂ */}
                 <motion.li variants={mobileItemVariants} className="border-b pb-3">
                   <button
                     type="button"
@@ -287,15 +336,46 @@ const Navbar = () => {
                   </Link>
                 </motion.li>
 
+                {/* CONTUL MEU pe mobil (doar dacă e logat) */}
                 {isAuthenticated ? (
-                  <motion.li variants={mobileItemVariants}>
+                  <motion.li variants={mobileItemVariants} className="border-t pt-3">
                     <button
                       type="button"
-                      onClick={() => { handleLogout(); handleMobileClose(); }}
-                      className="block w-full text-left px-3 py-3 rounded-lg hover:bg-gray-50 text-red-600"
+                      onClick={() => setAccountMobileOpen((v) => !v)}
+                      className="w-full text-left flex items-center justify-between px-3 py-3 rounded-lg hover:bg-gray-50"
+                      aria-expanded={accountMobileOpen}
+                      aria-controls="account-submenu"
                     >
-                      LOGOUT
+                      <span>CONTUL MEU</span>
+                      <span className={`text-xs transition-transform ${accountMobileOpen ? 'rotate-180' : ''}`}>▼</span>
                     </button>
+
+                    <AnimatePresence>
+                      {accountMobileOpen && (
+                        <motion.ul
+                          id="account-submenu"
+                          className="mt-2 space-y-2 text-xs uppercase tracking-wide text-gray-700 px-1"
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                        >
+                          <li>
+                            <Link to="/profile" onClick={handleMobileClose} className="block px-3 py-2 rounded-md hover:bg-gray-50">
+                              PROFIL
+                            </Link>
+                          </li>
+                          <li>
+                            <button
+                              type="button"
+                              onClick={() => { handleLogout(); handleMobileClose(); }}
+                              className="block w-full text-left px-3 py-2 rounded-md hover:bg-gray-50 text-red-600"
+                            >
+                              LOGOUT
+                            </button>
+                          </li>
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
                   </motion.li>
                 ) : (
                   <motion.li variants={mobileItemVariants}>

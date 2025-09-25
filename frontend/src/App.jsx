@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -33,6 +33,10 @@ import AnnouncementDetail from "./components/AnnouncementDetail";
 
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
+
+// === adăugiri pentru profil / guard ===
+import Profile from "./pages/Profile";
+import AuthContext from "./context/AuthContext";
 
 const SITE_NAME = "ACS Viitorul Răchiteni";
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
@@ -105,7 +109,7 @@ function AnnouncementRoute() {
         if (cancelled) return;
 
         const s = slugify(a.title || "");
-        const url = absUrl(`/stiri/${a.id}/${s}`);
+        url = absUrl(`/stiri/${a.id}/${s}`);
         const desc = (a.contentText || "").replace(/\s+/g, " ").trim().slice(0, 180) ||
           "Știri și rezultate ACS Viitorul Răchiteni";
 
@@ -187,6 +191,21 @@ function FixXOverflow() {
   return null;
 }
 
+// === guard simplu pentru /profile ===
+function RequireAuth({ children }) {
+  const { user, loading } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/login", { replace: true });
+    }
+  }, [loading, user, navigate]);
+
+  if (loading) return null;
+  return user ? children : null;
+}
+
 const App = () => {
   return (
     <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
@@ -262,6 +281,9 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/request-reset" element={<RequestResetPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+
+              {/* === nou: profil (doar autentificat) === */}
+              <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             </Route>
 
             {/* ADMIN */}

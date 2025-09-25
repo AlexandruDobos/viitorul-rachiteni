@@ -1,3 +1,4 @@
+// src/forms/SendEmailForm.jsx
 import React, { useRef, useState, useEffect } from "react";
 import { BASE_URL } from "../utils/constants";
 
@@ -6,48 +7,99 @@ const SendEmailForm = () => {
 
   const [title, setTitle] = useState("");
   const [sending, setSending] = useState(false);
-  const [msg,   setMsg]   = useState("");
-  const [err,   setErr]   = useState("");
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
 
-  // single source of truth for content
+  // SINGLE source of truth for the editor content
   const [contentHtml, setContentHtml] = useState("<p><br/></p>");
 
   // visual vs raw HTML view
   const [viewMode, setViewMode] = useState("visual"); // "visual" | "html"
-  const [rawHtml,  setRawHtml]  = useState("");       // mirror for textarea
 
-  // ---- helpers -------------------------------------------------------------
+  // ---------- helpers
 
-  const mountEditorWithContent = () => {
-    if (editorRef.current) {
-      editorRef.current.innerHTML = contentHtml || "<p><br/></p>";
+  // Rehydrate the visual editor when we switch to it
+  useEffect(() => {
+    if (viewMode !== "visual") return;
+    if (!editorRef.current) return;
+    editorRef.current.innerHTML = contentHtml || "<p><br/></p>";
+    // place caret at end
+    placeCaretAtEnd(editorRef.current);
+  }, [viewMode]); // only on mode switch
+
+  const placeCaretAtEnd = (el) => {
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch {}
+  };
+
+  const ensureParagraphRoot = () => {
+    const ed = editorRef.current;
+    if (!ed) return;
+    if (ed.innerHTML.trim() === "" || ed.innerHTML.trim() === "<br>") {
+      ed.innerHTML = "<p><br/></p>";
+      setContentHtml("<p><br/></p>");
     }
   };
 
-  useEffect(() => {
-    if (viewMode === "visual") {
-      mountEditorWithContent();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
-
-  const syncFromEditor = () => {
+  // Update state whenever the user types in visual editor
+  const handleVisualInput = () => {
     if (!editorRef.current) return;
     setContentHtml(editorRef.current.innerHTML);
   };
 
+  // Enter handling: Shift+Enter = br, Enter = new <p>
+  const handleKeyDown = (e) => {
+    if (viewMode !== "visual") return;
+    if (e.key !== "Enter") return;
+
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    if (e.shiftKey) {
+      e.preventDefault();
+      document.execCommand("insertLineBreak");
+      handleVisualInput();
+      return;
+    }
+
+    e.preventDefault();
+    const range = sel.getRangeAt(0);
+    range.collapse(false);
+
+    const p = document.createElement("p");
+    p.innerHTML = "<br/>";
+    range.insertNode(p);
+
+    sel.removeAllRanges();
+    const r = document.createRange();
+    r.setStart(p, 0);
+    r.collapse(true);
+    sel.addRange(r);
+
+    handleVisualInput();
+  };
+
+  // Exec formatting commands (visual only)
   const cmd = (command) => {
     if (viewMode !== "visual") return;
     document.execCommand(command, false, null);
     editorRef.current?.focus();
-    syncFromEditor();
+    handleVisualInput();
   };
 
+  // Insert structural tags (H1/H2/H3/P) around selection (visual only)
   const insertTag = (tag) => {
     if (viewMode !== "visual") return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
+
     const el = document.createElement(tag);
     if (range.collapsed) {
       el.innerHTML = "<br/>";
@@ -63,52 +115,10 @@ const SendEmailForm = () => {
     sel.addRange(r);
 
     editorRef.current?.focus();
-    syncFromEditor();
+    handleVisualInput();
   };
 
-  const ensureParagraphRoot = () => {
-    const ed = editorRef.current;
-    if (!ed) return;
-    if (ed.innerHTML.trim() === "" || ed.innerHTML.trim() === "<br>") {
-      ed.innerHTML = "<p><br/></p>";
-      syncFromEditor();
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (viewMode !== "visual") return;
-    if (e.key !== "Enter") return;
-
-    const sel = window.getSelection();
-    if (!sel || sel.rangeCount === 0) return;
-
-    // Shift+Enter => line break
-    if (e.shiftKey) {
-      e.preventDefault();
-      document.execCommand("insertLineBreak");
-      syncFromEditor();
-      return;
-    }
-
-    // Enter => new paragraph
-    e.preventDefault();
-    const range = sel.getRangeAt(0);
-    range.collapse(false);
-
-    const p = document.createElement("p");
-    p.innerHTML = "<br/>";
-    range.insertNode(p);
-
-    sel.removeAllRanges();
-    const r = document.createRange();
-    r.setStart(p, 0);
-    r.collapse(true);
-    sel.addRange(r);
-
-    syncFromEditor();
-  };
-
-  // remove empty <p> before sending
+  // Clean empty paragraphs before sending
   const cleanHtml = (html) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -118,29 +128,18 @@ const SendEmailForm = () => {
     return div.innerHTML.trim();
   };
 
-  // ---- mode switches -------------------------------------------------------
+  // Mode switches: just switch, contentHtml remains the ONLY source of truth
+  const switchToVisual = () => setViewMode("visual");
+  const switchToHtml = () => setViewMode("html");
 
-  const switchToVisual = () => {
-    // update source of truth from textarea, then render visual
-    setContentHtml((prev) => (rawHtml !== "" ? rawHtml : prev));
-    setViewMode("visual");
-  };
-
-  const switchToHtml = () => {
-    // populate textarea from source of truth
-    setRawHtml(contentHtml || "");
-    setViewMode("html");
-  };
-
-  // ---- submit --------------------------------------------------------------
+  // ---------- submit
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMsg(""); setErr("");
+    setMsg("");
+    setErr("");
 
-    const html = cleanHtml(
-      viewMode === "html" ? (rawHtml || "") : (contentHtml || "")
-    );
+    const html = cleanHtml(contentHtml || "");
 
     if (!title.trim() || !html) {
       setErr("Te rog completează titlul și conținutul.");
@@ -160,9 +159,10 @@ const SendEmailForm = () => {
       setMsg(text || "Emailul a fost pus în coadă pentru trimitere.");
       setTitle("");
       setContentHtml("<p><br/></p>");
-      setRawHtml("");
       setViewMode("visual");
-      mountEditorWithContent();
+      if (editorRef.current) {
+        editorRef.current.innerHTML = "<p><br/></p>";
+      }
     } catch (e2) {
       setErr(e2.message || "Eroare la trimitere.");
     } finally {
@@ -170,18 +170,21 @@ const SendEmailForm = () => {
     }
   };
 
-  // ---- render --------------------------------------------------------------
+  // ---------- render
 
   return (
     <div
       className="w-full max-w-none"
       style={{
+        // top offset pe mobil (evită overlap cu header-ul fix)
         paddingTop:
           "clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))",
       }}
     >
       <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-6 text-white shadow mb-4">
-        <h1 className="text-2xl font-extrabold tracking-tight">Trimite email către abonați</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          Trimite email către abonați
+        </h1>
         <p className="text-white/85 text-sm mt-1">
           Creează conținutul (H1/H2/H3/B/I/U) și apasă “Trimite”.
         </p>
@@ -203,7 +206,7 @@ const SendEmailForm = () => {
         className="rounded-2xl border border-gray-100 bg-white p-5 md:p-6 shadow-sm"
       >
         <div className="grid gap-5">
-          {/* Title */}
+          {/* Titlu */}
           <div className="grid gap-1.5">
             <label className="text-sm font-medium text-gray-800">Titlu</label>
             <input
@@ -215,7 +218,7 @@ const SendEmailForm = () => {
             />
           </div>
 
-          {/* Header with mode toggle */}
+          {/* Header editor + toggle Vizual/Text */}
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-800">Conținut</label>
             <div className="inline-flex rounded-lg overflow-hidden ring-1 ring-gray-200">
@@ -246,39 +249,77 @@ const SendEmailForm = () => {
             </div>
           </div>
 
-          {/* Toolbar (visual only) */}
+          {/* Toolbar (doar Vizual) */}
           {viewMode === "visual" && (
             <div className="flex flex-wrap gap-2 -mt-1 mb-2">
-              <button type="button" onClick={() => cmd("bold")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">B</button>
-              <button type="button" onClick={() => cmd("italic")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"><i>I</i></button>
-              <button type="button" onClick={() => cmd("underline")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"><u>U</u></button>
-              <button type="button" onClick={() => insertTag("h1")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">H1</button>
-              <button type="button" onClick={() => insertTag("h2")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">H2</button>
-              <button type="button" onClick={() => insertTag("h3")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">H3</button>
-              <button type="button" onClick={() => insertTag("p")}  className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">P</button>
+              <button
+                type="button"
+                onClick={() => cmd("bold")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                B
+              </button>
+              <button
+                type="button"
+                onClick={() => cmd("italic")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                <i>I</i>
+              </button>
+              <button
+                type="button"
+                onClick={() => cmd("underline")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                <u>U</u>
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTag("h1")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                H1
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTag("h2")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                H2
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTag("h3")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                H3
+              </button>
+              <button
+                type="button"
+                onClick={() => insertTag("p")}
+                className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
+              >
+                P
+              </button>
             </div>
           )}
 
-          {/* Body */}
+          {/* Corp editor */}
           {viewMode === "visual" ? (
             <div
               ref={editorRef}
               contentEditable
               onFocus={ensureParagraphRoot}
               onKeyDown={handleKeyDown}
-              onInput={syncFromEditor}
+              onInput={handleVisualInput}
               className="min-h-[360px] rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25 prose max-w-none"
               style={{ whiteSpace: "normal" }}
-              placeholder="Scrie mesajul aici..."
               suppressContentEditableWarning
             />
           ) : (
             <textarea
-              value={rawHtml === "" ? contentHtml : rawHtml}
-              onChange={(e) => {
-                setRawHtml(e.target.value);
-                setContentHtml(e.target.value);
-              }}
+              value={contentHtml}
+              onChange={(e) => setContentHtml(e.target.value)}
               spellCheck={false}
               className="min-h-[360px] w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-mono text-sm leading-6 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
               placeholder="<p>Scrie HTML-ul aici...</p>"
@@ -286,8 +327,9 @@ const SendEmailForm = () => {
           )}
 
           <p className="text-xs text-gray-500">
-            Poți formata textul: <strong>B</strong>, <em>I</em>, <u>U</u>, H1, H2, H3 și paragrafe.
-            <br />Enter = paragraf nou, Shift+Enter = linie nouă.
+            Poți formata: <strong>B</strong>, <em>I</em>, <u>U</u>, H1, H2, H3 și paragrafe.
+            <br />
+            Enter = paragraf nou, Shift+Enter = linie nouă.
           </p>
 
           <div className="pt-2">

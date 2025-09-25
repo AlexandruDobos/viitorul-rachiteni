@@ -55,15 +55,18 @@ public class AuthController {
         if (email == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        // luăm userul și returnăm doar ce trebuie în UI (name + subscribe)
         var userOpt = authService.findByEmail(email);
         if (userOpt.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         var u = userOpt.get();
+
+        boolean hasPassword = u.getPasswordHash() != null && !u.getPasswordHash().isBlank();
+
         return ResponseEntity.ok(Map.of(
                 "name", u.getName(),
-                "subscribe", u.isSubscribedToNews()
+                "subscribe", u.isSubscribedToNews(),
+                "hasPassword", hasPassword
         ));
     }
 

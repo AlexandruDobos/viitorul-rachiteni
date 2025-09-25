@@ -19,7 +19,6 @@ function formatDate(iso) {
     return iso || '';
   }
 }
-
 function escapeHtml(str = '') {
   return String(str).replace(/[&<>"']/g, (m) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -77,9 +76,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
     run();
   }, [id]);
 
-  const shareUrl = useMemo(() => {
-    return `https://api.viitorulrachiteni.ro/share/stiri/${id}`;
-  }, [id]);
+  const shareUrl = useMemo(() => `https://api.viitorulrachiteni.ro/share/stiri/${id}`, [id]);
 
   const copyLink = async () => {
     try {
@@ -132,7 +129,7 @@ const AnnouncementDetail = ({ id, onBack }) => {
   /* === JSON-LD: NewsArticle === */
   const origin =
     typeof window !== 'undefined' ? window.location.origin : 'https://viitorulrachiteni.ro';
-  const canonicalUrl = `${origin}/stiri/${id}`; // dacă ai route dedicată; altfel rămâne OK și ca referință canonică
+  const canonicalUrl = `${origin}/stiri/${id}`;
   const description =
     (item.excerpt || item.contentText || '')
       .replace(/\s+/g, ' ')
@@ -146,27 +143,15 @@ const AnnouncementDetail = ({ id, onBack }) => {
     inLanguage: 'ro-RO',
     articleSection: 'Știri',
     isAccessibleForFree: true,
-    mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': canonicalUrl,
-    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
     url: canonicalUrl,
     datePublished: item.publishedAt,
     dateModified: item.updatedAt || item.publishedAt,
     image: hasCover ? [item.coverUrl] : undefined,
     description,
     articleBody: item.contentText || undefined,
-    author: {
-      '@type': 'Organization',
-      name: 'ACS Viitorul Răchiteni',
-      url: origin + '/',
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'ACS Viitorul Răchiteni',
-      url: origin + '/',
-      // Adaugă un logo absolut dacă ai unul public: ex. `${origin}/logo.png`
-    },
+    author: { '@type': 'Organization', name: 'ACS Viitorul Răchiteni', url: origin + '/' },
+    publisher: { '@type': 'Organization', name: 'ACS Viitorul Răchiteni', url: origin + '/' },
   };
 
   return (
@@ -174,10 +159,26 @@ const AnnouncementDetail = ({ id, onBack }) => {
       {/* JSON-LD */}
       <JsonLd data={jsonLdData} />
 
-      {/* CSS pentru conținut – fix: img block + respectă width/align inline */}
+      {/* CSS pentru conținut */}
       <style>{`
         .richtext p:empty::before { content: "\\00a0"; }
         .richtext img { display:block; height:auto; max-width:100%; }
+        /* ——— ensure H1/H2/H3 are clearly visible ——— */
+        .richtext h1, .richtext h2, .richtext h3 {
+          line-height: 1.25;
+          font-weight: 700;
+          color: #0f172a; /* slate-900 */
+          margin-top: 1.1em;
+          margin-bottom: .55em;
+        }
+        .richtext h1 { font-size: 1.875rem; }         /* ~text-3xl */
+        .richtext h2 { font-size: 1.5rem; }           /* ~text-2xl */
+        .richtext h3 { font-size: 1.25rem; }          /* ~text-xl */
+        @media (min-width: 768px) {
+          .richtext h1 { font-size: 2.25rem; }        /* md: text-4xl */
+          .richtext h2 { font-size: 1.875rem; }       /* md: text-3xl */
+          .richtext h3 { font-size: 1.5rem; }         /* md: text-2xl */
+        }
       `}</style>
 
       {/* Toast */}

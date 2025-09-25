@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -175,6 +176,14 @@ public class AuthService {
 
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
+    }
+
+    public List<String> findSubscribedEmails() {
+        return userRepository.findAllBySubscribedToNewsTrue()
+                .stream()
+                .map(User::getEmail)
+                .filter(e -> e != null && !e.isBlank())
+                .toList();
     }
 
     public void updateAccount(String email, UpdateAccountRequest req) {

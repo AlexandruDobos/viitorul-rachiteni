@@ -13,6 +13,8 @@ public class RabbitMQConfig {
     public static final String APP_EXCHANGE = "app.exchange";
     public static final String CONTACT_QUEUE = "contact.message.queue";
     public static final String CONTACT_ROUTING_KEY = "contact.message";
+    public static final String ANN_QUEUE = "announcements.published.queue";
+    public static final String ANN_ROUTING_KEY = "announcements.published";
 
     @Bean
     public TopicExchange appExchange() {
@@ -27,6 +29,17 @@ public class RabbitMQConfig {
     @Bean
     public Binding contactBinding() {
         return BindingBuilder.bind(contactQueue()).to(appExchange()).with(CONTACT_ROUTING_KEY);
+    }
+
+    @Bean
+    public Queue announcementPublishedQueue() {
+        return new Queue(ANN_QUEUE, true);
+    }
+
+    @Bean
+    public Binding announcementPublishedBinding() {
+        return BindingBuilder.bind(announcementPublishedQueue())
+                .to(appExchange()).with(ANN_ROUTING_KEY);
     }
 
     @Bean

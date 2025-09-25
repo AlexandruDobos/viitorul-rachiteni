@@ -30,4 +30,9 @@ public class Announcement {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String contentText;
+
+    @Column(nullable = false)
+    private boolean sentToSubscribers = false;
+
+    private OffsetDateTime sentAt;
 }

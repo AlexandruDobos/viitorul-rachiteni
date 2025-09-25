@@ -8,21 +8,18 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public interface AnnouncementRepository extends JpaRepository<Announcement, Long> {
 
-    // — existent: dacă mai ai cod care-l folosește, îl păstrăm
     Page<Announcement> findAllByOrderByPublishedAtDesc(Pageable pageable);
 
-    // — existent: căutare pe titlu, fără filtrare pe timp (NU mai e folosit de listarea publică)
     @Query("""
            SELECT a FROM Announcement a
            WHERE LOWER(a.title) LIKE LOWER(CONCAT('%', :q, '%'))
            ORDER BY a.publishedAt DESC
            """)
     Page<Announcement> searchByTitle(@Param("q") String q, Pageable pageable);
-
-    /* ===== noi: listare DOAR știri deja publicate ===== */
 
     Page<Announcement> findByPublishedAtLessThanEqualOrderByPublishedAtDesc(
             OffsetDateTime now, Pageable pageable
@@ -39,4 +36,7 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
             @Param("now") OffsetDateTime now,
             Pageable pageable
     );
+
+    List<Announcement> findByPublishedAtLessThanEqualAndSentToSubscribersFalse(OffsetDateTime now);
+
 }

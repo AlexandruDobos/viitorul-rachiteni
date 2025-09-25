@@ -29,6 +29,8 @@ public class RabbitMQConfig {
     public static final String DONATION_QUEUE       = "donation.completed.queue";
     public static final String DONATION_ROUTING_KEY = "donations.completed";
 
+    public static final String ANNOUNCEMENTS_QUEUE = "announcements.published.queue";
+    public static final String ANNOUNCEMENTS_ROUTING_KEY = "announcements.published";
     // Exchanges
     @Bean
     public Exchange authExchange() {
@@ -38,6 +40,20 @@ public class RabbitMQConfig {
     @Bean
     public Exchange appExchange() {
         return ExchangeBuilder.topicExchange(APP_EXCHANGE).durable(true).build();
+    }
+
+    @Bean
+    public Queue announcementsQueue() {
+        return new Queue(ANNOUNCEMENTS_QUEUE, true);
+    }
+
+    @Bean
+    public Binding announcementsBinding() {
+        return BindingBuilder
+                .bind(announcementsQueue())
+                .to(appExchange())
+                .with(ANNOUNCEMENTS_ROUTING_KEY)
+                .noargs();
     }
 
     // Cozi

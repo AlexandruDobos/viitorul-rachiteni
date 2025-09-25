@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import com.viitorul.auth.dto.UpdateAccountRequest;
@@ -68,6 +69,12 @@ public class AuthController {
                 "subscribe", u.isSubscribedToNews(),
                 "hasPassword", hasPassword
         ));
+    }
+
+    @GetMapping("/subscribers")
+    public ResponseEntity<List<String>> getSubscribersEmails() {
+        List<String> emails = authService.findSubscribedEmails();
+        return ResponseEntity.ok(emails);
     }
 
     @PostMapping("/register")

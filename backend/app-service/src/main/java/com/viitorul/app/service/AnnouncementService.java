@@ -1,9 +1,13 @@
 package com.viitorul.app.service;
 
+import com.viitorul.app.config.RabbitMQConfig;
 import com.viitorul.app.dto.AnnouncementDTO;
 import com.viitorul.app.entity.Announcement;
 import com.viitorul.app.repository.AnnouncementRepository;
+import com.viitorul.common.events.AnnouncementPublishedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +24,7 @@ import java.util.stream.Collectors;
 public class AnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
-
+    private final RabbitTemplate rabbitTemplate;
     public AnnouncementDTO createAnnouncement(AnnouncementDTO dto) {
         Announcement entity = AnnouncementDTO.toEntity(dto);
 
@@ -79,5 +83,69 @@ public class AnnouncementService {
             return true;
         }
         return false;
+    }
+
+    @Scheduled(fixedDelay = 60_000L, initialDelay = 10_000L)
+    public void scanAndDispatchPublishedAnnouncements() {
+        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
+        List<Announcement> ready = announcementRepository
+                .findByPublishedAtLessThanEqualAndSentToSubscribersFalse(now);
+
+        for (Announcement a : ready) {
+            // 1) marchează ca trimis (idempotency)
+            a.setSentToSubscribers(true);
+            a.setSentAt(now);
+            announcementRepository.save(a);
+
+            // 2) publică evenimentul
+            String raw = (a.getContentText() != null && !a.getContentText().isBlank())
+                    ? a.getContentText()
+                    : (a.getContentHtml() != null ? a.getContentHtml() : "");
+
+            String excerpt = buildExcerpt(raw, 180, /*isHtml*/ a.getContentText() == null);
+            String url = buildPublicUrl(a.getId(), a.getTitle());
+
+            AnnouncementPublishedEvent ev = new AnnouncementPublishedEvent(
+                    a.getId(),
+                    a.getTitle(),
+                    excerpt,
+                    a.getCoverUrl(),
+                    url
+            );
+
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.APP_EXCHANGE,
+                    RabbitMQConfig.ANN_ROUTING_KEY,
+                    ev
+            );
+        }
+    }
+
+    private String buildExcerpt(String input, int max, boolean isHtml) {
+        if (input == null) return "";
+        String txt = isHtml ? stripHtml(input) : input;
+        txt = txt.replaceAll("\\s+", " ").trim();
+        return txt.length() <= max ? txt : txt.substring(0, Math.max(0, max - 1)) + "…";
+    }
+
+    private String stripHtml(String html) {
+        // simplu & suficient pentru newsletter
+        return html.replaceAll("<[^>]*>", " ");
+    }
+
+    private String slugify(String s) {
+        if (s == null) return "";
+        String base = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+        return base.length() > 80 ? base.substring(0, 80) : base;
+    }
+
+    private String buildPublicUrl(Long id, String title) {
+        String slug = slugify(title == null ? "" : title);
+        // ajustează origin-ul dacă vrei din config
+        return String.format("https://%s/stiri/%d/%s", "viitorulrachiteni.ro", id, slug);
     }
 }

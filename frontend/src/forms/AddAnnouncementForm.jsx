@@ -52,11 +52,6 @@ import {
 import { BASE_URL } from "../utils/constants";
 
 /* ======================= Inline image + drag-resize ======================= */
-/**
- * - imagine inline (în interiorul <p>) pentru centrare prin <p>, dar
- *   scriem și alinierea pe <img> (attr `align`) ca să reziste pe frontend.
- * - width (px) salvat în style.
- */
 const ResizableInlineImage = BaseImage.extend({
   name: "image",
   inline: true,
@@ -80,8 +75,6 @@ const ResizableInlineImage = BaseImage.extend({
           const out = {};
           const styles = [];
           if (attrs.width) styles.push(`width:${attrs.width}px;`);
-          // alinierea se compune mai jos, în funcție de attrs.align
-          // lăsăm img „inline”, dar pentru center/right îi punem display:block
           if (attrs.align === "center") {
             styles.push("display:block;margin-left:auto;margin-right:auto;");
           } else if (attrs.align === "right") {
@@ -93,7 +86,7 @@ const ResizableInlineImage = BaseImage.extend({
       },
       height: { default: null },
       align: {
-        default: null, // 'left' | 'center' | 'right' | null
+        default: null,
         parseHTML: (el) => {
           const style = (el.getAttribute("style") || "").toLowerCase();
           const hasCenter =
@@ -101,7 +94,7 @@ const ResizableInlineImage = BaseImage.extend({
           const hasRight = style.includes("margin-left:auto") && !hasCenter;
           if (hasCenter) return "center";
           if (hasRight) return "right";
-          return null; // left sau nealiniat
+          return null;
         },
         renderHTML: () => ({}),
       },
@@ -207,7 +200,6 @@ function InlineImageView({ node, updateAttributes, selected, editor, getPos }) {
         }}
         onClick={() => selectThisNode()}
       />
-      {/* mâner redimensionare */}
       <div
         role="button"
         aria-label="Redimensionează imagine"
@@ -247,6 +239,11 @@ function formatDateForList(iso) {
     return iso || "";
   }
 }
+const htmlToText = (html) => {
+  const div = document.createElement("div");
+  div.innerHTML = html || "";
+  return div.textContent || div.innerText || "";
+};
 
 /* ====================== Main component ====================== */
 function AddAnnouncementForm({ onSave }) {
@@ -277,13 +274,16 @@ function AddAnnouncementForm({ onSave }) {
   const coverFileRef = useRef(null);
   const inlineFileRef = useRef(null);
 
+  // --- NEW: view mode state and raw HTML (for textarea)
+  const [viewMode, setViewMode] = useState("visual"); // "visual" | "html"
+  const [rawHtml, setRawHtml] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
       TextStyle,
       Color,
-      // Aliniem block-urile (p, heading)
       TextAlign.configure({
         types: ["heading", "paragraph"],
         alignments: ["left", "center", "right", "justify"],
@@ -306,7 +306,7 @@ function AddAnnouncementForm({ onSave }) {
     editorProps: {
       attributes: {
         class:
-          "tiptap-editor-root prose prose-slate max-w-none min-h-[280px] rounded-2xl border bg-white p-4 focus:outline-none",
+          "tiptap-editor-root prose prose-slate max-w-none min-h[280px] min-h-[280px] rounded-2xl border bg-white p-4 focus:outline-none",
       },
     },
   });
@@ -388,13 +388,10 @@ function AddAnnouncementForm({ onSave }) {
           sel.$from.nodeAfter?.type?.name === "image";
   };
 
-  /* ===== aliniere: scriem pe paragraf + pe img (align) ===== */
   const setBlockAlign = (align) => {
     if (!editor) return;
     const near = isNearImage();
-    // 1) aplicăm pe bloc
     editor.chain().focus().setTextAlign(align).run();
-    // 2) dacă suntem pe imagine, scriem și pe <img> ca să persiste pe frontend
     if (near) setImageAlign(align === "justify" ? "left" : align);
   };
 
@@ -462,7 +459,7 @@ function AddAnnouncementForm({ onSave }) {
 
   /* --------------- Toolbar actions --------------- */
   const addLink = () => {
-    if (!editor) return;
+    if (!editor || viewMode === "html") return;
     const prev = editor.getAttributes("link")?.href || "";
     const url = window.prompt(
       "Introdu URL-ul (poți folosi și o rută internă, ex: /anunturi/123)",
@@ -477,13 +474,14 @@ function AddAnnouncementForm({ onSave }) {
   };
 
   const addImage = () => {
-    if (!editor) return;
+    if (!editor || viewMode === "html") return;
     const url = window.prompt("Introdu URL-ul imaginii");
     if (!url) return;
     editor.chain().focus().setImage({ src: url, alt: "image" }).run();
   };
 
   const handleInlineFile = async (e) => {
+    if (viewMode === "html") return;
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
@@ -501,6 +499,7 @@ function AddAnnouncementForm({ onSave }) {
   };
 
   const clearFormatting = () => {
+    if (viewMode === "html") return;
     editor?.chain().focus().clearNodes().unsetAllMarks().run();
   };
 
@@ -511,19 +510,22 @@ function AddAnnouncementForm({ onSave }) {
     setTextColor("#000000");
     setEditId(null);
     editor?.commands.setContent("");
+    setRawHtml("");
+    setViewMode("visual");
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!editor) return;
     setSubmitting(true);
 
+    // HTML-ul sursa depinde de modul curent
+    const html = viewMode === "html" ? (rawHtml || "") : (editor?.getHTML() || "");
     const payload = {
       title: title.trim(),
       publishedAt: new Date(publishedAt).toISOString(),
       coverUrl: coverUrl.trim() || null,
-      contentHtml: editor.getHTML(),
-      contentText: editor.getText(),
+      contentHtml: html,
+      contentText: viewMode === "html" ? htmlToText(html) : (editor?.getText() || htmlToText(html)),
     };
 
     const method = editId ? "PUT" : "POST";
@@ -558,6 +560,8 @@ function AddAnnouncementForm({ onSave }) {
     setCoverUrl(a.coverUrl || "");
     setPublishedAt(isoToInputLocal(a.publishedAt));
     editor?.commands.setContent(a.contentHtml || "");
+    setRawHtml(a.contentHtml || "");
+    setViewMode("visual");
   };
 
   const handleDelete = async (id) => {
@@ -599,11 +603,9 @@ function AddAnnouncementForm({ onSave }) {
       className="space-y-6 lg:pt-0"
       style={{ paddingTop: isMobile ? "calc(env(safe-area-inset-top, 0px) + 56px)" : 0 }}
     >
-      {/* hidden inputs for uploads */}
       <input ref={coverFileRef} type="file" accept="image/*" className="hidden" onChange={handleCoverFile} />
       <input ref={inlineFileRef} type="file" accept="image/*" className="hidden" onChange={handleInlineFile} />
 
-      {/* CARD */}
       <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white shadow-sm">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b px-5 py-4">
@@ -618,7 +620,7 @@ function AddAnnouncementForm({ onSave }) {
         </div>
 
         <div className="grid gap-5 p-5">
-          {/* Row 1: Title */}
+          {/* Title */}
           <div className="grid gap-2">
             <label className="text-sm font-medium">Titlu anunț</label>
             <div className="relative">
@@ -633,9 +635,8 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* Row 2: Date + Cover */}
+          {/* Date + Cover */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
-            {/* date small */}
             <div className="md:col-span-3">
               <label className="text-sm font-medium">Data publicării</label>
               <div className="relative mt-2 md:mt-0">
@@ -655,11 +656,8 @@ function AddAnnouncementForm({ onSave }) {
               </p>
             </div>
 
-            {/* cover input + upload button */}
             <div className="md:col-span-9">
-              <label className="text-sm font-medium">
-                Poză de copertă (URL, opțional)
-              </label>
+              <label className="text-sm font-medium">Poză de copertă (URL, opțional)</label>
               <div className="mt-2 flex w-full gap-2">
                 <div className="relative flex-1">
                   <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -693,7 +691,6 @@ function AddAnnouncementForm({ onSave }) {
                 </button>
               </div>
 
-              {/* tiny preview */}
               {coverUrl && (
                 <div className="mt-2 flex items-center gap-2">
                   <img
@@ -718,8 +715,53 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* Toolbar */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-2">
+          {/* --- NEW: Mode toggle Vizual/Text --- */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Conținut</span>
+            <div className="inline-flex rounded-lg overflow-hidden ring-1 ring-gray-200">
+              <button
+                type="button"
+                onClick={() => {
+                  // la trecere în vizual, împinge HTML-ul din textarea în editor
+                  if (viewMode === "html") {
+                    editor?.commands.setContent(rawHtml || "");
+                  }
+                  setViewMode("visual");
+                }}
+                className={[
+                  "px-3 py-1.5 text-sm",
+                  viewMode === "visual"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800 hover:bg-gray-50",
+                ].join(" ")}
+              >
+                Vizual
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  // la trece în text, ia HTML-ul curent din editor
+                  setRawHtml(editor?.getHTML() || "");
+                  setViewMode("html");
+                }}
+                className={[
+                  "px-3 py-1.5 text-sm",
+                  viewMode === "html"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800 hover:bg-gray-50",
+                ].join(" ")}
+              >
+                Text
+              </button>
+            </div>
+          </div>
+
+          {/* Toolbar (inactiv când e “Text”) */}
+          <div
+            className={`rounded-2xl border border-gray-200 bg-white p-2 ${
+              viewMode === "html" ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <ToolButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive("bold")}>
                 <Bold className="h-4 w-4" />
@@ -748,7 +790,6 @@ function AddAnnouncementForm({ onSave }) {
 
               <Divider />
 
-              {/* LISTE + CITAȚIE */}
               <ToolButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive("bulletList")}>
                 <List className="h-4 w-4" />
               </ToolButton>
@@ -761,39 +802,21 @@ function AddAnnouncementForm({ onSave }) {
 
               <Divider />
 
-              {/* ALINIERE (paragraf + img.align) */}
-              <ToolButton
-                title="Aliniază la stânga"
-                onClick={() => setBlockAlign("left")}
-                active={blockAlign === "left" || (!blockAlign && true)}
-              >
+              <ToolButton title="Aliniază la stânga" onClick={() => setBlockAlign("left")} active={blockAlign === "left" || (!blockAlign && true)}>
                 <AlignLeft className="h-4 w-4" />
               </ToolButton>
-              <ToolButton
-                title="Centrează"
-                onClick={() => setBlockAlign("center")}
-                active={blockAlign === "center"}
-              >
+              <ToolButton title="Centrează" onClick={() => setBlockAlign("center")} active={blockAlign === "center"}>
                 <AlignCenter className="h-4 w-4" />
               </ToolButton>
-              <ToolButton
-                title="Aliniază la dreapta"
-                onClick={() => setBlockAlign("right")}
-                active={blockAlign === "right"}
-              >
+              <ToolButton title="Aliniază la dreapta" onClick={() => setBlockAlign("right")} active={blockAlign === "right"}>
                 <AlignRight className="h-4 w-4" />
               </ToolButton>
-              <ToolButton
-                title="Justify"
-                onClick={() => setBlockAlign("justify")}
-                active={blockAlign === "justify"}
-              >
+              <ToolButton title="Justify" onClick={() => setBlockAlign("justify")} active={blockAlign === "justify"}>
                 <AlignJustify className="h-4 w-4" />
               </ToolButton>
 
               <Divider />
 
-              {/* LINK + IMAGINE */}
               <ToolButton onClick={addLink} active={editor?.isActive("link")}>
                 <LinkIcon className="h-4 w-4" />
               </ToolButton>
@@ -812,7 +835,6 @@ function AddAnnouncementForm({ onSave }) {
                 )}
               </ToolButton>
 
-              {/* CONTROALE LĂȚIME IMAGINE */}
               {isNearImage() && (
                 <>
                   <Divider />
@@ -868,8 +890,18 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* Editor */}
-          <EditorContent editor={editor} />
+          {/* Editor / Textarea */}
+          {viewMode === "visual" ? (
+            <EditorContent editor={editor} />
+          ) : (
+            <textarea
+              value={rawHtml}
+              onChange={(e) => setRawHtml(e.target.value)}
+              spellCheck={false}
+              className="min-h-[280px] w-full rounded-2xl border bg-white p-4 font-mono text-sm leading-6 outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
+              placeholder="<p>Scrie HTML-ul aici…</p>"
+            />
+          )}
 
           {/* Actions */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

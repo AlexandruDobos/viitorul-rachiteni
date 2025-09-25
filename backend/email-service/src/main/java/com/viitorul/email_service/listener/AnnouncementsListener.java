@@ -13,7 +13,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -30,9 +29,8 @@ public class AnnouncementsListener {
     @Value("${app.web-base-url:https://viitorulrachiteni.ro}")
     private String webBaseUrl;
 
-    // câte adrese punem în BCC per email
-    @Value("${app.mail.bcc-batch-size:80}")
-    private int batchSize;
+    // Pauză hard-coded între destinatari (200ms). Poți modifica valoarea dacă vrei.
+    private static final int SLEEP_MS = 200;
 
     @RabbitListener(queues = RabbitMQConfig.ANNOUNCEMENTS_QUEUE)
     public void onAnnouncementPublished(AnnouncementPublishedEvent ev) {
@@ -47,29 +45,36 @@ public class AnnouncementsListener {
         String subject = "Noutăți ACS Viitorul Răchiteni: " + safe(ev.getTitle());
         String html = buildHtml(ev);
 
-        // trimitem în batch-uri pe BCC
-        for (List<String> chunk : chunked(recipients, batchSize)) {
+        for (String rcpt : recipients) {
             try {
                 MimeMessage mime = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(mime, true, "UTF-8");
 
-                // Setăm un TO dummy (unii provideri cer TO non-empty); folosim from sau o adresă no-reply
-                String to = (from != null && !from.isBlank()) ? from : "no-reply@viitorulrachiteni.ro";
-                helper.setTo(to);
+                // setăm TO la destinatarul curent
+                helper.setTo(rcpt);
                 helper.setSubject(subject);
-                if (from != null && !from.isBlank()) helper.setFrom(from);
-                helper.setBcc(chunk.toArray(String[]::new));
+                if (from != null && !from.isBlank()) {
+                    helper.setFrom(from);
+                }
                 helper.setText(html, true);
 
                 // logo inline (opțional)
                 try {
                     helper.addInline("logo", new ClassPathResource("mail/logo.png"), "image/png");
-                } catch (Exception ignore) {}
+                } catch (Exception ignore) { }
 
                 mailSender.send(mime);
-                log.info("Announcement email sent to BCC batch size={}", chunk.size());
+                log.info("Announcement email sent to {}", rcpt);
+
+                // pauză mică între trimiteri (protejează împotriva throttling-ului)
+                try {
+                    Thread.sleep(SLEEP_MS);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn("Sleep interrupted while sending announcements");
+                }
             } catch (Exception e) {
-                log.error("Failed to send announcement batch: {}", e.getMessage(), e);
+                log.error("Failed to send announcement to {}: {}", rcpt, e.getMessage(), e);
             }
         }
     }
@@ -79,9 +84,10 @@ public class AnnouncementsListener {
         String excerpt = safe(ev.getExcerpt());
         String url = ev.getUrl() != null ? ev.getUrl() : webBaseUrl;
         String img = (ev.getCoverUrl() != null && !ev.getCoverUrl().isBlank())
-                ? "<img src=\"" + ev.getCoverUrl() + "\" alt=\"cover\" style=\"max-width:100%;border-radius:10px;margin:12px 0;\"/>"
+                ? "<img src=\"" + ev.getCoverUrl() + "\" alt=\"cover\" style=\"max-width:100%;border-radius:12px;margin:18px 0;\"/>"
                 : "";
 
+        // Totul centrat; fallback link sub buton
         return """
             <!doctype html>
             <html lang="ro">
@@ -90,35 +96,41 @@ public class AnnouncementsListener {
               <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>Noutăți • ACS Viitorul Răchiteni</title>
             </head>
-            <body style="margin:0;padding:0;background:#f6f8fb;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;line-height:1.6;color:#222;">
+            <body style="margin:0;padding:0;background:#f6f8fb;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;line-height:1.6;color:#111;">
+              <!-- preheader, ascuns -->
               <div style="display:none;max-height:0;overflow:hidden;opacity:0;">%s</div>
+
               <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
                 <tr>
                   <td align="center">
-                    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:14px;box-shadow:0 2px 12px rgba(16,24,40,.08);overflow:hidden;">
+                    <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;box-shadow:0 2px 12px rgba(16,24,40,.08);overflow:hidden;">
                       <tr>
-                        <td align="center" style="background:#0b61ff;background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:30px 20px;">
-                          <img src="cid:logo" alt="ACS Viitorul Răchiteni" height="80" style="display:block;border:0;outline:none;">
+                        <td align="center" style="background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:32px 24px;">
+                          <img src="cid:logo" alt="ACS Viitorul Răchiteni" height="84" style="display:block;border:0;outline:none;">
                         </td>
                       </tr>
 
-                      <tr><td style="height:10px"></td></tr>
+                      <tr><td style="height:12px"></td></tr>
 
                       <tr>
-                        <td style="padding:0 28px;">
-                          <h1 style="margin:0 0 6px 0;font-size:22px;line-height:1.3;color:#111827;font-weight:800;">%s</h1>
-                          <p style="margin:10px 0 12px 0;color:#374151;font-size:15px;">%s</p>
+                        <td align="center" style="padding:0 28px;">
+                          <h1 style="margin:0 0 10px 0;font-size:24px;line-height:1.3;color:#111827;font-weight:800;">%s</h1>
+                          <p style="margin:0 0 8px 0;color:#374151;font-size:15px;">%s</p>
                           %s
-                          <p style="margin:18px 0 28px 0;">
-                            <a href="%s" style="display:inline-block;padding:14px 22px;border-radius:12px;background:#111827;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 6px 16px rgba(17,24,39,.15);">
+                          <div style="margin:22px 0 8px 0;text-align:center;">
+                            <a href="%s" style="display:inline-block;padding:14px 22px;border-radius:12px;background:#0f172a;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;box-shadow:0 6px 16px rgba(17,24,39,.15);">
                               Citește anunțul
                             </a>
-                          </p>
+                          </div>
+                          <div style="margin:8px 0 22px 0;text-align:center;font-size:12px;color:#6b7280;">
+                            Dacă butonul nu funcționează, deschide linkul:<br>
+                            <a href="%s" style="color:#2563eb;text-decoration:none;word-break:break-all;">%s</a>
+                          </div>
                         </td>
                       </tr>
 
                       <tr>
-                        <td style="padding:0 28px 26px 28px;font-size:12px;color:#9ca3af;">
+                        <td align="center" style="padding:0 28px 26px 28px;font-size:12px;color:#9ca3af;">
                           Mulțumim,<br>Echipa <strong>ACS Viitorul Răchiteni</strong>
                         </td>
                       </tr>
@@ -129,20 +141,11 @@ public class AnnouncementsListener {
               </table>
             </body>
             </html>
-        """.formatted(excerpt, title, excerpt, img, url);
+        """.formatted(excerpt, title, excerpt, img, url, url, url);
     }
 
     private String safe(String s) {
         if (s == null) return "";
         return s.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;");
-    }
-
-    private static <T> List<List<T>> chunked(List<T> list, int size) {
-        List<List<T>> out = new ArrayList<>();
-        if (size <= 0) size = 50;
-        for (int i = 0; i < list.size(); i += size) {
-            out.add(list.subList(i, Math.min(i + size, list.size())));
-        }
-        return out;
     }
 }

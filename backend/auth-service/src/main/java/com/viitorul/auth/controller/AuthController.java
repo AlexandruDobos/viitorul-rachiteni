@@ -5,28 +5,26 @@ import com.viitorul.auth.dto.AuthResponse;
 import com.viitorul.auth.dto.LoginRequest;
 import com.viitorul.auth.dto.RegisterRequest;
 import com.viitorul.auth.dto.ResetPasswordRequest;
-import com.viitorul.auth.entity.VerificationToken;
 import com.viitorul.auth.service.AuthService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import lombok.extern.slf4j.Slf4j;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
-import java.security.Key;
+
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
+
+// 👇 importuri noi pentru DTO-urile adăugate
+import com.viitorul.auth.dto.ChangePasswordRequest;
+import com.viitorul.auth.dto.UpdateProfileRequest;
 
 @Slf4j
 @RestController
@@ -80,7 +78,6 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-
     @GetMapping("/status")
     public ResponseEntity<?> checkAuth(
             @CookieValue(value = "jwt", required = false) String jwt,
@@ -114,7 +111,6 @@ public class AuthController {
                 "authenticated", false
         ));
     }
-
 
     @GetMapping("/confirm")
     public void confirm(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
@@ -176,4 +172,55 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
     }
 
+    // =================================
+    // 👇 NOI: endpoints profil & parolă
+    // =================================
+
+    /** Extrage emailul din cookie-ul JWT sau din Authorization header (Bearer). */
+    private String resolveEmailFromRequest(String jwtCookie, String authHeader) {
+        String token = null;
+        if (jwtCookie != null && !jwtCookie.isBlank()) {
+            token = jwtCookie;
+        } else if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        }
+        if (token == null || !jwtUtils.validateToken(token)) {
+            return null;
+        }
+        return jwtUtils.getEmailFromToken(token);
+    }
+
+    /** Update profil (nume + abonare). */
+    @PutMapping("/me")
+    public ResponseEntity<?> updateMe(
+            @RequestBody UpdateProfileRequest req,
+            @CookieValue(name = "jwt", required = false) String jwtCookie,
+            @RequestHeader(name = "Authorization", required = false) String authHeader
+    ) {
+        String email = resolveEmailFromRequest(jwtCookie, authHeader);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        authService.updateProfile(email, req);
+        return ResponseEntity.ok(Map.of("message", "Profil actualizat"));
+    }
+
+    /** Schimbă parola (verifică parola curentă + regulile de complexitate). */
+    @PostMapping("/me/password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody ChangePasswordRequest req,
+            @CookieValue(name = "jwt", required = false) String jwtCookie,
+            @RequestHeader(name = "Authorization", required = false) String authHeader
+    ) {
+        String email = resolveEmailFromRequest(jwtCookie, authHeader);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        try {
+            authService.changePassword(email, req);
+            return ResponseEntity.ok(Map.of("message", "Parola a fost schimbată."));
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
+        }
+    }
 }

@@ -1,3 +1,4 @@
+// src/main/java/com/viitorul/auth/service/AuthService.java
 package com.viitorul.auth.service;
 
 import com.viitorul.auth.dto.*;
@@ -170,5 +171,50 @@ public class AuthService {
         );
 
         return "ok";
+    }
+
+    // =========================================
+    // 👇 ADĂUGIRI: update profil + schimbare parolă
+    // =========================================
+
+    /** Update nume + abonare (subscribe). Valorile null NU se modifică. */
+    public void updateProfile(String email, UpdateProfileRequest req) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundByEmailException::new);
+
+        if (req.getName() != null && !req.getName().trim().isEmpty()) {
+            user.setName(req.getName().trim());
+        }
+        if (req.getSubscribe() != null) {
+            // presupune existența câmpului boolean subscribedToNews în entitatea User (default false)
+            user.setSubscribedToNews(Boolean.TRUE.equals(req.getSubscribe()));
+        }
+
+        userRepository.save(user);
+    }
+
+    /**
+     * Schimbă parola după verificarea parolei curente.
+     * (Complexitatea noii parole se validează doar în frontend, conform cerinței tale.)
+     */
+    public void changePassword(String email, ChangePasswordRequest req) {
+        if (req.getCurrentPassword() == null || req.getNewPassword() == null) {
+            throw new RuntimeException("Parola curentă și noua parolă sunt necesare.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(UserNotFoundByEmailException::new);
+
+        if (user.getPasswordHash() == null) {
+            // cont posibil creat prin OAuth fără parolă locală
+            throw new RuntimeException("Acest cont nu are parolă locală.");
+        }
+
+        if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Parola curentă este incorectă.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+        userRepository.save(user);
     }
 }

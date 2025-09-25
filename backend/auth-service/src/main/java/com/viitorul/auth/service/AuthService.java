@@ -1,4 +1,3 @@
-// src/main/java/com/viitorul/auth/service/AuthService.java
 package com.viitorul.auth.service;
 
 import com.viitorul.auth.dto.*;
@@ -23,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -56,7 +56,7 @@ public class AuthService {
                 .passwordHash(passwordEncoder.encode(request.getPassword()))
                 .provider(AuthProvider.LOCAL)
                 .registeredAt(LocalDateTime.now())
-                .role(UserRole.USER) // 🚨 nu mai acceptăm rol din request, doar USER
+                .role(UserRole.USER) // doar USER
                 .emailVerified(false)
                 .build();
 
@@ -85,7 +85,7 @@ public class AuthService {
 
         String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
 
-        // ✅ cookie consistent cu AuthController & OAuth2SuccessHandler
+        // cookie consistent
         ResponseCookie.ResponseCookieBuilder cookie =
                 ResponseCookie.from("jwt", token)
                         .httpOnly(true)
@@ -173,48 +173,48 @@ public class AuthService {
         return "ok";
     }
 
-    // =========================================
-    // 👇 ADĂUGIRI: update profil + schimbare parolă
-    // =========================================
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
 
-    /** Update nume + abonare (subscribe). Valorile null NU se modifică. */
-    public void updateProfile(String email, UpdateProfileRequest req) {
+    public void updateAccount(String email, UpdateAccountRequest req) {
+        if (req == null) return;
+
         User user = userRepository.findByEmail(email)
                 .orElseThrow(UserNotFoundByEmailException::new);
 
-        if (req.getName() != null && !req.getName().trim().isEmpty()) {
-            user.setName(req.getName().trim());
+        // 1) Nume
+        if (req.getName() != null) {
+            String trimmed = req.getName().trim();
+            if (trimmed.isEmpty()) {
+                // dacă trimiți string gol explicit, îl refuzăm (nu lăsăm numele gol)
+                throw new RuntimeException("Numele nu poate fi gol.");
+            }
+            user.setName(trimmed);
         }
+
+        // 2) Abonare
         if (req.getSubscribe() != null) {
-            // presupune existența câmpului boolean subscribedToNews în entitatea User (default false)
+            // presupunem câmpul din entitate: subscribedToNews (boolean)
             user.setSubscribedToNews(Boolean.TRUE.equals(req.getSubscribe()));
         }
 
+        // 3) Parolă
+        boolean wantsPasswordChange =
+                req.getCurrentPassword() != null && req.getNewPassword() != null;
+
+        if (wantsPasswordChange) {
+            if (user.getPasswordHash() == null) {
+                // cont creat prin OAuth fără parolă locală
+                throw new RuntimeException("Acest cont nu are parolă locală.");
+            }
+            if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
+                throw new RuntimeException("Parola curentă este incorectă.");
+            }
+            user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
+        }
+
         userRepository.save(user);
     }
 
-    /**
-     * Schimbă parola după verificarea parolei curente.
-     * (Complexitatea noii parole se validează doar în frontend, conform cerinței tale.)
-     */
-    public void changePassword(String email, ChangePasswordRequest req) {
-        if (req.getCurrentPassword() == null || req.getNewPassword() == null) {
-            throw new RuntimeException("Parola curentă și noua parolă sunt necesare.");
-        }
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(UserNotFoundByEmailException::new);
-
-        if (user.getPasswordHash() == null) {
-            // cont posibil creat prin OAuth fără parolă locală
-            throw new RuntimeException("Acest cont nu are parolă locală.");
-        }
-
-        if (!passwordEncoder.matches(req.getCurrentPassword(), user.getPasswordHash())) {
-            throw new RuntimeException("Parola curentă este incorectă.");
-        }
-
-        user.setPasswordHash(passwordEncoder.encode(req.getNewPassword()));
-        userRepository.save(user);
-    }
 }

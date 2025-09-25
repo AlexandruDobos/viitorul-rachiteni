@@ -22,9 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
-// 👇 importuri noi pentru DTO-urile adăugate
-import com.viitorul.auth.dto.ChangePasswordRequest;
-import com.viitorul.auth.dto.UpdateProfileRequest;
+import com.viitorul.auth.dto.UpdateAccountRequest;
 
 @Slf4j
 @RestController
@@ -35,18 +33,39 @@ public class AuthController {
     private String jwtSecret;
     private final AuthService authService;
     private final JwtUtils jwtUtils;
-    // === adaugă aceleași setări ca la setarea cookie-ului ===
+
     @Value("${COOKIE_SECURE:true}")
     private boolean cookieSecure;
 
-    @Value("${COOKIE_SAMESITE:None}") // Strict / Lax / None
+    @Value("${COOKIE_SAMESITE:None}")
     private String cookieSameSite;
 
-    @Value("${COOKIE_DOMAIN:}")       // ex: .viitorulrachiteni.ro
+    @Value("${COOKIE_DOMAIN:}")
     private String cookieDomain;
-    // in AuthController
+
     @Value("${FRONTEND_URL:http://localhost:5173}")
     private String frontendUrl;
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(
+            @CookieValue(name = "jwt", required = false) String jwtCookie,
+            @RequestHeader(name = "Authorization", required = false) String authHeader
+    ) {
+        String email = resolveEmailFromRequest(jwtCookie, authHeader);
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        // luăm userul și returnăm doar ce trebuie în UI (name + subscribe)
+        var userOpt = authService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        var u = userOpt.get();
+        return ResponseEntity.ok(Map.of(
+                "name", u.getName(),
+                "subscribe", u.isSubscribedToNews()
+        ));
+    }
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
@@ -65,13 +84,13 @@ public class AuthController {
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from("jwt", "")
                 .httpOnly(true)
-                .secure(cookieSecure)      // la fel ca la set
-                .path("/")                 // la fel
-                .sameSite(cookieSameSite)  // la fel
-                .maxAge(0);                // ștergere
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite(cookieSameSite)
+                .maxAge(0);
 
         if (cookieDomain != null && !cookieDomain.isBlank()) {
-            builder.domain(cookieDomain);  // la fel
+            builder.domain(cookieDomain);
         }
 
         response.setHeader(HttpHeaders.SET_COOKIE, builder.build().toString());
@@ -103,7 +122,7 @@ public class AuthController {
                     ));
                 }
             } catch (Exception e) {
-                // logăm dacă vrei
+                // optional log
             }
         }
 
@@ -118,13 +137,11 @@ public class AuthController {
         if ("ok".equalsIgnoreCase(result)) {
             response.sendRedirect(frontendUrl + "/login?status=success");
         } else {
-            // encode ca să nu rupi URL-ul
             String msg = java.net.URLEncoder.encode(result, java.nio.charset.StandardCharsets.UTF_8);
             response.sendRedirect(frontendUrl + "/login?status=error&message=" + msg);
         }
     }
 
-    // in com.viitorul.auth.controller.AuthController
     @GetMapping("/introspect")
     public ResponseEntity<?> introspect(
             @CookieValue(name = "jwt", required = false) String jwtCookie,
@@ -159,7 +176,6 @@ public class AuthController {
     @PostMapping("/request-reset")
     public ResponseEntity<String> requestReset(@RequestParam("email") String email) {
         authService.createResetToken(email);
-        // nu divulgăm dacă emailul există sau nu
         return ResponseEntity.ok("Dacă adresa există, ți-am trimis un email cu instrucțiuni de resetare.");
     }
 
@@ -172,11 +188,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
     }
 
-    // =================================
-    // 👇 NOI: endpoints profil & parolă
-    // =================================
-
-    /** Extrage emailul din cookie-ul JWT sau din Authorization header (Bearer). */
     private String resolveEmailFromRequest(String jwtCookie, String authHeader) {
         String token = null;
         if (jwtCookie != null && !jwtCookie.isBlank()) {
@@ -190,25 +201,9 @@ public class AuthController {
         return jwtUtils.getEmailFromToken(token);
     }
 
-    /** Update profil (nume + abonare). */
-    @PutMapping("/me")
-    public ResponseEntity<?> updateMe(
-            @RequestBody UpdateProfileRequest req,
-            @CookieValue(name = "jwt", required = false) String jwtCookie,
-            @RequestHeader(name = "Authorization", required = false) String authHeader
-    ) {
-        String email = resolveEmailFromRequest(jwtCookie, authHeader);
-        if (email == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        authService.updateProfile(email, req);
-        return ResponseEntity.ok(Map.of("message", "Profil actualizat"));
-    }
-
-    /** Schimbă parola (verifică parola curentă + regulile de complexitate). */
-    @PostMapping("/me/password")
-    public ResponseEntity<?> changePassword(
-            @RequestBody ChangePasswordRequest req,
+    @PatchMapping("/profile")
+    public ResponseEntity<?> patchProfile(
+            @RequestBody UpdateAccountRequest req,
             @CookieValue(name = "jwt", required = false) String jwtCookie,
             @RequestHeader(name = "Authorization", required = false) String authHeader
     ) {
@@ -217,10 +212,11 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         try {
-            authService.changePassword(email, req);
-            return ResponseEntity.ok(Map.of("message", "Parola a fost schimbată."));
+            authService.updateAccount(email, req);
+            return ResponseEntity.ok(Map.of("message", "Profil actualizat"));
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", ex.getMessage()));
         }
     }
+
 }

@@ -1,21 +1,46 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { BASE_URL } from "../utils/constants";
 
 const SendEmailForm = () => {
   const editorRef = useRef(null);
+
   const [title, setTitle] = useState("");
   const [sending, setSending] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [err, setErr] = useState("");
+  const [msg,   setMsg]   = useState("");
+  const [err,   setErr]   = useState("");
+
+  // single source of truth for content
+  const [contentHtml, setContentHtml] = useState("<p><br/></p>");
 
   // visual vs raw HTML view
   const [viewMode, setViewMode] = useState("visual"); // "visual" | "html"
-  const [rawHtml, setRawHtml] = useState(""); // used in "html" mode textarea
+  const [rawHtml,  setRawHtml]  = useState("");       // mirror for textarea
+
+  // ---- helpers -------------------------------------------------------------
+
+  const mountEditorWithContent = () => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = contentHtml || "<p><br/></p>";
+    }
+  };
+
+  useEffect(() => {
+    if (viewMode === "visual") {
+      mountEditorWithContent();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
+
+  const syncFromEditor = () => {
+    if (!editorRef.current) return;
+    setContentHtml(editorRef.current.innerHTML);
+  };
 
   const cmd = (command) => {
     if (viewMode !== "visual") return;
     document.execCommand(command, false, null);
     editorRef.current?.focus();
+    syncFromEditor();
   };
 
   const insertTag = (tag) => {
@@ -30,12 +55,15 @@ const SendEmailForm = () => {
       el.appendChild(range.extractContents());
     }
     range.insertNode(el);
+
     sel.removeAllRanges();
     const r = document.createRange();
     r.selectNodeContents(el);
     r.collapse(true);
     sel.addRange(r);
+
     editorRef.current?.focus();
+    syncFromEditor();
   };
 
   const ensureParagraphRoot = () => {
@@ -43,23 +71,26 @@ const SendEmailForm = () => {
     if (!ed) return;
     if (ed.innerHTML.trim() === "" || ed.innerHTML.trim() === "<br>") {
       ed.innerHTML = "<p><br/></p>";
+      syncFromEditor();
     }
   };
 
   const handleKeyDown = (e) => {
     if (viewMode !== "visual") return;
     if (e.key !== "Enter") return;
+
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
 
-    // Shift+Enter => line break in acelasi paragraf
+    // Shift+Enter => line break
     if (e.shiftKey) {
       e.preventDefault();
       document.execCommand("insertLineBreak");
+      syncFromEditor();
       return;
     }
 
-    // Enter normal => paragraf nou
+    // Enter => new paragraph
     e.preventDefault();
     const range = sel.getRangeAt(0);
     range.collapse(false);
@@ -73,9 +104,11 @@ const SendEmailForm = () => {
     r.setStart(p, 0);
     r.collapse(true);
     sel.addRange(r);
+
+    syncFromEditor();
   };
 
-  // elimina paragrafele goale inainte de trimitere
+  // remove empty <p> before sending
   const cleanHtml = (html) => {
     const div = document.createElement("div");
     div.innerHTML = html;
@@ -85,33 +118,29 @@ const SendEmailForm = () => {
     return div.innerHTML.trim();
   };
 
-  // toggle buttons
+  // ---- mode switches -------------------------------------------------------
+
   const switchToVisual = () => {
-    // push textarea content back into editor
-    const ed = editorRef.current;
-    if (ed) {
-      ed.innerHTML = rawHtml || "<p><br/></p>";
-    }
+    // update source of truth from textarea, then render visual
+    setContentHtml((prev) => (rawHtml !== "" ? rawHtml : prev));
     setViewMode("visual");
   };
+
   const switchToHtml = () => {
-    // pull editor content into textarea
-    const ed = editorRef.current;
-    setRawHtml(ed ? ed.innerHTML : "");
+    // populate textarea from source of truth
+    setRawHtml(contentHtml || "");
     setViewMode("html");
   };
 
-  const getCurrentHtml = () => {
-    if (viewMode === "html") return rawHtml || "";
-    return editorRef.current?.innerHTML?.trim() || "";
-  };
+  // ---- submit --------------------------------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg(""); setErr("");
 
-    let html = getCurrentHtml();
-    html = cleanHtml(html);
+    const html = cleanHtml(
+      viewMode === "html" ? (rawHtml || "") : (contentHtml || "")
+    );
 
     if (!title.trim() || !html) {
       setErr("Te rog completează titlul și conținutul.");
@@ -130,9 +159,10 @@ const SendEmailForm = () => {
       if (!res.ok) throw new Error(text || "Eroare la trimitere.");
       setMsg(text || "Emailul a fost pus în coadă pentru trimitere.");
       setTitle("");
-      if (editorRef.current) editorRef.current.innerHTML = "<p><br/></p>";
+      setContentHtml("<p><br/></p>");
       setRawHtml("");
       setViewMode("visual");
+      mountEditorWithContent();
     } catch (e2) {
       setErr(e2.message || "Eroare la trimitere.");
     } finally {
@@ -140,11 +170,12 @@ const SendEmailForm = () => {
     }
   };
 
+  // ---- render --------------------------------------------------------------
+
   return (
     <div
       className="w-full max-w-none"
       style={{
-        // mobile top offset to avoid fixed header overlap
         paddingTop:
           "clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))",
       }}
@@ -184,7 +215,7 @@ const SendEmailForm = () => {
             />
           </div>
 
-          {/* Editor header: mode toggle */}
+          {/* Header with mode toggle */}
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-800">Conținut</label>
             <div className="inline-flex rounded-lg overflow-hidden ring-1 ring-gray-200">
@@ -215,7 +246,7 @@ const SendEmailForm = () => {
             </div>
           </div>
 
-          {/* Toolbar (only in visual) */}
+          {/* Toolbar (visual only) */}
           {viewMode === "visual" && (
             <div className="flex flex-wrap gap-2 -mt-1 mb-2">
               <button type="button" onClick={() => cmd("bold")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">B</button>
@@ -228,13 +259,14 @@ const SendEmailForm = () => {
             </div>
           )}
 
-          {/* Editor body */}
+          {/* Body */}
           {viewMode === "visual" ? (
             <div
               ref={editorRef}
               contentEditable
               onFocus={ensureParagraphRoot}
               onKeyDown={handleKeyDown}
+              onInput={syncFromEditor}
               className="min-h-[360px] rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25 prose max-w-none"
               style={{ whiteSpace: "normal" }}
               placeholder="Scrie mesajul aici..."
@@ -242,8 +274,11 @@ const SendEmailForm = () => {
             />
           ) : (
             <textarea
-              value={rawHtml}
-              onChange={(e) => setRawHtml(e.target.value)}
+              value={rawHtml === "" ? contentHtml : rawHtml}
+              onChange={(e) => {
+                setRawHtml(e.target.value);
+                setContentHtml(e.target.value);
+              }}
               spellCheck={false}
               className="min-h-[360px] w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-mono text-sm leading-6 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
               placeholder="<p>Scrie HTML-ul aici...</p>"

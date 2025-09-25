@@ -31,6 +31,9 @@ public class RabbitMQConfig {
 
     public static final String ANNOUNCEMENTS_QUEUE = "announcements.published.queue";
     public static final String ANNOUNCEMENTS_ROUTING_KEY = "announcements.published";
+    public static final String ADMIN_BROADCAST_QUEUE = "admin.broadcast.queue";
+    public static final String ADMIN_BROADCAST_ROUTING_KEY = "admin.broadcast";
+
     // Exchanges
     @Bean
     public Exchange authExchange() {
@@ -106,6 +109,19 @@ public class RabbitMQConfig {
                 .bind(passwordResetQueue())
                 .to(authExchange())
                 .with("auth.reset")
+                .noargs();
+    }
+
+    @Bean
+    public Queue adminBroadcastQueue() {
+        return new Queue(ADMIN_BROADCAST_QUEUE, true);
+    }
+
+    @Bean
+    public Binding adminBroadcastBinding() {
+        return BindingBuilder.bind(adminBroadcastQueue())
+                .to(appExchange())
+                .with(ADMIN_BROADCAST_ROUTING_KEY)
                 .noargs();
     }
 

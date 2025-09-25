@@ -55,7 +55,7 @@ const SendEmailForm = () => {
   };
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full max-w-none">
       <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500 px-6 py-6 text-white shadow mb-4">
         <h1 className="text-2xl font-extrabold tracking-tight">Trimite email către abonați</h1>
         <p className="text-white/85 text-sm mt-1">Creează conținutul (H2/H3/B/I) și apasă “Trimite”.</p>
@@ -92,7 +92,7 @@ const SendEmailForm = () => {
             <div
               ref={editorRef}
               contentEditable
-              className="min-h-[220px] rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25 prose max-w-none"
+              className="min-h-[360px] rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25 prose max-w-none"
               style={{ whiteSpace: "pre-wrap" }}
               placeholder="Scrie mesajul aici..."
               suppressContentEditableWarning

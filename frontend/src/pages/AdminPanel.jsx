@@ -361,6 +361,8 @@ const AdminPanel = () => {
             const iconName =
               key === "add-announcement"
                 ? "ann"
+                : key === "send-email"
+                ? "send"
                 : key === "competitions"
                   ? "comp"
                   : key === "matches"

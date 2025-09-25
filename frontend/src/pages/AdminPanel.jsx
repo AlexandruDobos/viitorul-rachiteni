@@ -13,6 +13,7 @@ import AddAnnouncementForm from "../forms/AddAnnouncementForm";
 import StandingsManager from "../forms/StandingsManager";
 import CompetitionsManager from "../forms/CompetitionsManager";
 import SocialLinksAdmin from "./SocialLinksAdmin";
+import SendEmailForm from "../forms/SendEmailForm";
 
 import logo from "../assets/logo.png";
 
@@ -33,7 +34,7 @@ const AdminPanel = () => {
   useEffect(() => {
     try {
       localStorage.setItem("adminSidebarCollapsed", collapsed ? "1" : "0");
-    } catch {}
+    } catch { }
   }, [collapsed]);
 
   // mobil: meniu tip "drawer"
@@ -41,6 +42,7 @@ const AdminPanel = () => {
 
   const menuItems = [
     { key: "add-announcement", label: "Anunț nou" },
+    { key: "send-email", label: "Trimite email" },
     { key: "competitions", label: "Competiții" },
     { key: "matches", label: "Meciuri" },
     { key: "add-player", label: "Jucători" },
@@ -57,6 +59,8 @@ const AdminPanel = () => {
     switch (activeView) {
       case "competitions":
         return <CompetitionsManager />;
+      case "send-email":
+        return <SendEmailForm />;
       case "add-player":
         return <AddPlayerForm />;
       case "add-team":
@@ -90,6 +94,12 @@ const AdminPanel = () => {
         return (
           <svg className={base} viewBox="0 0 24 24" fill="currentColor">
             <path d="M3 5h18v2H3V5zm2 4h14l-2 10H7L5 9zm4 12a2 2 0 104 0H9z" />
+          </svg>
+        );
+      case "send":
+        return (
+          <svg className={base} viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
           </svg>
         );
       case "comp":
@@ -255,27 +265,29 @@ const AdminPanel = () => {
                 const iconName =
                   key === "add-announcement"
                     ? "ann"
-                    : key === "competitions"
-                    ? "comp"
-                    : key === "matches"
-                    ? "match"
-                    : key === "add-player"
-                    ? "player"
-                    : key === "add-team"
-                    ? "team"
-                    : key === "manage-ads"
-                    ? "ads"
-                    : key === "social"
-                    ? "social"
-                    : key === "edit-contact"
-                    ? "contact"
-                    : key === "edit-logo"
-                    ? "logo"
-                    : key === "edit-name"
-                    ? "name"
-                    : key === "edit-standings"
-                    ? "table"
-                    : null;
+                    : key === "send-email"
+                      ? "send"
+                      : key === "competitions"
+                        ? "comp"
+                        : key === "matches"
+                          ? "match"
+                          : key === "add-player"
+                            ? "player"
+                            : key === "add-team"
+                              ? "team"
+                              : key === "manage-ads"
+                                ? "ads"
+                                : key === "social"
+                                  ? "social"
+                                  : key === "edit-contact"
+                                    ? "contact"
+                                    : key === "edit-logo"
+                                      ? "logo"
+                                      : key === "edit-name"
+                                        ? "name"
+                                        : key === "edit-standings"
+                                          ? "table"
+                                          : null;
 
                 const active = activeView === key;
 
@@ -350,26 +362,26 @@ const AdminPanel = () => {
               key === "add-announcement"
                 ? "ann"
                 : key === "competitions"
-                ? "comp"
-                : key === "matches"
-                ? "match"
-                : key === "add-player"
-                ? "player"
-                : key === "add-team"
-                ? "team"
-                : key === "manage-ads"
-                ? "ads"
-                : key === "social"
-                ? "social"
-                : key === "edit-contact"
-                ? "contact"
-                : key === "edit-logo"
-                ? "logo"
-                : key === "edit-name"
-                ? "name"
-                : key === "edit-standings"
-                ? "table"
-                : null;
+                  ? "comp"
+                  : key === "matches"
+                    ? "match"
+                    : key === "add-player"
+                      ? "player"
+                      : key === "add-team"
+                        ? "team"
+                        : key === "manage-ads"
+                          ? "ads"
+                          : key === "social"
+                            ? "social"
+                            : key === "edit-contact"
+                              ? "contact"
+                              : key === "edit-logo"
+                                ? "logo"
+                                : key === "edit-name"
+                                  ? "name"
+                                  : key === "edit-standings"
+                                    ? "table"
+                                    : null;
 
             return desktopNavButton(key, label, iconName);
           })}

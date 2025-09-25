@@ -6,6 +6,7 @@ const Profile = () => {
   // Date profil
   const [name, setName] = useState('');
   const [subscribe, setSubscribe] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true); // 👈 nou
 
   // Parolă
   const [currentPwd, setCurrentPwd] = useState('');
@@ -25,7 +26,7 @@ const Profile = () => {
   const [errPwd, setErrPwd] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
 
-  // Preluare profil curent (nume + abonare)
+  // Preluare profil curent (nume + abonare + are/nu are parolă)
   useEffect(() => {
     (async () => {
       try {
@@ -34,6 +35,7 @@ const Profile = () => {
         const data = await res.json();
         setName(data?.name ?? '');
         setSubscribe(Boolean(data?.subscribe));
+        setHasPassword(Boolean(data?.hasPassword)); // 👈 setăm din backend
       } catch (e) {
         setErrName(e.message || 'Eroare la încărcarea profilului.');
       }
@@ -99,6 +101,10 @@ const Profile = () => {
   /* ---- Save PAROLĂ (PATCH doar cu { currentPassword, newPassword }) ---- */
   const onSavePassword = async () => {
     setMsgPwd(''); setErrPwd('');
+    if (!hasPassword) {
+      setErrPwd('Acest cont este conectat printr-un provider și nu are parolă locală.');
+      return;
+    }
     if (!currentPwd || !newPwd || !confirmNewPwd) {
       setErrPwd('Completează toate câmpurile de parolă.');
       return;
@@ -241,84 +247,93 @@ const Profile = () => {
         <hr className="border-gray-100" />
 
         {/* ======= Secțiunea PAROLĂ ======= */}
-        <section>
-          {msgPwd && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{msgPwd}</div>}
-          {errPwd && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errPwd}</div>}
+        {hasPassword ? (   // 👈 afișează doar dacă userul are parolă locală
+          <section>
+            {msgPwd && <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{msgPwd}</div>}
+            {errPwd && <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{errPwd}</div>}
 
-          <h2 className="text-base md:text-lg font-semibold mb-2">Schimbă parola</h2>
-          <div className="grid gap-3 md:grid-cols-3">
-            <input
-              type="password"
-              value={currentPwd}
-              onChange={(e) => setCurrentPwd(e.target.value)}
-              placeholder="Parola curentă"
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
-            />
-            <input
-              type="password"
-              value={newPwd}
-              onChange={(e) => setNewPwd(e.target.value)}
-              placeholder="Parola nouă"
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
-            />
-            <input
-              type="password"
-              value={confirmNewPwd}
-              onChange={(e) => setConfirmNewPwd(e.target.value)}
-              placeholder="Confirmă parola nouă"
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
-            />
-          </div>
+            <h2 className="text-base md:text-lg font-semibold mb-2">Schimbă parola</h2>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input
+                type="password"
+                value={currentPwd}
+                onChange={(e) => setCurrentPwd(e.target.value)}
+                placeholder="Parola curentă"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
+              />
+              <input
+                type="password"
+                value={newPwd}
+                onChange={(e) => setNewPwd(e.target.value)}
+                placeholder="Parola nouă"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
+              />
+              <input
+                type="password"
+                value={confirmNewPwd}
+                onChange={(e) => setConfirmNewPwd(e.target.value)}
+                placeholder="Confirmă parola nouă"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
+              />
+            </div>
 
-          {(newPwd || confirmNewPwd) && (
-            <>
-              {newPwd !== confirmNewPwd && (
-                <p className="text-xs text-rose-600 mt-1">Parolele noi nu coincid.</p>
-              )}
-              <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-gray-600">
-                <div className={`flex items-center gap-1 ${pwdChecks.length ? 'text-emerald-600' : ''}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  Min. 8 caractere
+            {(newPwd || confirmNewPwd) && (
+              <>
+                {newPwd !== confirmNewPwd && (
+                  <p className="text-xs text-rose-600 mt-1">Parolele noi nu coincid.</p>
+                )}
+                <div className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-gray-600">
+                  <div className={`flex items-center gap-1 ${pwdChecks.length ? 'text-emerald-600' : ''}`}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    Min. 8 caractere
+                  </div>
+                  <div className={`flex items-center gap-1 ${pwdChecks.upper ? 'text-emerald-600' : ''}`}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    O literă mare
+                  </div>
+                  <div className={`flex items-center gap-1 ${pwdChecks.lower ? 'text-emerald-600' : ''}`}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    O literă mică
+                  </div>
+                  <div className={`flex items-center gap-1 ${pwdChecks.digit ? 'text-emerald-600' : ''}`}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    O cifră
+                  </div>
+                  <div className={`flex items-center gap-1 ${pwdChecks.symbol ? 'text-emerald-600' : ''}`}>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
+                    Un simbol
+                  </div>
                 </div>
-                <div className={`flex items-center gap-1 ${pwdChecks.upper ? 'text-emerald-600' : ''}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  O literă mare
-                </div>
-                <div className={`flex items-center gap-1 ${pwdChecks.lower ? 'text-emerald-600' : ''}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  O literă mică
-                </div>
-                <div className={`flex items-center gap-1 ${pwdChecks.digit ? 'text-emerald-600' : ''}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  O cifră
-                </div>
-                <div className={`flex items-center gap-1 ${pwdChecks.symbol ? 'text-emerald-600' : ''}`}>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-current opacity-70" />
-                  Un simbol
-                </div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                🔒 Parola trebuie să aibă minim 8 caractere, o literă mare, una mică, o cifră și un simbol.
-              </p>
-            </>
-          )}
+                <p className="text-xs text-gray-500 mt-1">
+                  🔒 Parola trebuie să aibă minim 8 caractere, o literă mare, una mică, o cifră și un simbol.
+                </p>
+              </>
+            )}
 
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={onSavePassword}
-              disabled={savingPwd}
-              className={[
-                'inline-flex items-center justify-center rounded-xl px-5 py-3 text-white shadow-sm transition',
-                !savingPwd
-                  ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:opacity-95'
-                  : 'bg-gray-400 cursor-not-allowed',
-              ].join(' ')}
-            >
-              {savingPwd ? 'Se salvează…' : 'Salvează parola'}
-            </button>
-          </div>
-        </section>
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={onSavePassword}
+                disabled={savingPwd}
+                className={[
+                  'inline-flex items-center justify-center rounded-xl px-5 py-3 text-white shadow-sm transition',
+                  !savingPwd
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 hover:opacity-95'
+                    : 'bg-gray-400 cursor-not-allowed',
+                ].join(' ')}
+              >
+                {savingPwd ? 'Se salvează…' : 'Salvează parola'}
+              </button>
+            </div>
+          </section>
+        ) : (
+          <section>
+            <h2 className="text-base md:text-lg font-semibold mb-2">Parolă</h2>
+            <p className="text-sm text-gray-600">
+              Contul tău este conectat printr-un provider (ex. Google) și nu are parolă locală.
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );

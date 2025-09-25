@@ -9,8 +9,8 @@ const CURRENCIES = [
 ];
 
 const PRESETS = {
-  ron: [25, 50, 100],
-  eur: [5, 10, 20],
+  ron: [100, 250, 500],
+  eur: [100, 250, 500],
 };
 
 const MIN_BY_CURRENCY = { ron: 2, eur: 0.5 };
@@ -24,7 +24,7 @@ function parseToMinorUnits(amountStr) {
 
 export default function Donations() {
   const [currency, setCurrency] = useState('ron');
-  const [amount, setAmount] = useState('50');
+  const [amount, setAmount] = useState('250');
   const [donorName, setDonorName] = useState('');
   const [donorEmail, setDonorEmail] = useState('');
   const [message, setMessage] = useState('');
@@ -33,6 +33,10 @@ export default function Donations() {
 
   const presets = useMemo(() => PRESETS[currency] || [], [currency]);
   const minHuman = MIN_BY_CURRENCY[currency] ?? 0.5;
+
+  const currentMinor = parseToMinorUnits(amount);
+  const tooLow =
+    currentMinor !== null && currentMinor < Math.round(minHuman * 100);
 
   const onPreset = (v) => {
     setAmount(String(v));
@@ -175,7 +179,7 @@ export default function Donations() {
                             ].join(' ')}
                             onClick={() => {
                               setCurrency(c.value);
-                              setAmount(String(PRESETS[c.value][1])); // preset mediu
+                              setAmount(String(PRESETS[c.value][1])); // preset mediu (250)
                               setError('');
                             }}
                           >
@@ -220,16 +224,18 @@ export default function Donations() {
                       inputMode="decimal"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      placeholder={`ex: ${currency === 'ron' ? '50' : '10'}`}
+                      placeholder={`ex: ${currency === 'ron' ? '250' : '250'}`}
                       className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
                     />
                     <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md bg-gray-50 px-2 py-1 text-[11px] text-gray-600 ring-1 ring-gray-200">
                       {currency.toUpperCase()}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Minim <b>{minHuman} {currency.toUpperCase()}</b> (poți folosi virgulă pentru zecimale).
-                  </p>
+                  {tooLow && (
+                    <p className="text-xs text-gray-500">
+                      Minim <b>{minHuman} {currency.toUpperCase()}</b> (poți folosi virgulă pentru zecimale).
+                    </p>
+                  )}
                 </div>
 
                 {/* Donor details (compact, no overlap) */}

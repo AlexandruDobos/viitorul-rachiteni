@@ -8,12 +8,18 @@ const SendEmailForm = () => {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
 
+  // visual vs raw HTML view
+  const [viewMode, setViewMode] = useState("visual"); // "visual" | "html"
+  const [rawHtml, setRawHtml] = useState(""); // used in "html" mode textarea
+
   const cmd = (command) => {
+    if (viewMode !== "visual") return;
     document.execCommand(command, false, null);
     editorRef.current?.focus();
   };
 
   const insertTag = (tag) => {
+    if (viewMode !== "visual") return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
     const range = sel.getRangeAt(0);
@@ -41,6 +47,7 @@ const SendEmailForm = () => {
   };
 
   const handleKeyDown = (e) => {
+    if (viewMode !== "visual") return;
     if (e.key !== "Enter") return;
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
@@ -78,15 +85,39 @@ const SendEmailForm = () => {
     return div.innerHTML.trim();
   };
 
+  // toggle buttons
+  const switchToVisual = () => {
+    // push textarea content back into editor
+    const ed = editorRef.current;
+    if (ed) {
+      ed.innerHTML = rawHtml || "<p><br/></p>";
+    }
+    setViewMode("visual");
+  };
+  const switchToHtml = () => {
+    // pull editor content into textarea
+    const ed = editorRef.current;
+    setRawHtml(ed ? ed.innerHTML : "");
+    setViewMode("html");
+  };
+
+  const getCurrentHtml = () => {
+    if (viewMode === "html") return rawHtml || "";
+    return editorRef.current?.innerHTML?.trim() || "";
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg(""); setErr("");
-    let html = editorRef.current?.innerHTML?.trim() || "";
+
+    let html = getCurrentHtml();
     html = cleanHtml(html);
+
     if (!title.trim() || !html) {
       setErr("Te rog completează titlul și conținutul.");
       return;
     }
+
     setSending(true);
     try {
       const res = await fetch(`${BASE_URL}/email/broadcast`, {
@@ -100,6 +131,8 @@ const SendEmailForm = () => {
       setMsg(text || "Emailul a fost pus în coadă pentru trimitere.");
       setTitle("");
       if (editorRef.current) editorRef.current.innerHTML = "<p><br/></p>";
+      setRawHtml("");
+      setViewMode("visual");
     } catch (e2) {
       setErr(e2.message || "Eroare la trimitere.");
     } finally {
@@ -111,7 +144,7 @@ const SendEmailForm = () => {
     <div
       className="w-full max-w-none"
       style={{
-        // ✅ offset doar pe mobil (identic cu AddPlayerForm): evita overlap cu top bar fix
+        // mobile top offset to avoid fixed header overlap
         paddingTop:
           "clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))",
       }}
@@ -139,6 +172,7 @@ const SendEmailForm = () => {
         className="rounded-2xl border border-gray-100 bg-white p-5 md:p-6 shadow-sm"
       >
         <div className="grid gap-5">
+          {/* Title */}
           <div className="grid gap-1.5">
             <label className="text-sm font-medium text-gray-800">Titlu</label>
             <input
@@ -150,11 +184,40 @@ const SendEmailForm = () => {
             />
           </div>
 
-          <div className="grid gap-1.5">
+          {/* Editor header: mode toggle */}
+          <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-gray-800">Conținut</label>
+            <div className="inline-flex rounded-lg overflow-hidden ring-1 ring-gray-200">
+              <button
+                type="button"
+                onClick={switchToVisual}
+                className={[
+                  "px-3 py-1.5 text-sm",
+                  viewMode === "visual"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800 hover:bg-gray-50",
+                ].join(" ")}
+              >
+                Vizual
+              </button>
+              <button
+                type="button"
+                onClick={switchToHtml}
+                className={[
+                  "px-3 py-1.5 text-sm",
+                  viewMode === "html"
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-800 hover:bg-gray-50",
+                ].join(" ")}
+              >
+                Text
+              </button>
+            </div>
+          </div>
 
-            {/* Toolbar */}
-            <div className="flex flex-wrap gap-2 mb-2">
+          {/* Toolbar (only in visual) */}
+          {viewMode === "visual" && (
+            <div className="flex flex-wrap gap-2 -mt-1 mb-2">
               <button type="button" onClick={() => cmd("bold")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">B</button>
               <button type="button" onClick={() => cmd("italic")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"><i>I</i></button>
               <button type="button" onClick={() => cmd("underline")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"><u>U</u></button>
@@ -163,7 +226,10 @@ const SendEmailForm = () => {
               <button type="button" onClick={() => insertTag("h3")} className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">H3</button>
               <button type="button" onClick={() => insertTag("p")}  className="px-3 py-1.5 rounded-lg border hover:bg-gray-50">P</button>
             </div>
+          )}
 
+          {/* Editor body */}
+          {viewMode === "visual" ? (
             <div
               ref={editorRef}
               contentEditable
@@ -174,11 +240,20 @@ const SendEmailForm = () => {
               placeholder="Scrie mesajul aici..."
               suppressContentEditableWarning
             />
-            <p className="text-xs text-gray-500">
-              Poți formata textul: <strong>B</strong>, <em>I</em>, <u>U</u>, H1, H2, H3 și paragrafe.
-              <br />Enter = paragraf nou, Shift+Enter = linie nouă.
-            </p>
-          </div>
+          ) : (
+            <textarea
+              value={rawHtml}
+              onChange={(e) => setRawHtml(e.target.value)}
+              spellCheck={false}
+              className="min-h-[360px] w-full rounded-xl border border-gray-300 bg-white px-4 py-3 font-mono text-sm leading-6 shadow-sm outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600/25"
+              placeholder="<p>Scrie HTML-ul aici...</p>"
+            />
+          )}
+
+          <p className="text-xs text-gray-500">
+            Poți formata textul: <strong>B</strong>, <em>I</em>, <u>U</u>, H1, H2, H3 și paragrafe.
+            <br />Enter = paragraf nou, Shift+Enter = linie nouă.
+          </p>
 
           <div className="pt-2">
             <button

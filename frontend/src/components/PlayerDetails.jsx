@@ -1,5 +1,5 @@
 // components/PlayerDetails.jsx
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import JsonLd from './JsonLD';
@@ -24,7 +24,7 @@ const Badge = ({ children, className = '' }) => (
 
 const cellHL = (cond, base, active) => (cond ? `${base} ${active}` : base);
 
-// Nume afișabil, indiferent cum vine din API
+// Nume afișabil
 const getDisplayName = (p = {}) => {
   const joined = [p.firstName, p.lastName].filter(Boolean).join(' ').trim();
   return (
@@ -44,26 +44,84 @@ const PlayerDetails = () => {
   const [expandedMatchIds, setExpandedMatchIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ NOU: filtru sezon
+  const [seasonId, setSeasonId] = useState(''); // '' = toate
+  const [seasonOptions, setSeasonOptions] = useState([]); // [{id,label}]
+
+  const sortStatsDesc = useCallback((arr) => {
+    return [...arr].sort((a, b) => {
+      // backend oricum trimite DESC, dar păstrăm ca fallback
+      const dA = a.matchDate ? new Date(a.matchDate) : new Date(0);
+      const dB = b.matchDate ? new Date(b.matchDate) : new Date(0);
+      if (dB.getTime() !== dA.getTime()) return dB - dA;
+
+      const tA = a.matchKickoffTime || '00:00:00';
+      const tB = b.matchKickoffTime || '00:00:00';
+      return tB.localeCompare(tA);
+    });
+  }, []);
+
+  const fetchStats = useCallback(async (pid, sid) => {
+    const q = sid ? `?seasonId=${sid}` : '';
+    const res = await fetch(`${BASE_URL}/app/matches/player/${pid}/stats${q}`);
+    const data = await res.json();
+    const safe = Array.isArray(data) ? data : [];
+    return sortStatsDesc(safe);
+  }, [sortStatsDesc]);
+
   useEffect(() => {
-    const fetchData = async () => {
+    const load = async () => {
+      setLoading(true);
       try {
-        const [resPlayer, resStats] = await Promise.all([
-          fetch(`${BASE_URL}/app/players/${playerId}`),
-          fetch(`${BASE_URL}/app/matches/player/${playerId}/stats`),
-        ]);
+        // 1) player
+        const resPlayer = await fetch(`${BASE_URL}/app/players/${playerId}`);
         const dataPlayer = await resPlayer.json();
-        const dataStats = await resStats.json();
         setPlayer(dataPlayer);
-        setStats(Array.isArray(dataStats) ? dataStats : []);
+
+        // 2) stats ALL → pentru totaluri + pentru a deduce opțiunile de sezon
+        const allStats = await fetchStats(playerId, '');
+        setStats(allStats);
+
+        // construim opțiunile de sezon din răspuns (distinct după seasonId/label)
+        const map = new Map();
+        allStats.forEach(s => {
+          if (s.seasonId && s.seasonLabel) {
+            map.set(s.seasonId, s.seasonLabel);
+          }
+        });
+        const opts = Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+        // sortăm desc după label dacă vrei, sau lăsăm ordinea naturală
+        setSeasonOptions(opts);
       } catch (e) {
         console.error('Eroare încărcare player/stats', e);
+        setStats([]);
+        setSeasonOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [playerId, fetchStats]);
+
+  // când se schimbă sezonul → re-fetch doar pentru acel sezon
+  useEffect(() => {
+    const refetch = async () => {
+      setLoading(true);
+      try {
+        const filtered = await fetchStats(playerId, seasonId || '');
+        setStats(filtered);
+        setExpandedMatchIds([]); // mic reset UX
+      } catch (e) {
+        console.error('Eroare refetch pe sezon', e);
         setStats([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, [playerId]);
+    // ignoră prima încărcare (când player/stats ALL au fost deja luate)
+    if (player) refetch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seasonId]);
 
   const toggleExpand = (matchId) => {
     setExpandedMatchIds((prev) =>
@@ -158,6 +216,21 @@ const PlayerDetails = () => {
               <Badge className="bg-yellow-100 text-yellow-800">Galbene: {totals.y}</Badge>
               <Badge className="bg-red-100 text-red-800">Roșii: {totals.r}</Badge>
             </div>
+
+            {/* ✅ Selector Sezon */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sezon</label>
+              <select
+                value={seasonId}
+                onChange={(e) => setSeasonId(e.target.value)}
+                className="w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              >
+                <option value="">Toate sezoanele</option>
+                {seasonOptions.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.seasonLabel || opt.label || `Sezon #${opt.id}`}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -189,6 +262,13 @@ const PlayerDetails = () => {
                         <Link to={`/matches/${stat.matchId}`} className="text-blue-600 hover:underline">
                           {stat.matchName || `Meci #${stat.matchId}`}
                         </Link>
+                        {/* mic meta sub nume */}
+                        {(stat.matchDate || stat.matchKickoffTime) && (
+                          <div className="text-xs text-gray-500">
+                            {stat.matchDate ?? ''}{stat.matchKickoffTime ? ` • ${stat.matchKickoffTime}` : ''}
+                            {stat.seasonLabel ? ` • ${stat.seasonLabel}` : ''}
+                          </div>
+                        )}
                       </td>
                       <td
                         className={cellHL(
@@ -241,6 +321,12 @@ const PlayerDetails = () => {
                     onClick={() => toggleExpand(stat.matchId)}
                   >
                     {stat.matchName || `Meci #${stat.matchId}`}
+                    {(stat.matchDate || stat.matchKickoffTime) && (
+                      <div className="text-xs text-gray-500 font-normal">
+                        {stat.matchDate ?? ''}{stat.matchKickoffTime ? ` • ${stat.matchKickoffTime}` : ''}
+                        {stat.seasonLabel ? ` • ${stat.seasonLabel}` : ''}
+                      </div>
+                    )}
                   </button>
 
                   {expandedMatchIds.includes(stat.matchId) && (

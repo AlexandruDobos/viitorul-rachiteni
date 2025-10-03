@@ -5,6 +5,9 @@ import com.viitorul.app.entity.MatchPlayerStat;
 import com.viitorul.app.entity.Player;
 import lombok.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,6 +26,11 @@ public class MatchPlayerStatDTO {
     private String playerProfileImageUrl;
     private Boolean playerActive;
 
+    private LocalDate matchDate;
+    private LocalTime matchKickoffTime;
+    private Long seasonId;
+    private String seasonLabel;
+
     public static MatchPlayerStatDTO toDto(MatchPlayerStat stat) {
         Match match = stat.getMatch();
         Player p = stat.getPlayer();
@@ -40,8 +48,13 @@ public class MatchPlayerStatDTO {
                 .shirtNumber(p.getShirtNumber())
                 .playerProfileImageUrl(p.getProfileImageUrl())
                 .playerActive(Boolean.TRUE.equals(p.getIsActive()))
+                .matchDate(match.getDate())
+                .matchKickoffTime(match.getKickoffTime())
+                .seasonId(match.getSeason() != null ? match.getSeason().getId() : null)
+                .seasonLabel(match.getSeason() != null ? match.getSeason().getLabel() : null)
                 .build();
     }
+
     public MatchPlayerStat toEntity(Match match, Player player) {
         return MatchPlayerStat.builder()
                 .match(match)

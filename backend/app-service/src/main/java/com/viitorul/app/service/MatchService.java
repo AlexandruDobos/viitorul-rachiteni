@@ -86,6 +86,12 @@ public class MatchService {
         return MatchDTO.toDto(match);
     }
 
+    public List<MatchPlayerStatDTO> getStatsForPlayer(Long playerId, Long seasonId) {
+        return statRepository.findForPlayerFilteredAndSorted(playerId, seasonId).stream()
+                .map(MatchPlayerStatDTO::toDto)
+                .toList();
+    }
+
     public MatchDTO updateMatch(Long id, MatchDTO dto) {
         Match match = matchRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Match not found"));
@@ -161,19 +167,12 @@ public class MatchService {
     }
 
 
-
-    /** Rezultate finalizate, ordonate DESC după dată/oră. */
     public List<MatchDTO> getResultsDesc() {
         return matchRepository.findFinishedMatchesDesc().stream()
                 .map(MatchDTO::toDto)
                 .toList();
     }
 
-    public List<MatchPlayerStatDTO> getStatsForPlayer(Long playerId) {
-        return statRepository.findByPlayer_Id(playerId).stream()
-                .map(MatchPlayerStatDTO::toDto)
-                .toList();
-    }
 
     public List<MatchPlayerStatDTO> getStatsForMatch(Long matchId) {
         return statRepository.findByMatch_Id(matchId).stream()

@@ -50,9 +50,13 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getMatchById(id));
     }
 
+    /** ✅ NOU: filtrare opțională după sezon + sortare DESC făcută în service/repo */
     @GetMapping("/player/{id}/stats")
-    public ResponseEntity<List<MatchPlayerStatDTO>> getStatsForPlayer(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(matchService.getStatsForPlayer(id));
+    public ResponseEntity<List<MatchPlayerStatDTO>> getStatsForPlayer(
+            @PathVariable("id") Long id,
+            @RequestParam(value = "seasonId", required = false) Long seasonId
+    ) {
+        return ResponseEntity.ok(matchService.getStatsForPlayer(id, seasonId));
     }
 
     @GetMapping("/player-stats/{matchId}")

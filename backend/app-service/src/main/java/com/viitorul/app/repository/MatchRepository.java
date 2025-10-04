@@ -19,7 +19,10 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """)
     List<Match> findUpcomingMatches();
 
-    // Paginare + search + filtrare sezon BY ID sau BY LABEL (ambele opționale)
+    /**
+     * Paginare + search fără diacritice + filtrare sezon (ID sau LABEL), ambele opționale.
+     * Necesită extensia Postgres `unaccent`.
+     */
     @Query(value = """
         SELECT m FROM Match m
         LEFT JOIN m.season s
@@ -27,14 +30,16 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
           AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND LOWER(s.label) = LOWER(:seasonLabel)))
+          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND
+               LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(m.awayTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.location, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.notes, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.competition.name, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+                LOWER(FUNCTION('unaccent', m.homeTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', m.awayTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.location,''))) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.notes,'')))    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name,'')))
+                    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%')))
               )
         ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
         """,
@@ -45,14 +50,16 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
           AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND LOWER(s.label) = LOWER(:seasonLabel)))
+          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND
+               LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(m.awayTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.location, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.notes, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
-                LOWER(COALESCE(m.competition.name, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+                LOWER(FUNCTION('unaccent', m.homeTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', m.awayTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.location,''))) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.notes,'')))    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name,'')))
+                    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%')))
               )
         """)
     Page<Match> searchFinishedMatches(@Param("q") String q,
@@ -60,7 +67,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
                                       @Param("seasonLabel") String seasonLabel,
                                       Pageable pageable);
 
-    // pentru selectorul de sezoane (doar etichetele)
     @Query("""
         SELECT DISTINCT s.label
         FROM Match m

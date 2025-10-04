@@ -170,8 +170,10 @@ public class MatchService {
 
 
     public Page<MatchDTO> getFinishedMatchesPaged(String q, Long seasonId, String seasonLabel, Pageable pageable) {
-        return matchRepository.searchFinishedMatches(q, seasonId, seasonLabel, pageable).map(MatchDTO::toDto);
+        return matchRepository.searchFinishedMatches(q, seasonId, seasonLabel, pageable)
+                .map(MatchDTO::toDto);
     }
+
 
     public List<String> getFinishedSeasons() {
         return matchRepository.findDistinctSeasonLabelsForFinished();

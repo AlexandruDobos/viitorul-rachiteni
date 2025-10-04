@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-// src/pages/Results.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { useNavigate } from 'react-router-dom';
@@ -30,15 +28,14 @@ const Results = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const [seasons, setSeasons] = useState([]);          // labels + "Toate"
-  const [selectedSeason, setSelectedSeason] = useState(TOATE); // implicit Toate
+  const [seasons, setSeasons] = useState([]);           // [Toate, ...labels]
+  const [selectedSeason, setSelectedSeason] = useState(null); // implicit: ultimul sezon (nu Toate)
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
   const [size] = useState(10);
 
   const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
   const hasMore = page < totalPages - 1;
 
@@ -73,26 +70,31 @@ const Results = () => {
     return 'draw';
   };
 
-  // 1) Luăm sezoanele și punem "Toate" PRIMUL, vizibil fără scroll orizontal
+  // 1) Luăm sezoanele. Punem "Toate" PRIMUL, dar selectăm implicit ULTIMUL sezon din listă (cel mai nou).
   useEffect(() => {
     const fetchSeasons = async () => {
       try {
         const res = await fetch(`${BASE_URL}/app/matches/results/seasons`, { credentials: 'include' });
         const arr = await res.json();
-        const list = Array.isArray(arr) ? arr : [];
-        const withAll = [TOATE, ...list];     // <<< Toate primul
+        const labels = Array.isArray(arr) ? arr : [];
+        const withAll = [TOATE, ...labels];   // Toate vizibil mereu
         setSeasons(withAll);
-        // implicit păstrăm "Toate"; dacă vrei alt default, schimbă aici
+
+        // implicit: ultimul sezon (arr[0] este deja cel mai recent din repo)
+        if (!selectedSeason) {
+          setSelectedSeason(labels[0] ?? TOATE);
+        }
       } catch (e) {
         console.error(e);
         setSeasons([TOATE]);
-        setSelectedSeason(TOATE);
+        if (!selectedSeason) setSelectedSeason(TOATE);
       }
     };
     fetchSeasons();
-  }, []); // eslint-disable-line
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // 2) Fetch paginat – dacă e "Toate", nu trimitem seasonLabel (interoghează toate)
+  // 2) Fetch paginat – dacă e "Toate", nu trimitem seasonLabel/seasonId => aduce toate sezoanele
   const fetchPage = useCallback(async (pageToLoad, append = false) => {
     setLoading(true);
     try {
@@ -104,26 +106,25 @@ const Results = () => {
         params.set('seasonLabel', selectedSeason);
       }
 
-      const url = `${BASE_URL}/app/matches/results?${params.toString()}`;
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(`${BASE_URL}/app/matches/results?${params.toString()}`, { credentials: 'include' });
       const pageJson = await res.json();
 
-      const pageContent = Array.isArray(pageJson?.content) ? pageJson.content : [];
+      const content = Array.isArray(pageJson?.content) ? pageJson.content : [];
       setTotalPages(pageJson?.totalPages ?? 0);
-      setTotalElements(pageJson?.totalElements ?? 0);
-      setItems((prev) => (append ? [...prev, ...pageContent] : pageContent));
+      setItems((prev) => (append ? [...prev, ...content] : content));
     } catch (err) {
       console.error('Eroare la preluarea meciurilor:', err);
       if (!append) setItems([]);
       setTotalPages(0);
-      setTotalElements(0);
     } finally {
       setLoading(false);
       setInitialLoading(false);
     }
   }, [q, selectedSeason, size]);
 
+  // Reîncarcă la schimbare sezon / q
   useEffect(() => {
+    if (selectedSeason === null) return; // așteptăm să fie setat din fetchSeasons
     setPage(0);
     fetchPage(0, false);
   }, [q, selectedSeason, fetchPage]);
@@ -164,7 +165,7 @@ const Results = () => {
         {/* Sezon */}
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-2">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-1">Sezon</div>
-          <div className="flex flex-wrap gap-2 px-1 py-1"> {/* <<< wrap, nu overflow-x */}
+          <div className="flex flex-wrap gap-2 px-1 py-1">
             {seasons.map((s) => {
               const active = s === selectedSeason;
               return (
@@ -185,7 +186,7 @@ const Results = () => {
           </div>
         </div>
 
-        {/* Search (diacritics-insensitive pe server) */}
+        {/* Search */}
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-3">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-2">Căutare</div>
           <input

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -25,16 +26,19 @@ public class AnnouncementService {
 
     private final AnnouncementRepository announcementRepository;
     private final RabbitTemplate rabbitTemplate;
+
+    @Transactional
     public AnnouncementDTO createAnnouncement(AnnouncementDTO dto) {
         Announcement entity = AnnouncementDTO.toEntity(dto);
 
         if (entity.getPublishedAt() == null) {
             entity.setPublishedAt(OffsetDateTime.now(ZoneOffset.UTC));
         }
-
+            entity.setSentToSubscribers(false);
         return AnnouncementDTO.fromEntity(announcementRepository.save(entity));
     }
 
+    @Transactional(readOnly = true)
     public List<AnnouncementDTO> getAllAnnouncements() {
         return announcementRepository.findAll()
                 .stream()
@@ -42,12 +46,14 @@ public class AnnouncementService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public Optional<AnnouncementDTO> getAnnouncementById(Long id) {
         return announcementRepository.findById(id)
                 .map(AnnouncementDTO::fromEntity);
     }
 
     /** Paginare publică + căutare pe titlu, dar doar știri publicate până ACUM */
+    @Transactional(readOnly = true)
     public Page<AnnouncementDTO> getAnnouncementsPage(int page, int size, String q) {
         Pageable pageable = PageRequest.of(page, size);
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
@@ -62,21 +68,41 @@ public class AnnouncementService {
     }
 
     // compatibilitate (fără q)
+    @Transactional(readOnly = true)
     public Page<AnnouncementDTO> getAnnouncementsPage(int page, int size) {
         return getAnnouncementsPage(page, size, "");
     }
 
+    @Transactional
     public Optional<AnnouncementDTO> updateAnnouncement(Long id, AnnouncementDTO updatedDto) {
         return announcementRepository.findById(id).map(existing -> {
-            Announcement updated = AnnouncementDTO.toEntity(updatedDto);
-            updated.setId(id);
-            if (updated.getPublishedAt() == null) {
-                updated.setPublishedAt(existing.getPublishedAt());
+            // actualizăm DOAR câmpurile editabile din existing
+            if (updatedDto.getTitle() != null) {
+                existing.setTitle(updatedDto.getTitle());
             }
-            return AnnouncementDTO.fromEntity(announcementRepository.save(updated));
+            if (updatedDto.getCoverUrl() != null) {
+                existing.setCoverUrl(updatedDto.getCoverUrl());
+            }
+            // contentText / contentHtml — setează în funcție de cum le folosești
+            if (updatedDto.getContentText() != null) {
+                existing.setContentText(updatedDto.getContentText());
+            }
+            if (updatedDto.getContentHtml() != null) {
+                existing.setContentHtml(updatedDto.getContentHtml());
+            }
+
+            // publishedAt — dacă lipsește în DTO, îl lăsăm neschimbat
+            if (updatedDto.getPublishedAt() != null) {
+                existing.setPublishedAt(updatedDto.getPublishedAt());
+            }
+
+
+            Announcement saved = announcementRepository.save(existing);
+            return AnnouncementDTO.fromEntity(saved);
         });
     }
 
+    @Transactional
     public boolean deleteAnnouncement(Long id) {
         if (announcementRepository.existsById(id)) {
             announcementRepository.deleteById(id);
@@ -86,6 +112,7 @@ public class AnnouncementService {
     }
 
     @Scheduled(fixedDelay = 60_000L, initialDelay = 10_000L)
+    @Transactional
     public void scanAndDispatchPublishedAnnouncements() {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         List<Announcement> ready = announcementRepository
@@ -129,7 +156,6 @@ public class AnnouncementService {
     }
 
     private String stripHtml(String html) {
-        // simplu & suficient pentru newsletter
         return html.replaceAll("<[^>]*>", " ");
     }
 
@@ -145,7 +171,6 @@ public class AnnouncementService {
 
     private String buildPublicUrl(Long id, String title) {
         String slug = slugify(title == null ? "" : title);
-        // ajustează origin-ul dacă vrei din config
         return String.format("https://%s/stiri/%d/%s", "viitorulrachiteni.ro", id, slug);
     }
 }

@@ -20,46 +20,49 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     List<Match> findUpcomingMatches();
 
     @Query(value = """
-        SELECT m FROM Match m
-        LEFT JOIN m.season s
-        WHERE m.active = true
-          AND m.homeGoals IS NOT NULL
-          AND m.awayGoals IS NOT NULL
-          AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND
-               LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
-          AND (
-                :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.location, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))    LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
-              )
-        ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
-        """,
+    SELECT m FROM Match m
+    LEFT JOIN m.season s
+    WHERE m.active = true
+      AND m.homeGoals IS NOT NULL
+      AND m.awayGoals IS NOT NULL
+      AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
+      AND (:seasonLabel IS NULL OR
+           LOWER(FUNCTION('unaccent', COALESCE(s.label,''))) = LOWER(FUNCTION('unaccent', :seasonLabel)))
+      AND (
+            :q IS NULL OR :q = '' OR
+            LOWER(FUNCTION('unaccent', m.homeTeam.name))           LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', m.awayTeam.name))           LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.location, '')))  LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))     LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, '')))
+                LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
+          )
+    ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
+    """,
             countQuery = """
-        SELECT COUNT(m) FROM Match m
-        LEFT JOIN m.season s
-        WHERE m.active = true
-          AND m.homeGoals IS NOT NULL
-          AND m.awayGoals IS NOT NULL
-          AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND
-               LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
-          AND (
-                :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.location, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))    LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
-              )
-        """)
+    SELECT COUNT(m) FROM Match m
+    LEFT JOIN m.season s
+    WHERE m.active = true
+      AND m.homeGoals IS NOT NULL
+      AND m.awayGoals IS NOT NULL
+      AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
+      AND (:seasonLabel IS NULL OR
+           LOWER(FUNCTION('unaccent', COALESCE(s.label,''))) = LOWER(FUNCTION('unaccent', :seasonLabel)))
+      AND (
+            :q IS NULL OR :q = '' OR
+            LOWER(FUNCTION('unaccent', m.homeTeam.name))           LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', m.awayTeam.name))           LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.location, '')))  LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))     LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+            LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, '')))
+                LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
+          )
+    """)
     Page<Match> searchFinishedMatches(@Param("q") String q,
                                       @Param("seasonId") Long seasonId,
                                       @Param("seasonLabel") String seasonLabel,
                                       Pageable pageable);
+
 
     @Query("""
         SELECT DISTINCT s.label

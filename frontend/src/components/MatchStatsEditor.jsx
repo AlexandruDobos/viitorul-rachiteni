@@ -25,6 +25,9 @@ const MatchStatsEditor = ({ matchId }) => {
   // 🔎 search state
   const [query, setQuery] = useState('');
 
+  // ✅ feedback banner state
+  const [feedback, setFeedback] = useState(null); // { type: 'success' | 'error', text: string }
+
   useEffect(() => {
     fetch(`${BASE_URL}/app/players`)
       .then(res => res.json())
@@ -65,10 +68,23 @@ const MatchStatsEditor = ({ matchId }) => {
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error('Fail save');
+
+      // success feedback
+      const p = players.find(pl => pl.id === playerId);
+      setFeedback({
+        type: 'success',
+        text: `Statistici salvate${p?.name ? ` pentru ${p.name}` : ''}.`,
+      });
       window?.navigator?.vibrate?.(40);
     } catch (err) {
       console.error(err);
-      alert('Eroare la salvare!');
+      setFeedback({
+        type: 'error',
+        text: 'Eroare la salvare. Încearcă din nou.',
+      });
+    } finally {
+      // auto-hide after 3s
+      setTimeout(() => setFeedback(null), 3000);
     }
   };
 
@@ -84,6 +100,21 @@ const MatchStatsEditor = ({ matchId }) => {
   return (
     <div className="bg-gray-50 rounded-xl p-4 my-6 border">
       <h3 className="text-base md:text-lg font-semibold mb-4">Statistici jucători</h3>
+
+      {/* ✅ feedback banner */}
+      {feedback && (
+        <div
+          className={`mb-4 rounded-lg px-3 py-2 text-sm ${
+            feedback.type === 'success'
+              ? 'bg-green-50 text-green-800 border border-green-200'
+              : 'bg-red-50 text-red-800 border border-red-200'
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {feedback.text}
+        </div>
+      )}
 
       {/* 🔎 Search input */}
       <div className="mb-4">

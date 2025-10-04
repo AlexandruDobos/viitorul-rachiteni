@@ -25,24 +25,22 @@ const OUTCOME_STYLES = {
 const Results = () => {
   const navigate = useNavigate();
 
-  // --- state ---
-  const [items, setItems] = useState([]);       // acumulăm paginat
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
   const [seasons, setSeasons] = useState([]);
-  const [selectedSeason, setSelectedSeason] = useState(null);
+  const [selectedSeason, setSelectedSeason] = useState(null); // e un LABEL: "2025/2026"
 
-  const [q, setQ] = useState('');               // search input control
+  const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
-  const [size] = useState(10);                  // poți modifica 10/12/20 etc.
+  const [size] = useState(10);
 
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
   const hasMore = page < totalPages - 1;
 
-  // --- helpers ---
   const formatDate = (d) => {
     if (!d) return '-';
     const date = new Date(d);
@@ -57,7 +55,6 @@ const Results = () => {
 
   const formatTime = (t) => (t ? String(t).slice(0, 5) : '-');
 
-  // determină outcome + stil
   const resultKey = (match) => {
     const home = (match.homeTeamName || '').toLowerCase();
     const away = (match.awayTeamName || '').toLowerCase();
@@ -75,17 +72,16 @@ const Results = () => {
     return 'draw';
   };
 
-  // --- fetch seasons (o singură dată) ---
+  // Sezoane (labels)
   useEffect(() => {
     const fetchSeasons = async () => {
       try {
         const res = await fetch(`${BASE_URL}/app/matches/results/seasons`, { credentials: 'include' });
         if (!res.ok) throw new Error('Seasons fetch failed');
-        const arr = await res.json(); // ex: ["2024-2025", "2023-2024", ...]
-        setSeasons(Array.isArray(arr) ? arr : []);
-        if (Array.isArray(arr) && arr.length > 0) {
-          setSelectedSeason((prev) => prev ?? arr[0]);
-        }
+        const arr = await res.json();
+        const list = Array.isArray(arr) ? arr : [];
+        setSeasons(list);
+        if (list.length > 0) setSelectedSeason((prev) => prev ?? list[0]);
       } catch (e) {
         console.error(e);
         setSeasons([]);
@@ -95,7 +91,7 @@ const Results = () => {
     fetchSeasons();
   }, []);
 
-  // --- fetch page ---
+  // Fetch paginat – acum trimite și seasonLabel
   const fetchPage = useCallback(async (pageToLoad, append = false) => {
     setLoading(true);
     try {
@@ -104,14 +100,8 @@ const Results = () => {
       params.set('size', String(size));
       if (q && q.trim()) params.set('q', q.trim());
       if (selectedSeason && selectedSeason !== 'ALL') {
-        // dacă vrei filtrare strict pe seasonId, poți converti label->id; aici filtrăm pe etichetă în backend?
-        // Noi am implementat filtrare pe seasonId în backend, dar păstrăm selectorul pe label pentru UX.
-        // Simplu: păstrăm labelul doar pentru afișare; dacă vrei strict după sezon,
-        // poți înlocui selectorul cu un dropdown de sezoane (ID+label).
+        params.set('seasonLabel', selectedSeason); // <-- important
       }
-      // CA SĂ MEARGĂ FILTRAREA PE SEZON: dacă ai și ID-urile în UI, setează params.set('seasonId', id).
-      // Alternativ, dacă deocamdată ai doar label în UI, poți adăuga în backend un endpoint care dă (id,label)
-      // și să salvezi în state atât id cât și label. Pentru exemplu, lăsăm fără seasonId.
 
       const url = `${BASE_URL}/app/matches/results?${params.toString()}`;
       const res = await fetch(url, { credentials: 'include' });
@@ -133,7 +123,6 @@ const Results = () => {
     }
   }, [q, selectedSeason, size]);
 
-  // --- inițial + când se schimbă sezonul sau query-ul, resetăm la pagina 0 ---
   useEffect(() => {
     setPage(0);
     fetchPage(0, false);

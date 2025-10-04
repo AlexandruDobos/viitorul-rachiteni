@@ -75,7 +75,7 @@ public class MatchService {
         } else {
             p = matchRepository.findAllByActiveTrueOrderByDateDesc(pageable);
         }
-        return p.map(MatchDTO::fromEntity); // adaptează la mapperul tău
+        return p.map(MatchDTO::toDto); // adaptează la mapperul tău
     }
 
     public List<MatchDTO> getUpcomingMatches() {

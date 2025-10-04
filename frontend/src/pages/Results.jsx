@@ -1,6 +1,4 @@
-/* eslint-disable no-unused-vars */
-// src/pages/Results.jsx
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,13 +12,14 @@ const Badge = ({ children, className = '' }) => (
 const seasonLabelOf = (m) =>
   m?.seasonLabel ?? m?.season?.label ?? (typeof m?.season === 'string' ? m.season : null);
 
-// culori statice (fără animații)
 const OUTCOME_STYLES = {
   win:   { container: 'bg-green-50 border-green-600',   button: 'bg-green-600 hover:bg-green-700 text-white' },
   draw:  { container: 'bg-yellow-50 border-yellow-600', button: 'bg-yellow-600 hover:bg-yellow-700 text-black' },
   lose:  { container: 'bg-red-50 border-red-600',       button: 'bg-red-600 hover:bg-red-700 text-white' },
   neutral: { container: 'bg-gray-50 border-gray-500',   button: 'bg-gray-600 hover:bg-gray-700 text-white' },
 };
+
+const TOATE = 'Toate';
 
 const Results = () => {
   const navigate = useNavigate();
@@ -29,8 +28,8 @@ const Results = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const [seasons, setSeasons] = useState([]);
-  const [selectedSeason, setSelectedSeason] = useState(null); // e un LABEL: "2025/2026"
+  const [seasons, setSeasons] = useState([]);          // doar label-uri
+  const [selectedSeason, setSelectedSeason] = useState(null); // label sau 'Toate'
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
@@ -72,26 +71,27 @@ const Results = () => {
     return 'draw';
   };
 
-  // Sezoane (labels)
+  // 1) Luăm sezoanele și adăugăm "Toate" la capăt
   useEffect(() => {
     const fetchSeasons = async () => {
       try {
         const res = await fetch(`${BASE_URL}/app/matches/results/seasons`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Seasons fetch failed');
         const arr = await res.json();
         const list = Array.isArray(arr) ? arr : [];
-        setSeasons(list);
-        if (list.length > 0) setSelectedSeason((prev) => prev ?? list[0]);
+        const withAll = [...list, TOATE];      // "Toate" la capăt
+        setSeasons(withAll);
+        // implicit rămâne primul sezon real selectat (dacă vrei implicit "Toate", pune setSelectedSeason(TOATE))
+        if (!selectedSeason) setSelectedSeason(list[0] ?? TOATE);
       } catch (e) {
         console.error(e);
-        setSeasons([]);
-        setSelectedSeason(null);
+        setSeasons([TOATE]);
+        setSelectedSeason(TOATE);
       }
     };
     fetchSeasons();
-  }, []);
+  }, []); // eslint-disable-line
 
-  // Fetch paginat – acum trimite și seasonLabel
+  // 2) Fetch paginat – dacă e "Toate", nu trimitem seasonLabel
   const fetchPage = useCallback(async (pageToLoad, append = false) => {
     setLoading(true);
     try {
@@ -99,8 +99,8 @@ const Results = () => {
       params.set('page', String(pageToLoad));
       params.set('size', String(size));
       if (q && q.trim()) params.set('q', q.trim());
-      if (selectedSeason && selectedSeason !== 'ALL') {
-        params.set('seasonLabel', selectedSeason); // <-- important
+      if (selectedSeason && selectedSeason !== TOATE) {
+        params.set('seasonLabel', selectedSeason);
       }
 
       const url = `${BASE_URL}/app/matches/results?${params.toString()}`;
@@ -110,7 +110,6 @@ const Results = () => {
       const pageContent = Array.isArray(pageJson?.content) ? pageJson.content : [];
       setTotalPages(pageJson?.totalPages ?? 0);
       setTotalElements(pageJson?.totalElements ?? 0);
-
       setItems((prev) => (append ? [...prev, ...pageContent] : pageContent));
     } catch (err) {
       console.error('Eroare la preluarea meciurilor:', err);
@@ -165,33 +164,27 @@ const Results = () => {
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-2">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-1">Sezon</div>
           <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
-            {seasons.length > 0 ? (
-              seasons.map((s) => {
-                const active = s === selectedSeason;
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setSelectedSeason(s)}
-                    className={[
-                      'whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition',
-                      active
-                        ? 'text-white shadow-sm ring-1 ring-indigo-400/50 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    ].join(' ')}
-                  >
-                    {s}
-                  </button>
-                );
-              })
-            ) : (
-              <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-500 px-3.5 py-1.5 text-sm">
-                Indisponibil
-              </span>
-            )}
+            {seasons.map((s) => {
+              const active = s === selectedSeason;
+              return (
+                <button
+                  key={s}
+                  onClick={() => setSelectedSeason(s)}
+                  className={[
+                    'whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm transition',
+                    active
+                      ? 'text-white shadow-sm ring-1 ring-indigo-400/50 bg-gradient-to-r from-blue-600 via-indigo-500 to-sky-500'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ].join(' ')}
+                >
+                  {s}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search (server-side diacritics-insensitive) */}
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-3">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-2">Căutare</div>
           <input
@@ -241,12 +234,10 @@ const Results = () => {
                   className={`relative rounded-3xl shadow-md overflow-hidden border ${styles.container}`}
                 >
                   <div className="relative">
-                    {/* Titlu */}
                     <div className="px-5 pt-6 text-center text-base sm:text-lg md:text-xl font-bold">
                       {homeName} <span className="text-gray-700">vs</span> {awayName}
                     </div>
 
-                    {/* Logo-uri + scor */}
                     <div className="px-5 py-6 flex items-center justify-center gap-6 sm:gap-12">
                       <img src={homeLogo} alt={homeName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
                       <div className="text-3xl sm:text-5xl font-extrabold min-w-[60px] text-center">
@@ -255,19 +246,16 @@ const Results = () => {
                       <img src={awayLogo} alt={awayName} className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow" />
                     </div>
 
-                    {/* Badges */}
                     <div className="px-5 pb-2 flex justify-center gap-2 flex-wrap">
                       {compName && <Badge className="bg-gray-200/60 text-xs sm:text-sm">Competiție: {compName}</Badge>}
                       {seasonLabel && <Badge className="bg-gray-200/60 text-xs sm:text-sm">Sezon: {seasonLabel}</Badge>}
                     </div>
 
-                    {/* Dată / locație */}
                     <div className="px-5 pb-4 text-xs sm:text-sm text-center text-gray-700">
                       <div>{formatDate(match.date)} | Ora: {formatTime(match.kickoffTime)}</div>
                       {match.location && <div className="mt-1">📍 {match.location}</div>}
                     </div>
 
-                    {/* CTA */}
                     <div className="px-5 pb-6">
                       <button
                         onClick={() => navigate(`/matches/${match.id}`)}
@@ -282,7 +270,6 @@ const Results = () => {
             })}
           </div>
 
-          {/* Load more */}
           <div className="max-w-4xl mx-auto my-8 flex justify-center">
             {hasMore ? (
               <button

@@ -68,6 +68,16 @@ public class MatchService {
         return MatchDTO.toDto(matchRepository.save(match));
     }
 
+    public Page<MatchDTO> getMatchesPaged(String q, Pageable pageable) {
+        Page<Match> p;
+        if (q != null && !q.trim().isEmpty()) {
+            p = matchRepository.searchAllByTeamOrLocation(q.trim(), pageable);
+        } else {
+            p = matchRepository.findAllByActiveTrueOrderByDateDesc(pageable);
+        }
+        return p.map(MatchDTO::fromEntity); // adaptează la mapperul tău
+    }
+
     public List<MatchDTO> getUpcomingMatches() {
         return matchRepository.findUpcomingMatches().stream()
                 .map(MatchDTO::toDto)

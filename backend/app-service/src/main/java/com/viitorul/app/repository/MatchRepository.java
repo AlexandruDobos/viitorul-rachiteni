@@ -86,4 +86,21 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         ORDER BY s.label DESC
         """)
     List<String> findDistinctSeasonLabelsForFinished();
+
+    Page<Match> findAllByActiveTrueOrderByDateDesc(Pageable pageable);
+
+    @Query("""
+       SELECT m FROM Match m
+       LEFT JOIN m.homeTeam ht
+       LEFT JOIN m.awayTeam at
+       WHERE m.active = true
+         AND (
+             LOWER(ht.name) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(at.name) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(m.location, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+          OR LOWER(COALESCE(m.notes, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+         )
+       ORDER BY m.date DESC, m.kickoffTime DESC
+       """)
+    Page<Match> searchAllByTeamOrLocation(@Param("q") String q, Pageable pageable);
 }

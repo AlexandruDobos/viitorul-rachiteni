@@ -32,6 +32,16 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getAllMatches());
     }
 
+    @GetMapping("/page")
+    public ResponseEntity<Page<MatchDTO>> getMatchesPaged(
+            @RequestParam(name = "q", required = false, defaultValue = "") String q,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(matchService.getMatchesPaged(q, pageable));
+    }
+
     /** NOU: un singur meci – următorul programat */
     @GetMapping("/next")
     public ResponseEntity<MatchDTO> getNextMatch() {

@@ -5,6 +5,8 @@ import com.viitorul.app.dto.MatchPlayerStatDTO;
 import com.viitorul.app.entity.*;
 import com.viitorul.app.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -167,10 +169,14 @@ public class MatchService {
     }
 
 
-    public List<MatchDTO> getResultsDesc() {
-        return matchRepository.findFinishedMatchesDesc().stream()
-                .map(MatchDTO::toDto)
-                .toList();
+    public Page<MatchDTO> getFinishedMatchesPaged(String q, Long seasonId, Pageable pageable) {
+        return matchRepository.searchFinishedMatches(q, seasonId, pageable)
+                .map(MatchDTO::toDto);
+    }
+
+    /** NOU: lista distinctă de etichete de sezoane pentru rezultate */
+    public List<String> getFinishedSeasons() {
+        return matchRepository.findDistinctSeasonLabelsForFinished();
     }
 
 

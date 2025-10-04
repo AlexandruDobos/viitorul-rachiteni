@@ -1,8 +1,10 @@
 package com.viitorul.app.repository;
 
 import com.viitorul.app.entity.Match;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -17,12 +19,52 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """)
     List<Match> findUpcomingMatches();
 
-    @Query("""
+    // --- nou: rezultate cu paginare + search + sezon (opțional) ---
+    @Query(value = """
         SELECT m FROM Match m
         WHERE m.active = true
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
+          AND (:seasonId IS NULL OR (m.season IS NOT NULL AND m.season.id = :seasonId))
+          AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(m.awayTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.location, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.notes, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.competition.name, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
         ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
+        """,
+            countQuery = """
+        SELECT COUNT(m) FROM Match m
+        WHERE m.active = true
+          AND m.homeGoals IS NOT NULL
+          AND m.awayGoals IS NOT NULL
+          AND (:seasonId IS NULL OR (m.season IS NOT NULL AND m.season.id = :seasonId))
+          AND (
+                :q IS NULL OR :q = '' OR
+                LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(m.awayTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.location, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.notes, '')) LIKE LOWER(CONCAT('%', :q, '%')) OR
+                LOWER(COALESCE(m.competition.name, '')) LIKE LOWER(CONCAT('%', :q, '%'))
+              )
         """)
-    List<Match> findFinishedMatchesDesc();
+    Page<Match> searchFinishedMatches(@Param("q") String q,
+                                      @Param("seasonId") Long seasonId,
+                                      Pageable pageable);
+
+    // pentru popularea selectorului de sezoane (distinct labels)
+    @Query("""
+        SELECT DISTINCT s.label
+        FROM Match m
+        JOIN m.season s
+        WHERE m.active = true
+          AND m.homeGoals IS NOT NULL
+          AND m.awayGoals IS NOT NULL
+          AND s.label IS NOT NULL
+        ORDER BY s.label DESC
+        """)
+    List<String> findDistinctSeasonLabelsForFinished();
 }

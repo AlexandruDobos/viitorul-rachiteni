@@ -39,7 +39,7 @@ public class MatchController {
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(matchService.getMatchesPaged(q, pageable));
+        return ResponseEntity.ok(matchService.getAllMatchesPaged(q, pageable));
     }
 
     /** NOU: un singur meci – următorul programat */

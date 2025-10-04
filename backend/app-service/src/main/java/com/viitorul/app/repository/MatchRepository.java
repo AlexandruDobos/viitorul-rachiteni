@@ -20,38 +20,54 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     List<Match> findUpcomingMatches();
 
     /**
-     * Căutare fără diacritice DOAR pe numele echipelor + filtrare opțională de sezon.
-     * Necesită extensia Postgres `unaccent`.
+     * Căutare fără diacritice doar pe numele echipelor + filtrare sezon (ID sau LABEL), ambele opționale.
+     * IMPORTANT: forțăm CAST(... AS string) pe parametri înainte de unaccent() ca să evităm unaccent(bytea).
      */
     @Query(value = """
         SELECT m FROM Match m
         LEFT JOIN m.season s
+        JOIN m.homeTeam ht
+        JOIN m.awayTeam at
         WHERE m.active = true
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
           AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR
-               LOWER(FUNCTION('unaccent', COALESCE(s.label, ''))) = LOWER(FUNCTION('unaccent', :seasonLabel)))
+          AND (
+               :seasonLabel IS NULL OR
+               LOWER(FUNCTION('unaccent', COALESCE(s.label,'')))
+                 = LOWER(FUNCTION('unaccent', CAST(:seasonLabel AS string)))
+          )
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
+                LOWER(FUNCTION('unaccent', ht.name)) LIKE
+                  CONCAT('%', LOWER(FUNCTION('unaccent', CAST(:q AS string))), '%')
+                OR
+                LOWER(FUNCTION('unaccent', at.name)) LIKE
+                  CONCAT('%', LOWER(FUNCTION('unaccent', CAST(:q AS string))), '%')
               )
         ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
         """,
             countQuery = """
         SELECT COUNT(m) FROM Match m
         LEFT JOIN m.season s
+        JOIN m.homeTeam ht
+        JOIN m.awayTeam at
         WHERE m.active = true
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
           AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
-          AND (:seasonLabel IS NULL OR
-               LOWER(FUNCTION('unaccent', COALESCE(s.label, ''))) = LOWER(FUNCTION('unaccent', :seasonLabel)))
+          AND (
+               :seasonLabel IS NULL OR
+               LOWER(FUNCTION('unaccent', COALESCE(s.label,'')))
+                 = LOWER(FUNCTION('unaccent', CAST(:seasonLabel AS string)))
+          )
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
+                LOWER(FUNCTION('unaccent', ht.name)) LIKE
+                  CONCAT('%', LOWER(FUNCTION('unaccent', CAST(:q AS string))), '%')
+                OR
+                LOWER(FUNCTION('unaccent', at.name)) LIKE
+                  CONCAT('%', LOWER(FUNCTION('unaccent', CAST(:q AS string))), '%')
               )
         """)
     Page<Match> searchFinishedMatches(@Param("q") String q,

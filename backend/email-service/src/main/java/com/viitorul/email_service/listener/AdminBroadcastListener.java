@@ -69,56 +69,65 @@ public class AdminBroadcastListener {
     }
 
     private String buildHtml(String title, String bodyHtml) {
-        // bodyHtml vine deja formatat (bold/italic/h2/h3) din admin; îl afișăm central
         return """
-            <!doctype html>
-            <html lang="ro">
-            <head>
-              <meta charset="UTF-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-              <title>%s • ACS Viitorul Răchiteni</title>
-            </head>
-            <body style="margin:0;padding:0;background:#f6f8fb;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;line-height:1.6;color:#111;">
-              <div style="display:none;max-height:0;overflow:hidden;opacity:0;">%s</div>
+        <!doctype html>
+        <html lang="ro">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>%s • ACS Viitorul Răchiteni</title>
+        </head>
+        <body style="margin:0;padding:0;background:#f6f8fb;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;line-height:1.6;color:#111;">
+          <!-- preheader, ascuns -->
+          <div style="display:none;max-height:0;overflow:hidden;opacity:0;">%s</div>
 
-              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
-                <tr>
-                  <td align="center">
-                    <table role="presentation" width="640" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;box-shadow:0 2px 12px rgba(16,24,40,.08);overflow:hidden;">
-                      <tr>
-                        <td align="center" style="background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:32px 24px;">
-                          <img src="cid:logo" alt="ACS Viitorul Răchiteni" height="84" style="display:block;border:0;outline:none;">
-                        </td>
-                      </tr>
+          <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="padding:32px 0;">
+            <tr>
+              <td align="center">
+                <!-- card -->
+                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0"
+                       style="max-width:640px;background:#ffffff;border-radius:16px;box-shadow:0 2px 12px rgba(16,24,40,.08);overflow:hidden;">
+                  <tr>
+                    <td align="center" style="background-image:linear-gradient(90deg,#1e3a8a,#2563eb,#0ea5e9);padding:32px 24px;">
+                      <img src="cid:logo" alt="ACS Viitorul Răchiteni" height="84"
+                           style="display:block;border:0;outline:none;">
+                    </td>
+                  </tr>
 
-                      <tr><td style="height:12px"></td></tr>
+                  <tr><td style="height:12px"></td></tr>
 
-                      <tr>
-                        <td align="center" style="padding:0 28px;">
-                          <h1 style="margin:0 0 12px 0;font-size:24px;line-height:1.3;color:#111827;font-weight:800;">%s</h1>
+                  <tr>
+                    <td align="center" style="padding:0 28px;">
+                      <h1 style="margin:0 0 12px 0;font-size:24px;line-height:1.3;color:#111827;font-weight:800;text-align:center;">%s</h1>
 
-                          <div style="text-align:left;max-width:560px;margin:0 auto;color:#111;font-size:15px;">
+                      <!-- CONȚINUT CENTRAT PE MOBIL: nested table -->
+                      <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+                        <tr>
+                          <td align="left" style="color:#111;font-size:15px;line-height:1.6;">
                             %s
-                          </div>
+                          </td>
+                        </tr>
+                      </table>
 
-                          <div style="height:20px"></div>
-                        </td>
-                      </tr>
+                      <div style="height:20px"></div>
+                    </td>
+                  </tr>
 
-                      <tr>
-                        <td align="center" style="padding:0 28px 26px 28px;font-size:12px;color:#9ca3af;">
-                          Mulțumim,<br/>Echipa <strong>ACS Viitorul Răchiteni</strong>
-                        </td>
-                      </tr>
+                  <tr>
+                    <td align="center" style="padding:0 28px 26px 28px;font-size:12px;color:#9ca3af;text-align:center;">
+                      Mulțumim,<br/>Echipa <strong>ACS Viitorul Răchiteni</strong>
+                    </td>
+                  </tr>
 
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </body>
-            </html>
-        """.formatted(escape(title), escape(title), escape(title), bodyHtml);
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+    """.formatted(escape(title), escape(title), escape(title), bodyHtml);
     }
+
 
     private String escape(String s) {
         if (s == null) return "";

@@ -19,10 +19,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """)
     List<Match> findUpcomingMatches();
 
-    /**
-     * Paginare + search fără diacritice + filtrare sezon (ID sau LABEL), ambele opționale.
-     * Necesită extensia Postgres `unaccent`.
-     */
     @Query(value = """
         SELECT m FROM Match m
         LEFT JOIN m.season s
@@ -34,12 +30,11 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
                LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.location,''))) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.notes,'')))    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name,'')))
-                    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%')))
+                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.location, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))    LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
               )
         ORDER BY m.date DESC, m.kickoffTime DESC, m.id DESC
         """,
@@ -54,12 +49,11 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
                LOWER(FUNCTION('unaccent', s.label)) = LOWER(FUNCTION('unaccent', :seasonLabel))))
           AND (
                 :q IS NULL OR :q = '' OR
-                LOWER(FUNCTION('unaccent', m.homeTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', m.awayTeam.name))        LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.location,''))) LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.notes,'')))    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%'))) OR
-                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name,'')))
-                    LIKE LOWER(FUNCTION('unaccent', CONCAT('%', :q, '%')))
+                LOWER(FUNCTION('unaccent', m.homeTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', m.awayTeam.name)) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.location, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.notes, '')))    LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%') OR
+                LOWER(FUNCTION('unaccent', COALESCE(m.competition.name, ''))) LIKE CONCAT('%', LOWER(FUNCTION('unaccent', :q)), '%')
               )
         """)
     Page<Match> searchFinishedMatches(@Param("q") String q,

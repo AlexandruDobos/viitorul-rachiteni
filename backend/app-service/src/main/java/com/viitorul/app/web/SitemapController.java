@@ -76,7 +76,7 @@ public class SitemapController {
             add(entries, origin + "/matches/" + m.getId(), null, "hourly", "0.6");
             seen.add(m.getId());
         }
-        Page<Match> firstPage = matchRepository.searchFinishedMatches(null, null, PageRequest.of(0, 5000));
+        Page<Match> firstPage = matchRepository.searchFinishedMatches(null, null, null, PageRequest.of(0, 5000));
         for (Match m : firstPage.getContent()) {
             if (seen.add(m.getId())) {
                 add(entries, origin + "/matches/" + m.getId(), lastmodClamp(m.getDate()), "monthly", "0.5");

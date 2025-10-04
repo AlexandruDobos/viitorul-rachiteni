@@ -68,14 +68,12 @@ public class MatchService {
         return MatchDTO.toDto(matchRepository.save(match));
     }
 
-    public Page<MatchDTO> getMatchesPaged(String q, Pageable pageable) {
-        Page<Match> p;
-        if (q != null && !q.trim().isEmpty()) {
-            p = matchRepository.searchAllByTeamOrLocation(q.trim(), pageable);
-        } else {
-            p = matchRepository.findAllByActiveTrueOrderByDateDesc(pageable);
-        }
-        return p.map(MatchDTO::toDto); // adaptează la mapperul tău
+    public Page<MatchDTO> getAllMatchesPaged(String q, Pageable pageable) {
+        Page<Match> page = (q == null || q.isBlank())
+                ? matchRepository.findAllByActiveTrueOrderByDateDesc(pageable)
+                : matchRepository.searchAllByTeamNames(q, pageable);
+
+        return page.map(MatchDTO::toDto);
     }
 
     public List<MatchDTO> getUpcomingMatches() {
@@ -84,7 +82,9 @@ public class MatchService {
                 .toList();
     }
 
-    /** ULTIMUL ADĂUGAT: următorul meci (primul din lista „upcoming”). */
+    /**
+     * ULTIMUL ADĂUGAT: următorul meci (primul din lista „upcoming”).
+     */
     public MatchDTO getNextMatch() {
         return matchRepository.findUpcomingMatches().stream()
                 .findFirst()

@@ -25,7 +25,7 @@ const MatchStatsEditor = ({ matchId }) => {
   // 🔎 search state
   const [query, setQuery] = useState('');
 
-  // ✅ feedback banner state
+  // ✅ feedback banner state (persistent)
   const [feedback, setFeedback] = useState(null); // { type: 'success' | 'error', text: string }
 
   useEffect(() => {
@@ -69,7 +69,7 @@ const MatchStatsEditor = ({ matchId }) => {
       });
       if (!res.ok) throw new Error('Fail save');
 
-      // success feedback
+      // success feedback (persistent)
       const p = players.find(pl => pl.id === playerId);
       setFeedback({
         type: 'success',
@@ -82,10 +82,8 @@ const MatchStatsEditor = ({ matchId }) => {
         type: 'error',
         text: 'Eroare la salvare. Încearcă din nou.',
       });
-    } finally {
-      // auto-hide after 3s
-      setTimeout(() => setFeedback(null), 3000);
     }
+    // ❌ eliminat auto-hide — mesajul rămâne vizibil până la următorul save
   };
 
   const togglePlayer = (id) => {
@@ -101,7 +99,7 @@ const MatchStatsEditor = ({ matchId }) => {
     <div className="bg-gray-50 rounded-xl p-4 my-6 border">
       <h3 className="text-base md:text-lg font-semibold mb-4">Statistici jucători</h3>
 
-      {/* ✅ feedback banner */}
+      {/* ✅ feedback banner (persistent) */}
       {feedback && (
         <div
           className={`mb-4 rounded-lg px-3 py-2 text-sm ${

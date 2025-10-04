@@ -9,6 +9,8 @@ import com.viitorul.app.repository.PlayerRepository;
 import com.viitorul.app.repository.MatchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -74,7 +76,8 @@ public class SitemapController {
             add(entries, origin + "/matches/" + m.getId(), null, "hourly", "0.6");
             seen.add(m.getId());
         }
-        for (Match m : matchRepository.findFinishedMatchesDesc()) {
+        Page<Match> firstPage = matchRepository.searchFinishedMatches(null, null, PageRequest.of(0, 5000));
+        for (Match m : firstPage.getContent()) {
             if (seen.add(m.getId())) {
                 add(entries, origin + "/matches/" + m.getId(), lastmodClamp(m.getDate()), "monthly", "0.5");
             }

@@ -6,8 +6,8 @@ import { BASE_URL } from '../utils/constants';
 import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
 
 // Small UI helpers (blue-focused)
-const SectionCard = ({ title, subtitle, children, footer }) => (
-  <div className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
+  <div ref={ref} className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
     <div className="p-5 border-b bg-gradient-to-r from-blue-700 to-blue-900 text-white">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
@@ -15,7 +15,8 @@ const SectionCard = ({ title, subtitle, children, footer }) => (
     <div className="p-6">{children}</div>
     {footer && <div className="border-t p-4 bg-gray-50">{footer}</div>}
   </div>
-);
+));
+SectionCard.displayName = 'SectionCard';
 
 const Label = ({ htmlFor, children }) => (
   <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-900 mb-1">{children}</label>
@@ -59,6 +60,9 @@ const AddPlayerForm = () => {
   // preview control
   const [preview, setPreview] = useState(null); // local blob URL
   const [showImg, setShowImg] = useState(true); // render <img> by default
+
+  // 👇 form card ref for smooth scroll on edit
+  const formCardRef = useRef(null);
 
   useEffect(() => {
     setShowImg(Boolean(preview || formData.profileImageUrl));
@@ -128,6 +132,9 @@ const AddPlayerForm = () => {
     setEditId(player.id);
     if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
+
+    // 👇 scroll to form on edit (same pattern as announcements/teams)
+    formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const toggleActive = async (player) => {
@@ -187,7 +194,11 @@ const AddPlayerForm = () => {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* FORMULAR */}
-      <SectionCard title={editId ? 'Editează Jucător' : 'Adaugă Jucător'} subtitle="Completează detaliile jucătorului și salvează.">
+      <SectionCard
+        ref={formCardRef}
+        title={editId ? 'Editează Jucător' : 'Adaugă Jucător'}
+        subtitle="Completează detaliile jucătorului și salvează."
+      >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="name">Nume</Label>

@@ -4,8 +4,8 @@ import { BASE_URL } from '../utils/constants';
 import defaultLogo from '../assets/unknown-team-logo.png';
 
 /** ------------------ Small UI helpers (blue-only) ------------------ */
-const SectionCard = ({ title, subtitle, children, footer }) => (
-  <div className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
+  <div ref={ref} className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
     <div className="p-5 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
@@ -13,7 +13,8 @@ const SectionCard = ({ title, subtitle, children, footer }) => (
     <div className="p-6">{children}</div>
     {footer && <div className="border-t p-4 bg-gray-50">{footer}</div>}
   </div>
-);
+));
+SectionCard.displayName = 'SectionCard';
 
 const Label = ({ htmlFor, children }) => (
   <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-900 mb-1">{children}</label>
@@ -65,6 +66,9 @@ const AddTeamForm = () => {
   // preview sigur
   const [preview, setPreview] = useState(null);
   const [showImg, setShowImg] = useState(true);
+
+  // 👇 ref pentru cardul formularului (pt scroll la edit)
+  const formCardRef = useRef(null);
 
   useEffect(() => {
     setShowImg(Boolean(preview || logo || defaultLogo));
@@ -165,6 +169,9 @@ const AddTeamForm = () => {
     setMessage('');
     if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
+
+    // 👇 Scroll la formular (ca la announcements)
+    formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleDelete = async (id) => {
@@ -193,7 +200,11 @@ const AddTeamForm = () => {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
       {/* FORM */}
-      <SectionCard title={editId ? 'Editează Echipă' : 'Adaugă Echipă'} subtitle="Completează detaliile și salvează.">
+      <SectionCard
+        ref={formCardRef}
+        title={editId ? 'Editează Echipă' : 'Adaugă Echipă'}
+        subtitle="Completează detaliile și salvează."
+      >
         {message && <Message text={message} />}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

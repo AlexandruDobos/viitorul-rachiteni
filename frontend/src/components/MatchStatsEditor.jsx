@@ -22,6 +22,9 @@ const MatchStatsEditor = ({ matchId }) => {
   // keep only one card open at a time on mobile
   const [openPlayerId, setOpenPlayerId] = useState(null);
 
+  // 🔎 search state
+  const [query, setQuery] = useState('');
+
   useEffect(() => {
     fetch(`${BASE_URL}/app/players`)
       .then(res => res.json())
@@ -73,13 +76,29 @@ const MatchStatsEditor = ({ matchId }) => {
     setOpenPlayerId(prev => (prev === id ? null : id));
   };
 
+  // 🔎 apply simple case-insensitive filter by name
+  const filteredPlayers = players.filter(p =>
+    (p?.name || '').toLowerCase().includes(query.trim().toLowerCase())
+  );
+
   return (
     <div className="bg-gray-50 rounded-xl p-4 my-6 border">
       <h3 className="text-base md:text-lg font-semibold mb-4">Statistici jucători</h3>
 
+      {/* 🔎 Search input */}
+      <div className="mb-4">
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Caută jucător după nume…"
+          className="w-full md:w-80 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+      </div>
+
       {/* MOBILE: accordion – fields open only when header tapped */}
       <div className="md:hidden space-y-3">
-        {players.map((player) => {
+        {filteredPlayers.map((player) => {
           const s = stats[player.id] || {};
           const isOpen = openPlayerId === player.id;
           return (
@@ -178,7 +197,7 @@ const MatchStatsEditor = ({ matchId }) => {
               </tr>
             </thead>
             <tbody>
-              {players.map(player => {
+              {filteredPlayers.map(player => {
                 const s = stats[player.id] || {};
                 return (
                   <tr key={player.id} className="border-b hover:bg-gray-50">

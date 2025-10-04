@@ -1,3 +1,5 @@
+/* eslint-disable no-unused-vars */
+// src/pages/Results.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { BASE_URL } from '../utils/constants';
 import { useNavigate } from 'react-router-dom';
@@ -28,8 +30,8 @@ const Results = () => {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const [seasons, setSeasons] = useState([]);          // doar label-uri
-  const [selectedSeason, setSelectedSeason] = useState(null); // label sau 'Toate'
+  const [seasons, setSeasons] = useState([]);          // labels + "Toate"
+  const [selectedSeason, setSelectedSeason] = useState(TOATE); // implicit Toate
 
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
@@ -71,17 +73,16 @@ const Results = () => {
     return 'draw';
   };
 
-  // 1) Luăm sezoanele și adăugăm "Toate" la capăt
+  // 1) Luăm sezoanele și punem "Toate" PRIMUL, vizibil fără scroll orizontal
   useEffect(() => {
     const fetchSeasons = async () => {
       try {
         const res = await fetch(`${BASE_URL}/app/matches/results/seasons`, { credentials: 'include' });
         const arr = await res.json();
         const list = Array.isArray(arr) ? arr : [];
-        const withAll = [...list, TOATE];      // "Toate" la capăt
+        const withAll = [TOATE, ...list];     // <<< Toate primul
         setSeasons(withAll);
-        // implicit rămâne primul sezon real selectat (dacă vrei implicit "Toate", pune setSelectedSeason(TOATE))
-        if (!selectedSeason) setSelectedSeason(list[0] ?? TOATE);
+        // implicit păstrăm "Toate"; dacă vrei alt default, schimbă aici
       } catch (e) {
         console.error(e);
         setSeasons([TOATE]);
@@ -91,7 +92,7 @@ const Results = () => {
     fetchSeasons();
   }, []); // eslint-disable-line
 
-  // 2) Fetch paginat – dacă e "Toate", nu trimitem seasonLabel
+  // 2) Fetch paginat – dacă e "Toate", nu trimitem seasonLabel (interoghează toate)
   const fetchPage = useCallback(async (pageToLoad, append = false) => {
     setLoading(true);
     try {
@@ -163,7 +164,7 @@ const Results = () => {
         {/* Sezon */}
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-2">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-1">Sezon</div>
-          <div className="no-scrollbar flex gap-2 overflow-x-auto px-1 py-1">
+          <div className="flex flex-wrap gap-2 px-1 py-1"> {/* <<< wrap, nu overflow-x */}
             {seasons.map((s) => {
               const active = s === selectedSeason;
               return (
@@ -184,7 +185,7 @@ const Results = () => {
           </div>
         </div>
 
-        {/* Search (server-side diacritics-insensitive) */}
+        {/* Search (diacritics-insensitive pe server) */}
         <div className="relative rounded-xl ring-1 ring-gray-200 bg-white p-3">
           <div className="text-xs font-semibold text-gray-600 px-1 mb-2">Căutare</div>
           <input
@@ -222,8 +223,8 @@ const Results = () => {
               const compName = match.competitionName ?? match.competition?.name ?? match.competition ?? null;
               const seasonLabel = seasonLabelOf(match);
 
-              const key = resultKey(match);
-              const styles = OUTCOME_STYLES[key] ?? OUTCOME_STYLES.neutral;
+              const k = resultKey(match);
+              const styles = OUTCOME_STYLES[k] ?? OUTCOME_STYLES.neutral;
 
               return (
                 <motion.div

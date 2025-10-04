@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 // src/forms/AddAnnouncementForm.jsx
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import PropTypes from "prop-types";
 import {
   useEditor,
@@ -47,6 +47,9 @@ import {
   AlignCenter,
   AlignRight,
   AlignJustify,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 import { BASE_URL } from "../utils/constants";
@@ -247,6 +250,10 @@ const htmlToText = (html) => {
 
 /* ====================== Main component ====================== */
 function AddAnnouncementForm({ onSave }) {
+  // scroll anchor to jump to on Edit
+  const formTopRef = useRef(null);
+  const titleInputRef = useRef(null);
+
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 1024 : true
   );
@@ -264,9 +271,20 @@ function AddAnnouncementForm({ onSave }) {
   const [textColor, setTextColor] = useState("#000000");
   const [submitting, setSubmitting] = useState(false);
 
+  // ---------- LIST with search + pagination ----------
   const [announcements, setAnnouncements] = useState([]);
-  const [editId, setEditId] = useState(null);
   const [loadingList, setLoadingList] = useState(false);
+
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(8);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // small debounce for query
+  const debouncedQuery = useDebounce(query, 350);
+
+  const [editId, setEditId] = useState(null);
 
   const [uploadingCover, setUploadingCover] = useState(false);
   const [uploadingInline, setUploadingInline] = useState(false);
@@ -413,24 +431,46 @@ function AddAnnouncementForm({ onSave }) {
   };
   const blockAlign = currentBlockAlign();
 
-  /* ---------------- API ---------------- */
-  const fetchAnnouncements = async () => {
+  /* ---------------- API: Page + Search (DESC by backend) ---------------- */
+  const fetchAnnouncementsPage = async (pageIdx, keepPage = false) => {
     try {
       setLoadingList(true);
-      const res = await fetch(`${BASE_URL}/app/announcements`);
+      const params = new URLSearchParams();
+      params.set("page", String(pageIdx ?? page));
+      params.set("size", String(size));
+      if (debouncedQuery?.trim()) params.set("q", debouncedQuery.trim());
+
+      const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error("Eroare la listare");
       const data = await res.json();
-      setAnnouncements(data);
+
+      const list = Array.isArray(data?.content) ? data.content : [];
+      setAnnouncements(list);
+      setTotalPages(data?.totalPages ?? 0);
+      setTotalElements(data?.totalElements ?? 0);
+      if (!keepPage) setPage(data?.number ?? 0); // backend returns current page index
     } catch (e) {
       console.error(e);
       alert("Nu s-au putut încărca anunțurile.");
+      setAnnouncements([]);
+      setTotalPages(0);
+      setTotalElements(0);
     } finally {
       setLoadingList(false);
     }
   };
+
+  // initial & whenever debounced query / size changes -> reset to page 0
   useEffect(() => {
-    fetchAnnouncements();
-  }, []);
+    fetchAnnouncementsPage(0, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery, size]);
+
+  // when page changes (via controls)
+  useEffect(() => {
+    fetchAnnouncementsPage(page, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
 
   /* --------------- R2 helpers --------------- */
   async function presignForR2(file, folder = "announcements") {
@@ -512,6 +552,8 @@ function AddAnnouncementForm({ onSave }) {
     editor?.commands.setContent("");
     setRawHtml("");
     setViewMode("visual");
+    // focus title
+    requestAnimationFrame(() => titleInputRef.current?.focus());
   };
 
   const handleSubmit = async (e) => {
@@ -544,7 +586,8 @@ function AddAnnouncementForm({ onSave }) {
       const saved = await res.json().catch(() => null);
       onSave?.(saved || payload);
 
-      await fetchAnnouncements();
+      // after save, refresh list from page 0 with current search
+      await fetchAnnouncementsPage(0, false);
       resetForm();
     } catch (err) {
       console.error(err);
@@ -562,6 +605,10 @@ function AddAnnouncementForm({ onSave }) {
     editor?.commands.setContent(a.contentHtml || "");
     setRawHtml(a.contentHtml || "");
     setViewMode("visual");
+
+    // 🔝 scroll to form + focus title
+    formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(() => titleInputRef.current?.focus(), 250);
   };
 
   const handleDelete = async (id) => {
@@ -571,7 +618,13 @@ function AddAnnouncementForm({ onSave }) {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Eroare la ștergere");
-      await fetchAnnouncements();
+      // if deleting last item on page, move back a page if needed
+      const newCount = totalElements - 1;
+      const lastPage = Math.max(0, Math.ceil(newCount / size) - 1);
+      const targetPage = Math.min(page, lastPage);
+      setTotalElements(newCount);
+      setPage(targetPage);
+      await fetchAnnouncementsPage(targetPage, true);
       if (editId === id) resetForm();
     } catch (e) {
       console.error(e);
@@ -603,6 +656,9 @@ function AddAnnouncementForm({ onSave }) {
       className="space-y-6 lg:pt-0"
       style={{ paddingTop: isMobile ? "calc(env(safe-area-inset-top, 0px) + 56px)" : 0 }}
     >
+      {/* invisible anchor to scroll to */}
+      <span ref={formTopRef} />
+
       <input ref={coverFileRef} type="file" accept="image/*" className="hidden" onChange={handleCoverFile} />
       <input ref={inlineFileRef} type="file" accept="image/*" className="hidden" onChange={handleInlineFile} />
 
@@ -625,6 +681,7 @@ function AddAnnouncementForm({ onSave }) {
             <label className="text-sm font-medium">Titlu anunț</label>
             <div className="relative">
               <input
+                ref={titleInputRef}
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -715,17 +772,14 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* --- NEW: Mode toggle Vizual/Text --- */}
+          {/* --- Mode toggle Vizual/Text --- */}
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Conținut</span>
             <div className="inline-flex rounded-lg overflow-hidden ring-1 ring-gray-200">
               <button
                 type="button"
                 onClick={() => {
-                  // la trecere în vizual, împinge HTML-ul din textarea în editor
-                  if (viewMode === "html") {
-                    editor?.commands.setContent(rawHtml || "");
-                  }
+                  if (viewMode === "html") editor?.commands.setContent(rawHtml || "");
                   setViewMode("visual");
                 }}
                 className={[
@@ -740,7 +794,6 @@ function AddAnnouncementForm({ onSave }) {
               <button
                 type="button"
                 onClick={() => {
-                  // la trece în text, ia HTML-ul curent din editor
                   setRawHtml(editor?.getHTML() || "");
                   setViewMode("html");
                 }}
@@ -756,7 +809,7 @@ function AddAnnouncementForm({ onSave }) {
             </div>
           </div>
 
-          {/* Toolbar (inactiv când e “Text”) */}
+          {/* Toolbar (disabled în “Text”) */}
           <div
             className={`rounded-2xl border border-gray-200 bg-white p-2 ${
               viewMode === "html" ? "opacity-50 pointer-events-none" : ""
@@ -923,54 +976,106 @@ function AddAnnouncementForm({ onSave }) {
         </div>
       </form>
 
-      {/* LISTA EXISTENTA */}
+      {/* LISTA CU CĂUTARE + PAGINARE (DESC din backend) */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
-          {loadingList && <span className="text-xs text-gray-500">Se încarcă…</span>}
+
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Search className="h-4 w-4" />
+              </span>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Caută după titlu…"
+                className="h-9 w-64 rounded-xl border border-gray-300 bg-white pl-9 pr-3 text-sm outline-none ring-indigo-600/20 transition focus:border-indigo-600 focus:ring-2"
+              />
+            </div>
+
+            <select
+              value={size}
+              onChange={(e) => setSize(Number(e.target.value) || 8)}
+              className="h-9 rounded-xl border border-gray-300 bg-white px-2 text-sm outline-none focus:border-indigo-600 focus:ring-2 ring-indigo-600/20"
+              title="Elemente / pagină"
+            >
+              {[5, 8, 10, 12].map((n) => (
+                <option key={n} value={n}>{n}/pag.</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {announcements.length === 0 ? (
-          <p className="text-sm text-gray-500">Nu există anunțuri încă.</p>
+        {loadingList ? (
+          <div className="py-8 text-center text-sm text-gray-500">Se încarcă…</div>
+        ) : announcements.length === 0 ? (
+          <p className="text-sm text-gray-500">Nu există anunțuri pentru criteriile curente.</p>
         ) : (
-          <ul className="space-y-2">
-            {announcements.map((a) => (
-              <li key={a.id} className="flex items-center justify-between rounded-xl border p-2">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={a.coverUrl || "/placeholder.png"}
-                    alt={a.title}
-                    className="h-12 w-12 rounded object-cover ring-1 ring-gray-200"
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.png";
-                    }}
-                  />
-                  <div>
-                    <div className="font-medium">{a.title}</div>
-                    <div className="text-xs text-gray-600">
-                      Publicat: {formatDateForList(a.publishedAt)}
+          <>
+            <ul className="space-y-2">
+              {announcements.map((a) => (
+                <li key={a.id} className="flex items-center justify-between rounded-xl border p-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={a.coverUrl || "/placeholder.png"}
+                      alt={a.title}
+                      className="h-12 w-12 rounded object-cover ring-1 ring-gray-200"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.png";
+                      }}
+                    />
+                    <div>
+                      <div className="font-medium">{a.title}</div>
+                      <div className="text-xs text-gray-600">
+                        Publicat: {formatDateForList(a.publishedAt)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="space-x-3 text-sm">
-                  <button
-                    onClick={() => handleEdit(a)}
-                    className="inline-flex items-center gap-1 text-blue-600 hover:underline"
-                    title="Editează"
-                  >
-                    <Edit3 className="h-4 w-4" /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(a.id)}
-                    className="inline-flex items-center gap-1 text-red-600 hover:underline"
-                    title="Șterge"
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                  <div className="space-x-3 text-sm">
+                    <button
+                      onClick={() => handleEdit(a)}
+                      className="inline-flex items-center gap-1 text-blue-600 hover:underline"
+                      title="Editează"
+                    >
+                      <Edit3 className="h-4 w-4" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(a.id)}
+                      className="inline-flex items-center gap-1 text-red-600 hover:underline"
+                      title="Șterge"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* Pagination */}
+            <div className="mt-4 flex flex-col items-center justify-between gap-2 sm:flex-row">
+              <div className="text-xs text-gray-500">
+                Pagina {page + 1} din {Math.max(totalPages, 1)} &middot; {totalElements} rezultate
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={page <= 0}
+                  className="inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Înapoi
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={page >= totalPages - 1}
+                  className="inline-flex items-center gap-1 rounded-xl border px-3 py-1.5 text-sm disabled:opacity-50"
+                >
+                  Înainte <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
@@ -1007,5 +1112,15 @@ ToolButton.propTypes = {
   disabled: PropTypes.bool,
   title: PropTypes.string,
 };
+
+/* --- tiny debounce hook --- */
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(t);
+  }, [value, delay]);
+  return debounced;
+}
 
 export default AddAnnouncementForm;

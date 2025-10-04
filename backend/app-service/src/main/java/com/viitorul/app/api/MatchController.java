@@ -42,19 +42,20 @@ public class MatchController {
     public ResponseEntity<Page<MatchDTO>> getResultsPaged(
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "seasonId", required = false) Long seasonId,
+            @RequestParam(value = "seasonLabel", required = false) String seasonLabel,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<MatchDTO> result = matchService.getFinishedMatchesPaged(q, seasonId, pageable);
+        Page<MatchDTO> result = matchService.getFinishedMatchesPaged(q, seasonId, seasonLabel, pageable);
         return ResponseEntity.ok(result);
     }
 
-    // pentru popularea selectorului de sezoane (etichetă “2024–2025” etc.)
     @GetMapping("/results/seasons")
     public ResponseEntity<List<String>> getResultsSeasons() {
         return ResponseEntity.ok(matchService.getFinishedSeasons());
     }
+
     @GetMapping("/upcoming")
     public ResponseEntity<List<MatchDTO>> getUpcomingMatches() {
         return ResponseEntity.ok(matchService.getUpcomingMatches());

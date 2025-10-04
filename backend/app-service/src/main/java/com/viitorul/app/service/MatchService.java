@@ -169,12 +169,10 @@ public class MatchService {
     }
 
 
-    public Page<MatchDTO> getFinishedMatchesPaged(String q, Long seasonId, Pageable pageable) {
-        return matchRepository.searchFinishedMatches(q, seasonId, pageable)
-                .map(MatchDTO::toDto);
+    public Page<MatchDTO> getFinishedMatchesPaged(String q, Long seasonId, String seasonLabel, Pageable pageable) {
+        return matchRepository.searchFinishedMatches(q, seasonId, seasonLabel, pageable).map(MatchDTO::toDto);
     }
 
-    /** NOU: lista distinctă de etichete de sezoane pentru rezultate */
     public List<String> getFinishedSeasons() {
         return matchRepository.findDistinctSeasonLabelsForFinished();
     }

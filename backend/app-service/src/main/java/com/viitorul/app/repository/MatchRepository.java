@@ -19,13 +19,15 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """)
     List<Match> findUpcomingMatches();
 
-    // --- nou: rezultate cu paginare + search + sezon (opțional) ---
+    // Paginare + search + filtrare sezon BY ID sau BY LABEL (ambele opționale)
     @Query(value = """
         SELECT m FROM Match m
+        LEFT JOIN m.season s
         WHERE m.active = true
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
-          AND (:seasonId IS NULL OR (m.season IS NOT NULL AND m.season.id = :seasonId))
+          AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
+          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND LOWER(s.label) = LOWER(:seasonLabel)))
           AND (
                 :q IS NULL OR :q = '' OR
                 LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
@@ -38,10 +40,12 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """,
             countQuery = """
         SELECT COUNT(m) FROM Match m
+        LEFT JOIN m.season s
         WHERE m.active = true
           AND m.homeGoals IS NOT NULL
           AND m.awayGoals IS NOT NULL
-          AND (:seasonId IS NULL OR (m.season IS NOT NULL AND m.season.id = :seasonId))
+          AND (:seasonId IS NULL OR (s IS NOT NULL AND s.id = :seasonId))
+          AND (:seasonLabel IS NULL OR (s IS NOT NULL AND LOWER(s.label) = LOWER(:seasonLabel)))
           AND (
                 :q IS NULL OR :q = '' OR
                 LOWER(m.homeTeam.name) LIKE LOWER(CONCAT('%', :q, '%')) OR
@@ -53,9 +57,10 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         """)
     Page<Match> searchFinishedMatches(@Param("q") String q,
                                       @Param("seasonId") Long seasonId,
+                                      @Param("seasonLabel") String seasonLabel,
                                       Pageable pageable);
 
-    // pentru popularea selectorului de sezoane (distinct labels)
+    // pentru selectorul de sezoane (doar etichetele)
     @Query("""
         SELECT DISTINCT s.label
         FROM Match m

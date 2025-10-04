@@ -46,6 +46,12 @@ public class MatchController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size
     ) {
+        if (seasonLabel != null) {
+            String s = seasonLabel.trim();
+            if (s.isEmpty() || s.equalsIgnoreCase("toate")) {
+                seasonLabel = null;
+            }
+        }
         Pageable pageable = PageRequest.of(page, size);
         Page<MatchDTO> result = matchService.getFinishedMatchesPaged(q, seasonId, seasonLabel, pageable);
         return ResponseEntity.ok(result);

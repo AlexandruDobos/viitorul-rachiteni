@@ -638,7 +638,7 @@ const AddMatchForm = () => {
             type="text"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Caută după echipă, locație sau notițe…"
+            placeholder="Caută după echipă"
             className="w-full sm:w-80 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <div className="flex items-center gap-2">

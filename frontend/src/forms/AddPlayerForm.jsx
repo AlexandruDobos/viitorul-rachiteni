@@ -3,16 +3,11 @@ import { BASE_URL } from '../utils/constants';
 import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
 
 function getJwt() {
-  return (
-    localStorage.getItem('jwt') ||
-    null
-  );
+  return localStorage.getItem('jwt') || null;
 }
 function authHeaders(extra = {}) {
   const jwt = getJwt();
-  return jwt
-    ? { Authorization: `Bearer ${jwt}`, ...extra }
-    : { ...extra };
+  return jwt ? { Authorization: `Bearer ${jwt}`, ...extra } : { ...extra };
 }
 
 const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
@@ -83,7 +78,6 @@ const AddPlayerForm = () => {
       contentType: file.type || 'application/octet-stream',
       folder
     });
-    // folosim cookie-ul: trimitem cu credentials: 'include'
     const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
       method: 'GET',
       credentials: 'include',
@@ -126,7 +120,7 @@ const AddPlayerForm = () => {
       method,
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(formData),
-      credentials: 'include', // 👈 trimite cookie-ul jwt
+      credentials: 'include',
     });
 
     if (res.ok) {
@@ -162,7 +156,7 @@ const AddPlayerForm = () => {
     const endpoint = toActivate ? 'activate' : 'deactivate';
     const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, {
       method: 'PATCH',
-      credentials: 'include', // 👈 trimite cookie-ul jwt
+      credentials: 'include',
     });
     if (res.ok) {
       await fetchPlayers();
@@ -254,7 +248,13 @@ const AddPlayerForm = () => {
             <Label htmlFor="profileImageUrl">Poză profil</Label>
             <div className="flex gap-2">
               <Input id="profileImageUrl" name="profileImageUrl" placeholder="Link poză (sau încarcă mai jos)" value={formData.profileImageUrl} onChange={handleChange} />
-              <button type="button" onClick={onChooseImage} disabled={uploadingImg} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-60" title="Încarcă imagine în R2">
+              <button
+                type="button"
+                onClick={onChooseImage}
+                disabled={uploadingImg}
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-60 whitespace-nowrap"
+                title="Încarcă imagine în R2"
+              >
                 {uploadingImg ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
@@ -269,7 +269,7 @@ const AddPlayerForm = () => {
             {formData.profileImageUrl && (
               <div className="mt-1 text-xs text-gray-600 truncate">
                 Salvat:&nbsp;
-                <a href={formData.profileImageUrl} className="underline text-blue-700 hover:text-blue-900" target="_blank" rel="noreferrer">
+                <a href={formData.profileImageUrl} className="underline text-blue-700 hover:text-blue-900 break-all" target="_blank" rel="noreferrer">
                   {formData.profileImageUrl}
                 </a>
               </div>
@@ -294,15 +294,15 @@ const AddPlayerForm = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 pt-2">
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm">
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl shadow-sm w-full sm:w-auto whitespace-nowrap">
               {editId ? 'Salvează modificările' : 'Adaugă'}
             </button>
             {editId && (
               <button
                 type="button"
                 onClick={() => { setFormData({ name: '', position: '', shirtNumber: '', profileImageUrl: defaultAvatar, isActive: true }); setEditId(null); }}
-                className="border px-5 py-2.5 rounded-xl hover:bg-gray-50"
+                className="border px-5 py-2.5 rounded-xl hover:bg-gray-50 w-full sm:w-auto whitespace-nowrap"
               >
                 Anulează editarea
               </button>
@@ -317,17 +317,21 @@ const AddPlayerForm = () => {
           {players.map((player) => {
             const inactive = player.isActive === false;
             return (
-              <li key={player.id} className={`flex items-center justify-between border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition ${inactive ? 'opacity-80' : ''}`}>
-                <div className="flex items-center gap-3">
+              <li
+                key={player.id}
+                className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition ${inactive ? 'opacity-80' : ''}`}
+              >
+                {/* stânga */}
+                <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
                   <img
                     src={player.profileImageUrl || defaultAvatar}
                     alt={player.name || ''}
-                    className="w-12 h-12 rounded-full object-cover border"
+                    className="w-12 h-12 rounded-full object-cover border flex-shrink-0"
                     onError={(e) => { e.currentTarget.src = defaultAvatar; }}
                   />
-                  <div>
-                    <div className={`font-semibold ${inactive ? 'line-through text-gray-500' : 'text-gray-900'}`}>{player.name}</div>
-                    <div className="text-sm text-gray-600">{player.position} {player.shirtNumber ? `#${player.shirtNumber}` : ''}</div>
+                  <div className="min-w-0">
+                    <div className={`font-semibold truncate ${inactive ? 'line-through text-gray-500' : 'text-gray-900'}`}>{player.name}</div>
+                    <div className="text-sm text-gray-600 truncate">{player.position} {player.shirtNumber ? `#${player.shirtNumber}` : ''}</div>
                     {!inactive ? (
                       <Badge className="mt-1 bg-blue-100 text-blue-800">Activ</Badge>
                     ) : (
@@ -336,11 +340,19 @@ const AddPlayerForm = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button onClick={() => handleEdit(player)} className="px-3 py-1.5 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm">Edit</button>
+                {/* dreapta – pe mobil în coloană, full width */}
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleEdit(player)}
+                    className="px-3 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm w-full sm:w-auto whitespace-nowrap"
+                  >
+                    Edit
+                  </button>
                   <button
                     onClick={() => toggleActive(player)}
-                    className={`px-3 py-1.5 rounded-lg text-sm shadow-sm ${inactive ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                    className={`px-3 py-2 rounded-lg text-sm shadow-sm w-full sm:w-auto whitespace-nowrap ${
+                      inactive ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    }`}
                     title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}
                   >
                     {inactive ? 'Activează' : 'Dezactivează'}

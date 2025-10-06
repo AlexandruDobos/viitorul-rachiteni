@@ -1,11 +1,21 @@
-// ==============================
-// AddPlayerForm.jsx — blue-only refined UI (with mobile-only top offset)
-// ==============================
 import React, { useState, useEffect, useRef } from 'react';
 import { BASE_URL } from '../utils/constants';
 import defaultAvatar from '../assets/anonymous-profile-photo.jpg';
 
-// Small UI helpers (blue-focused)
+function getJwt() {
+  return (
+    localStorage.getItem('jwt') ||
+    null
+  );
+}
+function authHeaders(extra = {}) {
+  const jwt = getJwt();
+  return jwt
+    ? { Authorization: `Bearer ${jwt}`, ...extra }
+    : { ...extra };
+}
+
+
 const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
   <div ref={ref} className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
     <div className="p-5 border-b bg-gradient-to-r from-blue-700 to-blue-900 text-white">
@@ -58,10 +68,9 @@ const AddPlayerForm = () => {
   const fileRef = useRef(null);
 
   // preview control
-  const [preview, setPreview] = useState(null); // local blob URL
-  const [showImg, setShowImg] = useState(true); // render <img> by default
+  const [preview, setPreview] = useState(null);
+  const [showImg, setShowImg] = useState(true);
 
-  // 👇 form card ref for smooth scroll on edit
   const formCardRef = useRef(null);
 
   useEffect(() => {
@@ -72,8 +81,16 @@ const AddPlayerForm = () => {
 
   // ---- helpers pentru R2 (folder=players)
   async function presignForR2(file, folder = 'players') {
-    const q = new URLSearchParams({ filename: file.name, contentType: file.type || 'application/octet-stream', folder });
-    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, { method: 'GET', credentials: 'include' });
+    const q = new URLSearchParams({
+      filename: file.name,
+      contentType: file.type || 'application/octet-stream',
+      folder
+    });
+    // 🔐 GET protejat de ADMIN → adăugăm Authorization
+    const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
+      method: 'GET',
+      headers: authHeaders(),
+    });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
     const { uploadUrl, publicUrl } = data || {};
@@ -82,6 +99,7 @@ const AddPlayerForm = () => {
   }
 
   async function putFileToR2(uploadUrl, file) {
+    // Upload direct la R2 (nu trece prin API) → fără header de auth
     const res = await fetch(uploadUrl, { method: 'PUT', body: file });
     if (!res.ok) {
       const t = await res.text().catch(() => '');
@@ -90,6 +108,7 @@ const AddPlayerForm = () => {
   }
 
   const fetchPlayers = async () => {
+    // GET public
     const res = await fetch(`${BASE_URL}/app/players?activeOnly=false`);
     if (!res.ok) return alert('Eroare la listare jucători');
     const data = await res.json();
@@ -108,7 +127,11 @@ const AddPlayerForm = () => {
     const method = editId ? 'PUT' : 'POST';
     const url = editId ? `${BASE_URL}/app/players/${editId}` : `${BASE_URL}/app/players`;
 
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
+    const res = await fetch(url, {
+      method,
+      headers: authHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }), // 🔐
+      body: JSON.stringify(formData),
+    });
 
     if (res.ok) {
       await fetchPlayers();
@@ -132,8 +155,6 @@ const AddPlayerForm = () => {
     setEditId(player.id);
     if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
-
-    // 👇 scroll to form on edit (same pattern as announcements/teams)
     formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
@@ -143,7 +164,10 @@ const AddPlayerForm = () => {
     if (!ok) return;
 
     const endpoint = toActivate ? 'activate' : 'deactivate';
-    const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, { method: 'PATCH' });
+    const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, {
+      method: 'PATCH',
+      headers: authHeaders(), // 🔐
+    });
     if (res.ok) {
       await fetchPlayers();
       if (editId === player.id) setFormData((p) => ({ ...p, isActive: toActivate }));
@@ -167,7 +191,7 @@ const AddPlayerForm = () => {
 
     try {
       setUploadingImg(true);
-      const { uploadUrl, publicUrl } = await presignForR2(file, 'players');
+      const { uploadUrl, publicUrl } = await presignForR2(file, 'players'); // 🔐 cere Authorization la presign
       await putFileToR2(uploadUrl, file);
       setFormData((p) => ({ ...p, profileImageUrl: publicUrl }));
     } catch (err) {
@@ -185,7 +209,6 @@ const AddPlayerForm = () => {
     <div
       className="space-y-8"
       style={{
-        // ✅ Top padding numai pe mobil (sub meniul fix); 0 pe ≥1024px
         paddingTop:
           'clamp(0px, calc((1024px - 100vw) * 9999), calc(env(safe-area-inset-top, 0px) + 56px))',
       }}
@@ -319,7 +342,11 @@ const AddPlayerForm = () => {
 
                 <div className="flex items-center gap-2">
                   <button onClick={() => handleEdit(player)} className="px-3 py-1.5 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm">Edit</button>
-                  <button onClick={() => toggleActive(player)} className={`px-3 py-1.5 rounded-lg text-sm shadow-sm ${inactive ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`} title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}>
+                  <button
+                    onClick={() => toggleActive(player)}
+                    className={`px-3 py-1.5 rounded-lg text-sm shadow-sm ${inactive ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
+                    title={inactive ? 'Activează jucător' : 'Dezactivează jucător'}
+                  >
                     {inactive ? 'Activează' : 'Dezactivează'}
                   </button>
                 </div>

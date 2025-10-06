@@ -5,7 +5,10 @@ import defaultLogo from '../assets/unknown-team-logo.png';
 
 /** ------------------ Small UI helpers (blue-only) ------------------ */
 const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
-  <div ref={ref} className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
+  <div
+    ref={ref}
+    className="w-full max-w-full bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden"
+  >
     <div className="p-5 border-b bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
       <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
       {subtitle && <p className="text-sm text-white/90 mt-0.5">{subtitle}</p>}
@@ -188,7 +191,7 @@ const AddTeamForm = () => {
 
   return (
     <div
-      className="space-y-8 overflow-x-hidden"
+      className="w-full mx-auto max-w-screen-sm px-3 sm:px-0 space-y-8 overflow-x-hidden"
       style={{
         // ✅ Padding sus doar pe mobil (sub meniul fix); 0 pe ≥1024px
         paddingTop:
@@ -251,7 +254,7 @@ const AddTeamForm = () => {
                   href={logo}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-xs underline text-blue-700 hover:text-blue-900 truncate max-w-[60%]"
+                  className="text-xs underline text-blue-700 hover:text-blue-900 truncate break-all max-w-[60%]"
                   title={logo}
                 >
                   {logo}
@@ -279,24 +282,24 @@ const AddTeamForm = () => {
           {teams.map((team) => (
             <li
               key={team.id}
-              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition"
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition w-full"
             >
               {/* Stânga: logo + info */}
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex items-center gap-3 min-w-0 w-full sm:w-auto">
                 <img
                   src={team.logo || defaultLogo}
                   alt={team.name || ''}
                   className="w-10 h-10 object-contain rounded bg-white border flex-shrink-0"
                   onError={(e) => { e.currentTarget.src = defaultLogo; }}
                 />
-                <div className="min-w-0">
+                <div className="min-w-0 w-full">
                   <div className="font-semibold text-gray-900 truncate">{team.name}</div>
                   {team.logo && team.logo !== defaultLogo && (
                     <a
                       href={team.logo}
                       target="_blank"
                       rel="noreferrer"
-                      className="block text-xs text-blue-700 underline truncate max-w-full sm:max-w-[320px]"
+                      className="block text-xs text-blue-700 underline truncate break-all max-w-full sm:max-w-[320px]"
                       title={team.logo}
                     >
                       {team.logo}

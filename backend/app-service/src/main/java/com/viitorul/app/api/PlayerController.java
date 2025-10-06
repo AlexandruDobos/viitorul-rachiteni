@@ -5,6 +5,7 @@ import com.viitorul.app.service.PlayerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +18,7 @@ public class PlayerController {
 
     private final PlayerService playerService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<PlayerDTO> addPlayer(@RequestBody PlayerDTO playerDTO) {
         log.info("Add player request");
@@ -39,7 +41,7 @@ public class PlayerController {
     public ResponseEntity<PlayerDTO> getPlayerById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(playerService.getPlayerById(id));
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<PlayerDTO> updatePlayer(@PathVariable("id") Long id, @RequestBody PlayerDTO playerDTO) {
         return ResponseEntity.ok(playerService.updatePlayer(id, playerDTO));
@@ -48,18 +50,19 @@ public class PlayerController {
     /**
      * Soft delete: marchează jucătorul ca inactiv (isActive=false).
      */
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePlayer(@PathVariable("id") Long id) {
         playerService.deletePlayer(id);
         return ResponseEntity.noContent().build(); // 204
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/activate")
     public ResponseEntity<Void> activate(@PathVariable("id") Long id) {
         playerService.activatePlayer(id);
         return ResponseEntity.noContent().build();
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/deactivate")
     public ResponseEntity<Void> deactivate(@PathVariable("id") Long id) {
         playerService.deactivatePlayer(id);

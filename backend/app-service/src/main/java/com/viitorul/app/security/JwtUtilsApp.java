@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -80,4 +81,22 @@ public class JwtUtilsApp {
         if (email == null || email.isBlank()) email = c.getSubject();
         return email;
     }
+
+    public List<String> getRoles(String token) {
+        Claims c = parse(token);
+
+        Object r = c.get("role");
+        if (r == null) return List.of();
+
+        if (r instanceof String s) {
+            return List.of(s);
+        }
+
+        if (r instanceof List<?> list) {
+            return list.stream().map(Object::toString).toList();
+        }
+
+        return List.of();
+    }
+
 }

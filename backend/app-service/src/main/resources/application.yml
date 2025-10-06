@@ -4,6 +4,9 @@ spring:
     port: 5672
   main:
     timezone: Europe/Bucharest
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true  # respinge cheile greșite
 
 auth:
   base-url: ${AUTH_BASE_URL:http://auth-service:8081}

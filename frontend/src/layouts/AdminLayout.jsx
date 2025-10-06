@@ -1,15 +1,16 @@
-// src/layouts/AdminLayout.jsx
 import React from "react";
 import { Outlet } from "react-router-dom";
 
 /**
- * Layout gol pentru zona de admin.
- * Fără navbar, fără reclame, fără footer – doar conținutul admin pe tot ecranul.
+ * Layout pentru zona de admin – container centrat, fără overflow orizontal.
  */
 export default function AdminLayout() {
   return (
-    <div className="min-h-screen w-full bg-white">
-      <Outlet />
+    <div className="min-h-screen w-full bg-white overflow-x-hidden">
+      {/* container sigur pe mobil */}
+      <div className="mx-auto w-full max-w-screen-sm px-3 sm:px-4">
+        <Outlet />
+      </div>
     </div>
   );
 }

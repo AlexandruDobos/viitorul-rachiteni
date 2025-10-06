@@ -143,6 +143,7 @@ const AddTeamForm = () => {
       const payloadLogo = logo || defaultLogo;
       const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
+        credentials: "include",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, logo: payloadLogo }),
       });
@@ -177,7 +178,7 @@ const AddTeamForm = () => {
   const handleDelete = async (id) => {
     if (confirm('Sigur vrei să ștergi această echipă?')) {
       try {
-        const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE' });
+        const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE', credentials: "include" });
         if (!res.ok) throw new Error('Failed to delete');
         fetchTeams();
       } catch (e) {

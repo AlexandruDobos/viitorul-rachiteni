@@ -472,7 +472,7 @@ const AddMatchForm = () => {
     const id = confirmDeleteId;
     if (!id) return;
     try {
-      const res = await fetch(`${BASE_URL}/app/matches/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${BASE_URL}/app/matches/${id}`, { method: 'DELETE', credentials: "include"});
       if (res.ok) {
         setConfirmDeleteId(null);
         // reîncărcăm pagina curentă

@@ -164,6 +164,7 @@ const AdsManager = () => {
 
     const res = await fetch(url, {
       method,
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -200,7 +201,7 @@ const AdsManager = () => {
     const ok = window.confirm("Sigur vrei să ștergi această reclamă?");
     if (!ok) return;
     setDeletingId(id);
-    await fetch(`${BASE_URL}/app/ads/${id}`, { method: "DELETE" });
+    await fetch(`${BASE_URL}/app/ads/${id}`, { method: "DELETE", credentials: "include" });
     setDeletingId(null);
     fetchAds();
   };

@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 // src/forms/AddAnnouncementForm.jsx
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import PropTypes from "prop-types";
 import {
   useEditor,
@@ -250,7 +250,6 @@ const htmlToText = (html) => {
 
 /* ====================== Main component ====================== */
 function AddAnnouncementForm({ onSave }) {
-  // scroll anchor to jump to on Edit
   const formTopRef = useRef(null);
   const titleInputRef = useRef(null);
 
@@ -281,9 +280,7 @@ function AddAnnouncementForm({ onSave }) {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // small debounce for query
   const debouncedQuery = useDebounce(query, 350);
-
   const [editId, setEditId] = useState(null);
 
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -292,7 +289,6 @@ function AddAnnouncementForm({ onSave }) {
   const coverFileRef = useRef(null);
   const inlineFileRef = useRef(null);
 
-  // --- NEW: view mode state and raw HTML (for textarea)
   const [viewMode, setViewMode] = useState("visual"); // "visual" | "html"
   const [rawHtml, setRawHtml] = useState("");
 
@@ -448,7 +444,7 @@ function AddAnnouncementForm({ onSave }) {
       setAnnouncements(list);
       setTotalPages(data?.totalPages ?? 0);
       setTotalElements(data?.totalElements ?? 0);
-      if (!keepPage) setPage(data?.number ?? 0); // backend returns current page index
+      if (!keepPage) setPage(data?.number ?? 0);
     } catch (e) {
       console.error(e);
       alert("Nu s-au putut încărca anunțurile.");
@@ -460,13 +456,11 @@ function AddAnnouncementForm({ onSave }) {
     }
   };
 
-  // initial & whenever debounced query / size changes -> reset to page 0
   useEffect(() => {
     fetchAnnouncementsPage(0, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedQuery, size]);
 
-  // when page changes (via controls)
   useEffect(() => {
     fetchAnnouncementsPage(page, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -481,7 +475,7 @@ function AddAnnouncementForm({ onSave }) {
     });
     const res = await fetch(`${BASE_URL}/app/uploads/sign?${q}`, {
       method: "GET",
-      credentials: "include",
+      credentials: "include",            // 👈 trimite cookie-ul JWT
     });
     if (!res.ok) throw new Error("Nu s-a putut obține URL-ul de încărcare.");
     const data = await res.json();
@@ -552,7 +546,6 @@ function AddAnnouncementForm({ onSave }) {
     editor?.commands.setContent("");
     setRawHtml("");
     setViewMode("visual");
-    // focus title
     requestAnimationFrame(() => titleInputRef.current?.focus());
   };
 
@@ -560,7 +553,6 @@ function AddAnnouncementForm({ onSave }) {
     e.preventDefault();
     setSubmitting(true);
 
-    // HTML-ul sursa depinde de modul curent
     const html = viewMode === "html" ? (rawHtml || "") : (editor?.getHTML() || "");
     const payload = {
       title: title.trim(),
@@ -580,13 +572,13 @@ function AddAnnouncementForm({ onSave }) {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        credentials: "include",           // 👈 trimite cookie-ul JWT
       });
       if (!res.ok) throw new Error("Eroare la salvare");
 
       const saved = await res.json().catch(() => null);
       onSave?.(saved || payload);
 
-      // after save, refresh list from page 0 with current search
       await fetchAnnouncementsPage(0, false);
       resetForm();
     } catch (err) {
@@ -606,7 +598,6 @@ function AddAnnouncementForm({ onSave }) {
     setRawHtml(a.contentHtml || "");
     setViewMode("visual");
 
-    // 🔝 scroll to form + focus title
     formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     setTimeout(() => titleInputRef.current?.focus(), 250);
   };
@@ -616,9 +607,9 @@ function AddAnnouncementForm({ onSave }) {
     try {
       const res = await fetch(`${BASE_URL}/app/announcements/${id}`, {
         method: "DELETE",
+        credentials: "include",           // 👈 trimite cookie-ul JWT
       });
       if (!res.ok) throw new Error("Eroare la ștergere");
-      // if deleting last item on page, move back a page if needed
       const newCount = totalElements - 1;
       const lastPage = Math.max(0, Math.ceil(newCount / size) - 1);
       const targetPage = Math.min(page, lastPage);
@@ -981,7 +972,7 @@ function AddAnnouncementForm({ onSave }) {
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
             <div className="relative">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-4 w-4" />

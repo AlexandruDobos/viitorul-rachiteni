@@ -13,6 +13,7 @@ const LogoEditor = () => {
   const handleSave = async () => {
     await fetch(`${BASE_URL}/app/logo`, {
       method: 'PUT',
+      credentials: "include",
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: logoUrl }),
     });

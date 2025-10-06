@@ -13,6 +13,7 @@ const AppNameEditor = () => {
   const handleSave = async () => {
     await fetch(`${BASE_URL}/app/name`, {
       method: 'PUT',
+      credentials: "include",
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: appName }),
     });

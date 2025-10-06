@@ -15,7 +15,6 @@ function authHeaders(extra = {}) {
     : { ...extra };
 }
 
-
 const SectionCard = React.forwardRef(({ title, subtitle, children, footer }, ref) => (
   <div ref={ref} className="bg-white/95 backdrop-blur-sm shadow-lg rounded-2xl ring-1 ring-gray-100 overflow-hidden">
     <div className="p-5 border-b bg-gradient-to-r from-blue-700 to-blue-900 text-white">
@@ -63,11 +62,9 @@ const AddPlayerForm = () => {
   const [players, setPlayers] = useState([]);
   const [editId, setEditId] = useState(null);
 
-  // upload state + hidden file input
   const [uploadingImg, setUploadingImg] = useState(false);
   const fileRef = useRef(null);
 
-  // preview control
   const [preview, setPreview] = useState(null);
   const [showImg, setShowImg] = useState(true);
 
@@ -86,10 +83,10 @@ const AddPlayerForm = () => {
       contentType: file.type || 'application/octet-stream',
       folder
     });
-    // 🔐 GET protejat de ADMIN → adăugăm Authorization
+    // folosim cookie-ul: trimitem cu credentials: 'include'
     const res = await fetch(`${BASE_URL}/app/uploads/sign?${q.toString()}`, {
       method: 'GET',
-      headers: authHeaders(),
+      credentials: 'include',
     });
     if (!res.ok) throw new Error('Nu s-a putut obține URL-ul de încărcare.');
     const data = await res.json();
@@ -99,7 +96,6 @@ const AddPlayerForm = () => {
   }
 
   async function putFileToR2(uploadUrl, file) {
-    // Upload direct la R2 (nu trece prin API) → fără header de auth
     const res = await fetch(uploadUrl, { method: 'PUT', body: file });
     if (!res.ok) {
       const t = await res.text().catch(() => '');
@@ -108,7 +104,6 @@ const AddPlayerForm = () => {
   }
 
   const fetchPlayers = async () => {
-    // GET public
     const res = await fetch(`${BASE_URL}/app/players?activeOnly=false`);
     if (!res.ok) return alert('Eroare la listare jucători');
     const data = await res.json();
@@ -129,8 +124,9 @@ const AddPlayerForm = () => {
 
     const res = await fetch(url, {
       method,
-      headers: authHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }), // 🔐
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify(formData),
+      credentials: 'include', // 👈 trimite cookie-ul jwt
     });
 
     if (res.ok) {
@@ -166,7 +162,7 @@ const AddPlayerForm = () => {
     const endpoint = toActivate ? 'activate' : 'deactivate';
     const res = await fetch(`${BASE_URL}/app/players/${player.id}/${endpoint}`, {
       method: 'PATCH',
-      headers: authHeaders(), // 🔐
+      credentials: 'include', // 👈 trimite cookie-ul jwt
     });
     if (res.ok) {
       await fetchPlayers();
@@ -191,7 +187,7 @@ const AddPlayerForm = () => {
 
     try {
       setUploadingImg(true);
-      const { uploadUrl, publicUrl } = await presignForR2(file, 'players'); // 🔐 cere Authorization la presign
+      const { uploadUrl, publicUrl } = await presignForR2(file, 'players');
       await putFileToR2(uploadUrl, file);
       setFormData((p) => ({ ...p, profileImageUrl: publicUrl }));
     } catch (err) {

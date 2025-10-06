@@ -143,7 +143,7 @@ const AddTeamForm = () => {
       const payloadLogo = logo || defaultLogo;
       const res = await fetch(`${BASE_URL}/app/teams${editId ? '/' + editId : ''}`, {
         method: editId ? 'PUT' : 'POST',
-        credentials: "include",
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, logo: payloadLogo }),
       });
@@ -170,15 +170,13 @@ const AddTeamForm = () => {
     setMessage('');
     if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
     setShowImg(true);
-
-    // 👇 Scroll la formular (ca la announcements)
     formCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleDelete = async (id) => {
     if (confirm('Sigur vrei să ștergi această echipă?')) {
       try {
-        const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE', credentials: "include" });
+        const res = await fetch(`${BASE_URL}/app/teams/${id}`, { method: 'DELETE', credentials: 'include' });
         if (!res.ok) throw new Error('Failed to delete');
         fetchTeams();
       } catch (e) {
@@ -190,7 +188,7 @@ const AddTeamForm = () => {
 
   return (
     <div
-      className="space-y-8"
+      className="space-y-8 overflow-x-hidden"
       style={{
         // ✅ Padding sus doar pe mobil (sub meniul fix); 0 pe ≥1024px
         paddingTop:
@@ -242,14 +240,20 @@ const AddTeamForm = () => {
                 <img
                   src={preview || logo || defaultLogo}
                   alt=""
-                  className="w-12 h-12 object-contain rounded border bg-white"
+                  className="w-12 h-12 object-contain rounded border bg-white flex-shrink-0"
                   onError={(e) => { e.currentTarget.src = defaultLogo; setShowImg(true); }}
                 />
               ) : (
                 <img src={defaultLogo} alt="" className="w-12 h-12 object-contain rounded border bg-white" />
               )}
               {logo && logo !== defaultLogo && (
-                <a href={logo} target="_blank" rel="noreferrer" className="text-xs underline text-blue-700 hover:text-blue-900 truncate max-w-[60%]" title={logo}>
+                <a
+                  href={logo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs underline text-blue-700 hover:text-blue-900 truncate max-w-[60%]"
+                  title={logo}
+                >
                   {logo}
                 </a>
               )}
@@ -273,28 +277,46 @@ const AddTeamForm = () => {
       <SectionCard title="Echipe existente" subtitle="Editează sau elimină echipe.">
         <ul className="space-y-3">
           {teams.map((team) => (
-            <li key={team.id} className="flex items-center justify-between border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition">
+            <li
+              key={team.id}
+              className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border rounded-2xl p-3 md:p-4 hover:bg-gray-50 transition"
+            >
+              {/* Stânga: logo + info */}
               <div className="flex items-center gap-3 min-w-0">
                 <img
                   src={team.logo || defaultLogo}
                   alt={team.name || ''}
-                  className="w-10 h-10 object-contain rounded bg-white border"
+                  className="w-10 h-10 object-contain rounded bg-white border flex-shrink-0"
                   onError={(e) => { e.currentTarget.src = defaultLogo; }}
                 />
-                <div className="truncate">
+                <div className="min-w-0">
                   <div className="font-semibold text-gray-900 truncate">{team.name}</div>
                   {team.logo && team.logo !== defaultLogo && (
-                    <a href={team.logo} target="_blank" rel="noreferrer" className="text-xs text-blue-700 underline truncate max-w-[320px]">
+                    <a
+                      href={team.logo}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-xs text-blue-700 underline truncate max-w-full sm:max-w-[320px]"
+                      title={team.logo}
+                    >
                       {team.logo}
                     </a>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => handleEdit(team)} className="px-3 py-1.5 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+
+              {/* Dreapta: acțiuni (pe mobil devin pe rând, full-width) */}
+              <div className="flex sm:flex-row flex-col w-full sm:w-auto gap-2">
+                <button
+                  onClick={() => handleEdit(team)}
+                  className="px-3 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-700 text-white shadow-sm w-full sm:w-auto"
+                >
                   Edit
                 </button>
-                <button onClick={() => handleDelete(team.id)} className="px-3 py-1.5 rounded-lg text-sm border border-gray-300 text-gray-800 hover:bg-gray-100">
+                <button
+                  onClick={() => handleDelete(team.id)}
+                  className="px-3 py-2 rounded-lg text-sm border border-gray-300 text-gray-800 hover:bg-gray-100 w-full sm:w-auto"
+                >
                   Delete
                 </button>
               </div>

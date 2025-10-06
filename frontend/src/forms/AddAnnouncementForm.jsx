@@ -458,13 +458,11 @@ function AddAnnouncementForm({ onSave }) {
 
   useEffect(() => {
     fetchAnnouncementsPage(0, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, size]);
+  }, [debouncedQuery, size]); // eslint-disable-line
 
   useEffect(() => {
     fetchAnnouncementsPage(page, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page]); // eslint-disable-line
 
   /* --------------- R2 helpers --------------- */
   async function presignForR2(file, folder = "announcements") {
@@ -969,11 +967,13 @@ function AddAnnouncementForm({ onSave }) {
 
       {/* LISTA CU CĂUTARE + PAGINARE (DESC din backend) */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* header + controls: stacked on mobile */}
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="text-lg font-semibold">Anunțuri existente</h3>
 
-        <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            {/* Search (full width on mobile) */}
+            <div className="relative w-full sm:w-auto">
               <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-4 w-4" />
               </span>
@@ -982,10 +982,11 @@ function AddAnnouncementForm({ onSave }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Caută după titlu…"
-                className="h-9 w-64 rounded-xl border border-gray-300 bg-white pl-9 pr-3 text-sm outline-none ring-indigo-600/20 transition focus:border-indigo-600 focus:ring-2"
+                className="h-9 w-full sm:w-64 rounded-xl border border-gray-300 bg-white pl-9 pr-3 text-sm outline-none ring-indigo-600/20 transition focus:border-indigo-600 focus:ring-2"
               />
             </div>
 
+            {/* Page size under search on mobile */}
             <select
               value={size}
               onChange={(e) => setSize(Number(e.target.value) || 8)}
@@ -1007,24 +1008,29 @@ function AddAnnouncementForm({ onSave }) {
           <>
             <ul className="space-y-2">
               {announcements.map((a) => (
-                <li key={a.id} className="flex items-center justify-between rounded-xl border p-2">
-                  <div className="flex items-center gap-3">
+                <li
+                  key={a.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border p-2"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
                     <img
                       src={a.coverUrl || "/placeholder.png"}
                       alt={a.title}
-                      className="h-12 w-12 rounded object-cover ring-1 ring-gray-200"
+                      className="h-12 w-12 rounded object-cover ring-1 ring-gray-200 flex-shrink-0"
                       onError={(e) => {
                         e.currentTarget.src = "/placeholder.png";
                       }}
                     />
-                    <div>
-                      <div className="font-medium">{a.title}</div>
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">{a.title}</div>
                       <div className="text-xs text-gray-600">
                         Publicat: {formatDateForList(a.publishedAt)}
                       </div>
                     </div>
                   </div>
-                  <div className="space-x-3 text-sm">
+
+                  {/* actions stacked on mobile */}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-2 sm:mt-0 w-full sm:w-auto text-sm">
                     <button
                       onClick={() => handleEdit(a)}
                       className="inline-flex items-center gap-1 text-blue-600 hover:underline"

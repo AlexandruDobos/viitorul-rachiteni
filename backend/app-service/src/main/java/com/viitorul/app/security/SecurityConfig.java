@@ -10,6 +10,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -21,38 +26,45 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(cors -> {}) // ✅ activează CORS (vezi bean-ul de mai jos)
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // --- EXCEPȚII SPECIFICE (înaintea regulilor generale) ---
-                        // GET sensibil: semnare upload → doar ADMIN
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // ✅ preflight CORS
+
+                        // --- EXCEPȚII SPECIFICE ---
                         .requestMatchers(HttpMethod.GET, "/api/app/uploads/**").hasRole("ADMIN")
-
-                        // Formularele publice:
                         .requestMatchers(HttpMethod.POST, "/api/app/contact/messages").permitAll()
-
-                        // Votul la meci: îl validezi tu în controller (cookie/bearer via AuthClient)
                         .requestMatchers(HttpMethod.POST, "/api/app/matches/*/vote").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/my-vote").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/votes/summary").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/auth/me").permitAll()
 
                         // --- REGULI GENERALE ---
-                        // Toate GET-urile din /api/app/** sunt publice (site-ul trebuie să le consume)
                         .requestMatchers(HttpMethod.GET, "/api/app/**").permitAll()
-
-                        // Toate scrierile din /api/app/** cer ADMIN
                         .requestMatchers(HttpMethod.POST,   "/api/app/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/app/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH,  "/api/app/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/app/**").hasRole("ADMIN")
 
-                        // Orice altceva: autentificat
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-}
 
+    // ✅ CORS cu credențiale pentru domeniul frontend-ului
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        var c = new CorsConfiguration();
+        c.setAllowedOrigins(List.of("https://www.viitorulrachiteni.ro"));
+        c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        c.setAllowedHeaders(List.of("Content-Type","Authorization")); // Authorization e ok să rămână
+        c.setAllowCredentials(true); // necesar pentru cookie
+
+        var s = new UrlBasedCorsConfigurationSource();
+        s.registerCorsConfiguration("/**", c);
+        return s;
+    }
+}

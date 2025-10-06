@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -24,24 +23,39 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
+        String token = null;
+
+        // 1) Bearer header (dacă, uneori, îl vei folosi)
         String auth = req.getHeader("Authorization");
-        if (auth != null && auth.startsWith("Bearer ") && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String token = auth.substring(7);
-            if (jwt.valid(token)) {
-                String email = jwt.getEmail(token);
+        if (auth != null && auth.startsWith("Bearer ")) {
+            token = auth.substring(7);
+        }
 
-                List<SimpleGrantedAuthority> authorities = jwt.getRoles(token).stream()
-                        .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
-                        .map(SimpleGrantedAuthority::new)
-                        .toList();
-
-                UsernamePasswordAuthenticationToken at =
-                        new UsernamePasswordAuthenticationToken(email, null, authorities);
-                at.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
-                SecurityContextHolder.getContext().setAuthentication(at);
+        // 2) Cookie "jwt" (fallback)
+        if (token == null && req.getCookies() != null) {
+            for (var c : req.getCookies()) {
+                if ("jwt".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
+                    token = c.getValue();
+                    break;
+                }
             }
         }
+
+        if (token != null && jwt.valid(token) &&
+                SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            String email = jwt.getEmail(token);
+
+            var authorities = jwt.getRoles(token).stream()
+                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            var at = new UsernamePasswordAuthenticationToken(email, null, authorities);
+            at.setDetails(new WebAuthenticationDetailsSource().buildDetails(req));
+            SecurityContextHolder.getContext().setAuthentication(at);
+        }
+
         chain.doFilter(req, res);
     }
 }
-

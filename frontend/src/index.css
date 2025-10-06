@@ -4,7 +4,17 @@
 
 /* === Base defaults ca fallback (nu deranjează clasele Tailwind) === */
 @layer base {
-  html { color: #0f172a; background-color: #ffffff; } /* text-slate-900, bg-white */
+  html { color: #0f172a; background-color: #ffffff; }
   body { color: inherit; background-color: inherit; }
-  ::selection { background: #bfdbfe; color: #0f172a; } /* highlight vizibil */
+
+  /* 🔒 taie orice scroll orizontal din rădăcină */
+  html, body, #root { width: 100%; overflow-x: hidden; }
+
+  /* 🧰 în flex layout, lăsăm copiii să se micșoreze (altfel pot forța overflow) */
+  * { min-width: 0; }
+
+  /* 🖼️ media nu depășește niciodată containerul */
+  img, video { max-width: 100%; height: auto; }
+
+  ::selection { background: #bfdbfe; color: #0f172a; }
 }

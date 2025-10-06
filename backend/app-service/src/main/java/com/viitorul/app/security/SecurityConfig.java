@@ -21,23 +21,38 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🔒 dezactivează CSRF (pentru API-uri stateless)
                 .csrf(csrf -> csrf.disable())
-
-                // 🔒 nicio sesiune - folosim doar JWT
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 🔒 reguli de acces
                 .authorizeHttpRequests(auth -> auth
-                        // rutele GET publice (ex. lista jucătorilor)
-                        .requestMatchers(HttpMethod.GET, "/api/app/players/**").permitAll()
-                        // orice altceva necesită autentificare
+                        // --- EXCEPȚII SPECIFICE (înaintea regulilor generale) ---
+                        // GET sensibil: semnare upload → doar ADMIN
+                        .requestMatchers(HttpMethod.GET, "/api/app/uploads/**").hasRole("ADMIN")
+
+                        // Formularele publice:
+                        .requestMatchers(HttpMethod.POST, "/api/app/contact/messages").permitAll()
+
+                        // Votul la meci: îl validezi tu în controller (cookie/bearer via AuthClient)
+                        .requestMatchers(HttpMethod.POST, "/api/app/matches/*/vote").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/my-vote").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/votes/summary").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/app/matches/auth/me").permitAll()
+
+                        // --- REGULI GENERALE ---
+                        // Toate GET-urile din /api/app/** sunt publice (site-ul trebuie să le consume)
+                        .requestMatchers(HttpMethod.GET, "/api/app/**").permitAll()
+
+                        // Toate scrierile din /api/app/** cer ADMIN
+                        .requestMatchers(HttpMethod.POST,   "/api/app/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/api/app/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,  "/api/app/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/app/**").hasRole("ADMIN")
+
+                        // Orice altceva: autentificat
                         .anyRequest().authenticated()
                 )
-
-                // 🔒 adaugă filtrul tău JWT înainte de UsernamePasswordAuthenticationFilter
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 }
+

@@ -10,8 +10,15 @@
   /* 🔒 taie orice scroll orizontal din rădăcină */
   html, body, #root { width: 100%; overflow-x: hidden; }
 
-  /* 🧰 în flex layout, lăsăm copiii să se micșoreze (altfel pot forța overflow) */
-  * { min-width: 0; }
+  /* ✅ permite shrink DOAR în layout-uri flex/grid (evităm side-effects pe butoane/inputuri) */
+  .flex > * { min-width: 0; }
+  .grid > * { min-width: 0; }
+
+  /* 🧱 textul obișnuit poate rupe cuvinte foarte lungi (URL etc.) ca să rămână în card */
+  p, span, li, h1, h2, h3, h4, h5, h6, a { overflow-wrap: anywhere; }
+
+  /* 🧷 dar butoanele/insignele NU se rup pe două rânduri */
+  button, .btn, .badge, .chip { white-space: nowrap; }
 
   /* 🖼️ media nu depășește niciodată containerul */
   img, video { max-width: 100%; height: auto; }

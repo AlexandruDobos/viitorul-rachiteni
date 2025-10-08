@@ -1,4 +1,3 @@
-// src/pages/SubscriptionSuccess.jsx
 import React, { useEffect, useRef, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
@@ -18,7 +17,7 @@ export default function SubscriptionSuccess() {
       try {
         if (!sessionId) return;
         setLoading(true);
-        const res = await fetch(`${BASE_URL}/subscriptions/session/${sessionId}`);
+        const res = await fetch(`${BASE_URL}/donations/subscriptions/session/${sessionId}`);
         if (!res.ok) throw new Error('Nu am putut încărca detaliile abonamentului.');
         const json = await res.json();
         if (!ignore) setData(json);

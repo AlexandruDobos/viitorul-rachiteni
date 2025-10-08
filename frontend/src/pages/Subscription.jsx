@@ -1,4 +1,3 @@
-// src/pages/Subscription.jsx
 import React, { useMemo, useState } from 'react';
 import logo from '../assets/logo.png';
 import { BASE_URL } from '../utils/constants';
@@ -33,7 +32,7 @@ export default function Subscription() {
     setError('');
     setSubmitting(true);
     try {
-      const res = await fetch(`${BASE_URL}/subscriptions/checkout`, {
+      const res = await fetch(`${BASE_URL}/donations/subscriptions/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

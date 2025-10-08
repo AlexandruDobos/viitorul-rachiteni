@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -54,13 +53,21 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ✅ CORS cu credențiale pentru domeniul frontend-ului
+    // ✅ CORS cu credențiale – acceptă apex + www + orice subdomeniu *.viitorulrachiteni.ro
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         var c = new CorsConfiguration();
-        c.setAllowedOrigins(List.of("https://www.viitorulrachiteni.ro"));
+
+        // Folosim patterns pentru a acoperi toate cazurile (inclusiv www și apex).
+        c.setAllowedOriginPatterns(List.of(
+                "https://viitorulrachiteni.ro",
+                "https://www.viitorulrachiteni.ro",
+                "https://*.viitorulrachiteni.ro"
+                // Dacă ai nevoie în dev, adaugă și: "http://localhost:5173"
+        ));
+
         c.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        c.setAllowedHeaders(List.of("Content-Type","Authorization")); // Authorization e ok să rămână
+        c.setAllowedHeaders(List.of("Content-Type","Authorization"));
         c.setAllowCredentials(true); // necesar pentru cookie
 
         var s = new UrlBasedCorsConfigurationSource();

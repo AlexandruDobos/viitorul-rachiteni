@@ -14,9 +14,6 @@ const PLANS = {
 };
 
 export default function Subscription() {
-    useEffect(() => {
-        document.title = 'Abonament – ACS Viitorul Răchiteni';
-    }, []);
     const [currency, setCurrency] = useState('ron');
     const [plan, setPlan] = useState(50);            // default 50
     const [donorName, setDonorName] = useState('');

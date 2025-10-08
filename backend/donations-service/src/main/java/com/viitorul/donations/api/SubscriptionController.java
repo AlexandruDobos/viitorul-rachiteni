@@ -55,4 +55,35 @@ public class SubscriptionController {
 
         return ResponseEntity.ok(Map.of("id", session.getId(), "url", session.getUrl()));
     }
+
+    @GetMapping("/session/{id}")
+    public ResponseEntity<Map<String, Object>> getSubscriptionSession(@PathVariable("id") String id) throws Exception {
+        Session s = Session.retrieve(id);
+        if (!"subscription".equalsIgnoreCase(s.getMode())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Not a subscription session"));
+        }
+
+        // Luăm subscripția pentru interval/price
+        String subId = s.getSubscription();
+        var out = new java.util.HashMap<String, Object>();
+        out.put("id", s.getId());
+        out.put("status", s.getPaymentStatus());
+        out.put("amount", s.getAmountTotal());        // prima plată (minor units)
+        out.put("currency", s.getCurrency());
+
+        if (subId != null) {
+            com.stripe.model.Subscription sub = com.stripe.model.Subscription.retrieve(subId);
+            // încercăm să citim intervalul din primul item
+            String interval = null;
+            if (sub.getItems() != null &&
+                    sub.getItems().getData() != null &&
+                    !sub.getItems().getData().isEmpty() &&
+                    sub.getItems().getData().get(0).getPrice() != null &&
+                    sub.getItems().getData().get(0).getPrice().getRecurring() != null) {
+                interval = sub.getItems().getData().get(0).getPrice().getRecurring().getInterval(); // "month"
+            }
+            out.put("interval", interval);
+        }
+        return ResponseEntity.ok(out);
+    }
 }

@@ -49,14 +49,16 @@ public class StripeWebhookController {
 
                 if (sessionId != null && !sessionId.isBlank()) {
                     Session session = Session.retrieve(sessionId);
-
+                    if ("subscription".equalsIgnoreCase(session.getMode()) || session.getSubscription() != null) {
+                        return ResponseEntity.ok("ignored_subscription");
+                    }
                     if ("paid".equalsIgnoreCase(session.getPaymentStatus())) {
                         // 1) persistă în DB (idempotent)
                         donationService.markPaidFromSession(session);
 
                         // 2) trimite evenimentul pentru email
                         String donorName = session.getMetadata() != null ? session.getMetadata().get("donor_name") : null;
-                        String msg       = session.getMetadata() != null ? session.getMetadata().get("message") : null;
+                        String msg = session.getMetadata() != null ? session.getMetadata().get("message") : null;
 
                         DonationCompletedEvent evt = new DonationCompletedEvent(
                                 session.getId(),

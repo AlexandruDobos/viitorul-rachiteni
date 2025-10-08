@@ -257,7 +257,18 @@ const App = () => {
               } />
               <Route path="/donations/success" element={<DonationsSuccess />} />
               <Route path="/donations/cancel" element={<DonationsCancel />} />
-              <Route path="/abonament" element={<Subscription />} />
+              <Route
+                path="/abonament"
+                element={
+                  <StaticSeo
+                    title="Abonament"
+                    description="Abonează-te lunar (50/250/500 RON sau 10/50/100 EUR) și susține ACS Viitorul Răchiteni. Plăți recurente securizate prin Stripe."
+                    path="/abonament"
+                  >
+                    <Subscription />
+                  </StaticSeo>
+                }
+              />
               <Route path="/abonament/success" element={<SubscriptionSuccess />} />
               <Route path="/abonament/cancel" element={<SubscriptionCancel />} />
               <Route path="/squad" element={

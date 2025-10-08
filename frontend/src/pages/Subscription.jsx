@@ -36,10 +36,9 @@ export default function Subscription() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    plan,                // 50 | 250 | 500
-                    currency,            // 'ron' | 'eur'
-                    donorEmail: donorEmail || undefined,
-                    donorName: donorName || undefined,
+                    planCode: `${currency}_${plan}`,               // <— cheie exactă
+                    supporterEmail: donorEmail || undefined,       // (denumiri aliniate cu backendul)
+                    supporterName: donorName || undefined,
                 }),
             });
             if (!res.ok) {

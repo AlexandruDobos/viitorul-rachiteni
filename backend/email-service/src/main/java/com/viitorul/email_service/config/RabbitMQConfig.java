@@ -34,6 +34,8 @@ public class RabbitMQConfig {
     public static final String ADMIN_BROADCAST_QUEUE = "admin.broadcast.queue";
     public static final String ADMIN_BROADCAST_ROUTING_KEY = "admin.broadcast";
 
+    public static final String SUBSCRIPTION_QUEUE       = "subscription.paid.queue";
+    public static final String SUBSCRIPTION_ROUTING_KEY = "subscriptions.paid";
     // Exchanges
     @Bean
     public Exchange authExchange() {
@@ -65,7 +67,15 @@ public class RabbitMQConfig {
     @Bean public Queue activatedQueue()     { return new Queue(ACTIVATED_QUEUE, true); }
     @Bean public Queue contactQueue()       { return new Queue(CONTACT_QUEUE, true); }
     @Bean public Queue donationQueue()      { return new Queue(DONATION_QUEUE, true); }
+    @Bean public Queue subscriptionQueue() { return new Queue(SUBSCRIPTION_QUEUE, true); }
 
+    @Bean
+    public Binding bindingSubscriptionQueue() {
+        return BindingBuilder.bind(subscriptionQueue())
+                .to(appExchange())
+                .with(SUBSCRIPTION_ROUTING_KEY)
+                .noargs();
+    }
     // Bindings
     @Bean
     public Binding bindingContactQueue() {

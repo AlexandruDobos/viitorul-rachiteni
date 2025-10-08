@@ -18,6 +18,8 @@ public class RabbitMQConfig {
     // Routing key pentru evenimentul nostru
     public static final String DONATION_ROUTING_KEY = "donations.completed";
 
+    public static final String SUBSCRIPTION_PAYMENT_ROUTING_KEY = "subscriptions.payment";
+
     @Bean
     public TopicExchange appExchange() {
         return ExchangeBuilder.topicExchange(APP_EXCHANGE).durable(true).build();

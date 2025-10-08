@@ -17,9 +17,22 @@ spring:
 server:
   port: 8083
 
+subscriptions:
+  successUrl: https://viitorulrachiteni.ro/abonament/success
+  cancelUrl:  https://viitorulrachiteni.ro/abonament/cancel
+  name: "Abonament ACS Viitorul Răchiteni"
+  prices:
+    ron_50:  price_1SFzHgHreQRcrq815dfo1Veb
+    ron_250: price_1SFzIoHreQRcrq81J5xcamt8
+    ron_500: price_1SFzIzHreQRcrq81Db6ehSj1
+    eur_10:  price_1SFzJDHreQRcrq81Kfjc87N5
+    eur_50:  price_1SFzJMHreQRcrq81vxz8sPzf
+    eur_100: price_1SFzJUHreQRcrq81q4AHpu3e
+
 stripe:
   secret-key: ${STRIPE_SECRET_KEY}
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+  subscriptions-webhook-secret: ${STRIPE_SUBSCRIPTIONS_WEBHOOK_SECRET}
 
 donations:
   success-url: https://www.viitorulrachiteni.ro/donations/success

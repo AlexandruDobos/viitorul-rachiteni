@@ -1,4 +1,10 @@
 package com.viitorul.donations.repository;
 
-public class SubscriptionRepository {
+import com.viitorul.donations.domain.Subscription;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface SubscriptionRepository extends JpaRepository<Subscription, Long> {
+    Optional<Subscription> findByStripeSubscriptionId(String stripeSubId);
 }

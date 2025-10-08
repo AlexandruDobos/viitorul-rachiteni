@@ -164,6 +164,13 @@ const Navbar = () => {
                 </Link>
               </motion.div>
 
+              <motion.div variants={navItemVariants} className="flex items-center">
+                <Link to="/abonament" className="group relative pb-1 hover:text-gray-900">
+                  ABONAMENT
+                  <Underline active={isActive('/abonament')} />
+                </Link>
+              </motion.div>
+
               {/* CONTACT */}
               <motion.div variants={navItemVariants} className="flex items-center">
                 <Link to="/contact" className="group relative pb-1 hover:text-gray-900">
@@ -328,6 +335,11 @@ const Navbar = () => {
                 <motion.li variants={mobileItemVariants}>
                   <Link to="/donations" onClick={handleMobileClose} className="block px-3 py-3 rounded-lg hover:bg-gray-50">
                     DONAȚII
+                  </Link>
+                </motion.li>
+                <motion.li variants={mobileItemVariants}>
+                  <Link to="/abonament" onClick={handleMobileClose} className="block px-3 py-3 rounded-lg hover:bg-gray-50">
+                    ABONAMENT
                   </Link>
                 </motion.li>
                 <motion.li variants={mobileItemVariants}>

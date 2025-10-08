@@ -30,7 +30,9 @@ import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
 import News from "./pages/News";
 import AnnouncementDetail from "./components/AnnouncementDetail";
-
+import Subscription from "./pages/Subscription";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import SubscriptionCancel from "./pages/SubscriptionCancel";
 import PublicLayout from "./layouts/PublicLayout";
 import AdminLayout from "./layouts/AdminLayout";
 
@@ -140,12 +142,12 @@ function AnnouncementRoute() {
           "datePublished": a.publishedAt,
           "dateModified": a.publishedAt,
           "author": { "@type": "Organization", "name": SITE_NAME },
-          "publisher": { "@type": "Organization", "name": SITE_NAME, "logo": { "@type":"ImageObject","url": absUrl("/favicon.png") } },
+          "publisher": { "@type": "Organization", "name": SITE_NAME, "logo": { "@type": "ImageObject", "url": absUrl("/favicon.png") } },
           "image": a.coverUrl ? [absUrl(a.coverUrl)] : [absUrl("/favicon.png")],
           "mainEntityOfPage": { "@type": "WebPage", "@id": url }
         });
         document.head.appendChild(script);
-      } catch {}
+      } catch { }
     })();
     return () => { cancelled = true; };
   }, [id]);
@@ -255,7 +257,9 @@ const App = () => {
               } />
               <Route path="/donations/success" element={<DonationsSuccess />} />
               <Route path="/donations/cancel" element={<DonationsCancel />} />
-
+              <Route path="/abonament" element={<Subscription />} />
+              <Route path="/abonament/success" element={<SubscriptionSuccess />} />
+              <Route path="/abonament/cancel" element={<SubscriptionCancel />} />
               <Route path="/squad" element={
                 <StaticSeo
                   title="Lotul echipei"

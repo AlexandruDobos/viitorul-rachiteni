@@ -239,7 +239,7 @@ export default function Subscription() {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M12 2a5 5 0 00-5 5 5 5 0 001 3l-5 5a3 3 0 000 4l2 2a3 3 0 004 0l5-5a5 5 0 003 1 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" />
                     </svg>
-                    {submitting ? 'Se deschide Stripe…' : `Abonează-te cu Stripe (${plan} ${currency.toUpperCase()}/lună)`}
+                    {submitting ? 'Se deschide Stripe…' : `Abonează-te`}
                   </button>
 
                   <div className="text-xs text-gray-500">

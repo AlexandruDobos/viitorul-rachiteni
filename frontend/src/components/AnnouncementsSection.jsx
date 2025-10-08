@@ -272,6 +272,7 @@ const SkeletonCard = () => (
 );
 
 /* ===== COMPONENTA PRINCIPALĂ ===== */
+/* ===== COMPONENTA PRINCIPALĂ ===== */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
@@ -286,7 +287,17 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // calcul mereu (evităm hook condițional)
+  // ⬇️ anchor pentru “scroll la începutul secțiunii”
+  const topRef = useRef(null);
+  const scrollToTop = () => {
+    if (!topRef.current) return;
+    // offset pentru navbar fix pe mobil (ajustează dacă ai altă înălțime)
+    const headerOffset = window.innerWidth < 1024 ? 64 : 0;
+    const y = topRef.current.getBoundingClientRect().top + window.scrollY - headerOffset;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  };
+
+  // calc numerotare
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -321,6 +332,8 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
+    // la fiecare schimbare de pagină pe /stiri, urcă la începutul secțiunii
+    if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
 
@@ -331,6 +344,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       setPage(0);
       setQuery(newQ);
       fetchPage(0, newQ);
+      scrollToTop(); // urcă și când se schimbă căutarea
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -372,10 +386,14 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     setPage(0);
     setQuery('');
     fetchPage(0, '');
+    scrollToTop();
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {/* anchor pentru scroll-to-top */}
+      <span ref={topRef} />
+
       <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
         {!enableSearch && (
           <h2 className="
@@ -456,7 +474,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
             >
               {items.map((a, idx) => (
                 <motion.div key={a.id} variants={itemVariants} layout>
-                  {/* /stiri: folosește <h3> în card pentru că există deja <h2> de secțiune */}
                   <AnnouncementCard a={a} isLCP={page === 0 && idx === 0} headingLevel={3} />
                 </motion.div>
               ))}
@@ -474,7 +491,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
               >
                 <button
                   className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => setPage(0)}
+                  onClick={() => { setPage(0); scrollToTop(); }}
                   disabled={page === 0}
                   title="Prima pagină"
                 >
@@ -482,7 +499,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 </button>
                 <button
                   className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  onClick={() => { setPage((p) => Math.max(0, p - 1)); scrollToTop(); }}
                   disabled={page === 0}
                   title="Anterior"
                 >
@@ -494,7 +511,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                     <>
                       <button
                         className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={() => setPage(0)}
+                        onClick={() => { setPage(0); scrollToTop(); }}
                       >
                         1
                       </button>
@@ -504,7 +521,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                   {pageNumbers.map((n) => (
                     <button
                       key={n}
-                      onClick={() => setPage(n - 1)}
+                      onClick={() => { setPage(n - 1); scrollToTop(); }}
                       className={`px-3 py-1.5 text-sm rounded-lg border ${
                         n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
                       }`}
@@ -519,7 +536,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                       )}
                       <button
                         className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={() => setPage(totalPages - 1)}
+                        onClick={() => { setPage(totalPages - 1); scrollToTop(); }}
                       >
                         {totalPages}
                       </button>
@@ -529,7 +546,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
                 <button
                   className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  onClick={() => { setPage((p) => Math.min(totalPages - 1, p + 1)); scrollToTop(); }}
                   disabled={page === totalPages - 1}
                   title="Următor"
                 >
@@ -537,7 +554,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
                 </button>
                 <button
                   className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => setPage(totalPages - 1)}
+                  onClick={() => { setPage(totalPages - 1); scrollToTop(); }}
                   disabled={page === totalPages - 1}
                   title="Ultima pagină"
                 >

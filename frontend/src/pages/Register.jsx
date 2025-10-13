@@ -71,7 +71,6 @@ const Register = () => {
     }
   };
 
-  // mici indicatoare pentru parolă
   const pwdChecks = {
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -239,9 +238,12 @@ const Register = () => {
             )}
           </div>
 
-          <p className="text-xs text-gray-600">
-            🔒 Parola trebuie să aibă minim 8 caractere, o literă mare, una mică, o cifră și un simbol.
-          </p>
+          {/* Mesaj informativ despre abonare automată */}
+          <div className="text-xs rounded-lg border border-blue-200 bg-blue-50 text-blue-800 px-3 py-2">
+            ℹ️ La crearea contului ești <span className="font-semibold">abonat automat</span> la
+            noutățile echipei (email). Te poți dezabona oricând din
+            <span className="font-semibold"> Profil → Abonare la noutăți</span>.
+          </div>
 
           {/* Submit */}
           <button

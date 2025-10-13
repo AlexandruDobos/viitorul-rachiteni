@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/my-vote").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/*/votes/summary").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/app/matches/auth/me").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/app/matches/*/stats").permitAll()
 
                         // --- REGULI GENERALE ---
                         .requestMatchers(HttpMethod.GET, "/api/app/**").permitAll()

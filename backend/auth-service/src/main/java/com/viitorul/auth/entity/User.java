@@ -1,4 +1,3 @@
-// src/main/java/com/viitorul/auth/entity/User.java
 package com.viitorul.auth.entity;
 
 import com.viitorul.auth.entity.enums.AuthProvider;
@@ -35,8 +34,12 @@ public class User {
     private boolean emailVerified;
 
     @Builder.Default
-    @Column(name = "subscribed_to_news", nullable = false)
-    private boolean subscribedToNews = false; // 👈 nou: default false
+    @Column(
+            name = "subscribed_to_news",
+            nullable = false,
+            columnDefinition = "boolean default true"
+    )
+    private boolean subscribedToNews = true; //
 
     private LocalDateTime registeredAt;
     private LocalDateTime lastLoginAt;

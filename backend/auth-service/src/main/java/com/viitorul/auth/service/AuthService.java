@@ -59,6 +59,7 @@ public class AuthService {
                 .registeredAt(LocalDateTime.now())
                 .role(UserRole.USER) // doar USER
                 .emailVerified(false)
+                .subscribedToNews(true)
                 .build();
 
         userRepository.save(user);

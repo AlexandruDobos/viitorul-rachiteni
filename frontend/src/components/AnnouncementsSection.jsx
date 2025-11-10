@@ -9,13 +9,24 @@ const WINDOW = 5;
 
 /* ===== utilitare ===== */
 const slugify = (s = '') =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
 
 function formatDate(iso) {
   try {
-    return new Date(iso).toLocaleString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' });
-  } catch { return iso || ''; }
+    return new Date(iso).toLocaleString('ro-RO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return iso || '';
+  }
 }
 function wordsExcerpt(text = '', maxWords = 24) {
   const words = (text || '').trim().split(/\s+/);
@@ -30,68 +41,60 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD (rectangular, dimensiune unitară) ===== */
+/* ===== CARD ===== */
 function AnnouncementCard({ a, blueFrame = false, isLCP = false, headingLevel = 3 }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
   const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
+
+  const outerClass = 'relative rounded-2xl';
+  const heightClass = blueFrame
+    ? 'h-[220px] sm:h-[280px] md:h-[340px] lg:h-[420px] xl:h-[480px]'
+    : 'h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px]';
 
   // clamp între 1–6
   const Tag = `h${Math.min(6, Math.max(1, headingLevel))}`;
 
   return (
-    <Link to={href} title={a.title} className="group block h-full">
-      <article
-        className="
-          h-full flex flex-col justify-start
-          rounded-2xl ring-1 ring-indigo-100/70
-          shadow-[0_10px_30px_rgba(30,58,138,0.08)]
-          bg-white overflow-hidden
-        "
-      >
-        {/* Header: titlu + dată (înălțime rezervată pentru aliniere identică) */}
-        <header className="px-3 pt-3 text-center">
+    <Link to={href} title={a.title} className="group block w-full text-left bg-transparent">
+      <div className={outerClass}>
+        {/* Header: TITLU + DATĂ */}
+        <div className="px-2 sm:px-3 pt-3 flex flex-col items-center text-center">
           <Tag
             className="
-              font-sans font-extrabold uppercase tracking-tight leading-snug
-              text-base sm:text-lg md:text-xl text-slate-900
-              line-clamp-3
+              font-sans font-extrabold uppercase tracking-tight leading-tight
+              text-lg sm:text-2xl md:text-3xl text-slate-900
             "
-            style={{ wordBreak: 'break-word' }}
           >
             {a.title}
           </Tag>
 
-          <div className="mt-2 w-full flex items-center gap-3">
+          <div className="mt-2 w-full max-w-[560px] flex items-center gap-3">
             <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-            <span className="whitespace-nowrap text-xs font-medium text-slate-600">
+            <span className="whitespace-nowrap text-xs sm:text-sm font-medium text-slate-600">
               {formatDate(a.publishedAt)}
             </span>
             <span className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
           </div>
+        </div>
 
-          {/* rezervă înălțime constantă pt header */}
-          <div className="h-2 md:h-3" />
-        </header>
-
-        {/* Media: înălțime fixă pentru toate cardurile */}
-        <div className="px-3">
+        {/* Media */}
+        <div className="px-2 sm:px-3 pt-3">
           <div
-            className="
-              relative overflow-hidden rounded-xl
-              aspect-[16/9]
-              h-44 sm:h-48 md:h-56 lg:h-60
-              ring-1 ring-indigo-50
-            "
+            className={`relative overflow-hidden rounded-2xl ring-1 ring-indigo-100/70 shadow-[0_10px_30px_rgba(30,58,138,0.12)] ${heightClass}`}
           >
             {imgSrc ? (
               <img
                 src={imgSrc}
                 alt={a.title}
+                width={960}
+                height={540}
                 loading={isLCP ? 'eager' : 'lazy'}
                 fetchpriority={isLCP ? 'high' : 'auto'}
                 decoding="async"
                 className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
-                onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.png';
+                }}
               />
             ) : (
               <div className="absolute inset-0 grid place-items-center text-gray-400 bg-gray-100">
@@ -102,52 +105,143 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false, headingLevel = 
           </div>
         </div>
 
-        {/* Teaser – pe home ascuns; pe /stiri menține cardul „egal” */}
-        <div className={`px-3 pb-4 pt-3 ${blueFrame ? 'hidden' : 'block'}`}>
-          <p className="text-sm text-gray-700">{wordsExcerpt(a.contentText, 32)}</p>
+        {/* Teaser – vizibil DOAR pe /stiri, ascuns pe home */}
+        <div className={`px-2 sm:px-3 pb-4 sm:pb-5 ${blueFrame ? 'hidden' : ''}`}>
+          <p className="text-sm sm:text-base text-gray-700">{wordsExcerpt(a.contentText, 36)}</p>
         </div>
-      </article>
+      </div>
     </Link>
   );
 }
 
-/* ===== GRID – HOME (fără carusel) ===== */
-function HomeAnnouncementsGrid({ items }) {
-  const list = (items || []).slice(0, 4);
+/* ===== CARUSEL – HOME ===== */
+function HomeAnnouncementsCarousel({ items }) {
+  const [page, setPage] = useState(0);
+  const pages = useMemo(() => (items?.length ? items : []), [items]);
+
+  const dragRef = useRef({ startX: 0, deltaX: 0, active: false });
+  const THRESH = 40;
+
+  const prev = () => setPage((p) => Math.max(0, p - 1));
+  const next = () => setPage((p) => Math.min(pages.length - 1, p + 1));
+
+  // swipe
+  const onPointerDown = (e) => {
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    dragRef.current = { startX: x, deltaX: 0, active: true };
+  };
+  const onPointerMove = (e) => {
+    if (!dragRef.current.active) return;
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    dragRef.current.deltaX = x - dragRef.current.startX;
+  };
+  const onPointerUp = () => {
+    if (!dragRef.current.active) return;
+    const { deltaX } = dragRef.current;
+    dragRef.current.active = false;
+    if (Math.abs(deltaX) > THRESH) (deltaX > 0 ? prev() : next());
+  };
+
+  // accesibilitate
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowLeft') prev();
+    if (e.key === 'ArrowRight') next();
+  };
+
+  const slidePct = pages.length ? 100 / pages.length : 100;
 
   return (
-    <>
-      {/* 1 col mobil, 2 col mediu, 4 col mare; cardurile au h-full pentru aliniere */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
-        {list.map((a, i) => (
-          <AnnouncementCard
-            key={a.id ?? i}
-            a={a}
-            blueFrame
-            isLCP={i === 0}
-            headingLevel={2}
-          />
-        ))}
-      </div>
+    <section
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      className="relative select-none"
+      style={{ touchAction: 'pan-y' }}
+      aria-label="Anunțuri"
+    >
+      <div
+        className="relative overflow-hidden rounded-xl"
+        onMouseDown={onPointerDown}
+        onMouseMove={onPointerMove}
+        onMouseUp={onPointerUp}
+        onMouseLeave={onPointerUp}
+        onTouchStart={onPointerDown}
+        onTouchMove={onPointerMove}
+        onTouchEnd={onPointerUp}
+      >
+        {pages.length > 1 && (
+          <>
+            {/* Săgeți – „glassy”, vizibile, 44px touch target */}
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Anterior"
+              disabled={page === 0}
+              className="
+                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 disabled:opacity-50
+                transition
+              "
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Următor"
+              disabled={page === pages.length - 1}
+              className="
+                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
+                h-11 w-11 grid place-items-center rounded-full
+                bg-white/70 backdrop-blur-md text-gray-800
+                ring-1 ring-white/60 shadow-md
+                hover:bg-white/90 disabled:opacity-50
+                transition
+              "
+            >
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
+              </svg>
+            </button>
+          </>
+        )}
 
-      {/* CTA „toate știrile” */}
-      <div className="mt-6 flex justify-center">
-        <Link
-          to="/stiri"
-          className="
-            inline-flex items-center gap-2 rounded-full px-5 py-2.5
-            text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700
-            shadow-md ring-1 ring-blue-700/20 transition
-          "
-          aria-label="Vezi toate știrile"
+        <div
+          className="flex transition-transform duration-500 ease-out"
+          style={{
+            width: `${pages.length * 100}%`,
+            transform: `translateX(-${page * slidePct}%)`,
+          }}
         >
-          Vezi toate știrile
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
-          </svg>
-        </Link>
+          {pages.map((a, i) => (
+            <div
+              key={a.id ?? i}
+              className="flex-shrink-0 px-1 sm:px-2"
+              style={{ width: `${slidePct}%` }}
+            >
+              {/* Home: folosește <h2> în card pentru ierarhie corectă */}
+              <AnnouncementCard a={a} blueFrame isLCP={i === 0} headingLevel={2} />
+            </div>
+          ))}
+        </div>
       </div>
-    </>
+    </section>
   );
 }
 
@@ -165,18 +259,19 @@ const itemVariants = {
 const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { delay: 0.1 } }, exit: { opacity: 0 } };
 
 const SkeletonCard = () => (
-  <div className="overflow-hidden rounded-2xl ring-1 ring-indigo-100/70">
+  <div className="overflow-hidden rounded-3xl">
     <div className="animate-pulse">
-      <div className="h-10 bg-gray-200 mx-3 mt-3 rounded" />
-      <div className="h-48 sm:h-56 md:h-64 bg-gray-200 rounded-xl mx-3 mt-3" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded" />
+      <div className="h-8 bg-gray-200 rounded mx-2 mt-3" />
+      <div className="relative h-[180px] sm:h-[230px] lg:h-[290px] xl:h-[330px] bg-gray-200 rounded-2xl mx-2 sm:mx-3 mt-3" />
+      <div className="p-5 space-y-4">
+        <div className="h-5 bg-gray-200 rounded" />
         <div className="h-4 bg-gray-200 rounded w-3/4" />
       </div>
     </div>
   </div>
 );
 
+/* ===== COMPONENTA PRINCIPALĂ ===== */
 /* ===== COMPONENTA PRINCIPALĂ ===== */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
@@ -192,15 +287,17 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // anchor scroll top
+  // ⬇️ anchor pentru “scroll la începutul secțiunii”
   const topRef = useRef(null);
   const scrollToTop = () => {
     if (!topRef.current) return;
+    // offset pentru navbar fix pe mobil (ajustează dacă ai altă înălțime)
     const headerOffset = window.innerWidth < 1024 ? 64 : 0;
     const y = topRef.current.getBoundingClientRect().top + window.scrollY - headerOffset;
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   };
 
+  // calc numerotare
   const pageNumbers = useMemo(() => {
     const total = Math.max(1, totalPages);
     const current = page + 1;
@@ -211,11 +308,16 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [page, totalPages]);
 
+  // fetch helper
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
-      const params = new URLSearchParams({ page: String(pageNum), size: String(EFFECTIVE_SIZE) });
+      const params = new URLSearchParams({
+        page: String(pageNum),
+        size: String(EFFECTIVE_SIZE),
+      });
       if (!limit && enableSearch) params.set('q', effectiveQuery || '');
+
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
@@ -230,6 +332,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
+    // la fiecare schimbare de pagină pe /stiri, urcă la începutul secțiunii
     if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
@@ -241,7 +344,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       setPage(0);
       setQuery(newQ);
       fetchPage(0, newQ);
-      scrollToTop();
+      scrollToTop(); // urcă și când se schimbă căutarea
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -252,9 +355,7 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
-            {Array.from({ length: 4 }).map((_, i) => (<SkeletonCard key={i} />))}
-          </div>
+          <SkeletonCard />
         </div>
       );
     }
@@ -274,23 +375,31 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
     return (
       <div className="max-w-6xl mx-auto">
-        <HomeAnnouncementsGrid items={items.slice(0, limit)} />
+        <HomeAnnouncementsCarousel items={items.slice(0, limit)} />
       </div>
     );
   }
 
   /* ---------- /stiri ---------- */
   const onClear = () => {
-    setQueryInput(''); setPage(0); setQuery(''); fetchPage(0, ''); scrollToTop();
+    setQueryInput('');
+    setPage(0);
+    setQuery('');
+    fetchPage(0, '');
+    scrollToTop();
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+      {/* anchor pentru scroll-to-top */}
       <span ref={topRef} />
 
       <div className={`${!enableSearch ? 'flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3' : 'flex justify-center'}`}>
         {!enableSearch && (
-          <h2 className="font-sans font-extrabold uppercase tracking-tight text-2xl md:text-3xl text-slate-900">
+          <h2 className="
+              font-sans font-extrabold uppercase tracking-tight
+              text-2xl md:text-3xl text-slate-900
+            ">
             Ultimele noutăți
           </h2>
         )}
@@ -307,14 +416,26 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
               inputMode="search"
               autoComplete="off"
             />
-            <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-blue-600"
-              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
+            <svg
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 peer-focus:text-blue-600"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.35-4.35" />
             </svg>
             {queryInput && (
-              <button type="button" onClick={onClear}
+              <button
+                type="button"
+                onClick={onClear}
                 className="absolute right-2 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-full text-gray-500 hover:text-gray-700"
-                aria-label="Șterge căutarea" title="Șterge">×</button>
+                aria-label="Șterge căutarea"
+                title="Șterge"
+              >
+                ×
+              </button>
             )}
           </div>
         )}
@@ -322,24 +443,37 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
       {state.loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (<SkeletonCard key={i} />))}
+          {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : state.error ? (
-        <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
+        <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">
+          {state.error}
+        </div>
       ) : items.length === 0 ? (
         <div className="bg-white rounded-xl p-6 ring-1 ring-gray-200 text-gray-600">
-          {enableSearch && query ? <>Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.</> : 'Nu există anunțuri momentan.'}
+          {enableSearch && query ? (
+            <>
+              Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.
+            </>
+          ) : (
+            'Nu există anunțuri momentan.'
+          )}
         </div>
       ) : (
         <>
           <AnimatePresence mode="wait">
             <motion.div
               key={`page-${page}-${query || 'all'}`}
-              className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch"
-              variants={gridVariants} initial="hidden" animate="show" exit="exit"
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
+              variants={gridVariants}
+              initial="hidden"
+              animate="show"
+              exit="exit"
             >
               {items.map((a, idx) => (
-                <motion.div key={a.id} variants={itemVariants} layout className="h-full">
+                <motion.div key={a.id} variants={itemVariants} layout>
                   <AnnouncementCard a={a} isLCP={page === 0 && idx === 0} headingLevel={3} />
                 </motion.div>
               ))}
@@ -348,42 +482,84 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
           {totalPages > 1 && (
             <AnimatePresence>
-              <motion.div className="flex items-center justify-center gap-2 pt-4"
-                variants={pagerVariants} initial="hidden" animate="show" exit="exit">
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => { setPage(0); scrollToTop(); }} disabled={page === 0} title="Prima pagină">«</button>
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
-                  onClick={() => { setPage((p) => Math.max(0, p - 1)); scrollToTop(); }} disabled={page === 0} title="Anterior">←</button>
+              <motion.div
+                className="flex items-center justify-center gap-2 pt-4"
+                variants={pagerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+              >
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => { setPage(0); scrollToTop(); }}
+                  disabled={page === 0}
+                  title="Prima pagină"
+                >
+                  «
+                </button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  onClick={() => { setPage((p) => Math.max(0, p - 1)); scrollToTop(); }}
+                  disabled={page === 0}
+                  title="Anterior"
+                >
+                  ←
+                </button>
 
                 <>
                   {pageNumbers[0] > 1 && (
                     <>
-                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={() => { setPage(0); scrollToTop(); }}>1</button>
+                      <button
+                        className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+                        onClick={() => { setPage(0); scrollToTop(); }}
+                      >
+                        1
+                      </button>
                       {pageNumbers[0] > 2 && <span className="px-1 text-sm text-gray-500">…</span>}
                     </>
                   )}
                   {pageNumbers.map((n) => (
-                    <button key={n} onClick={() => { setPage(n - 1); scrollToTop(); }}
-                      className={`px-3 py-1.5 text-sm rounded-lg border ${n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'}`}>
+                    <button
+                      key={n}
+                      onClick={() => { setPage(n - 1); scrollToTop(); }}
+                      className={`px-3 py-1.5 text-sm rounded-lg border ${
+                        n - 1 === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-50'
+                      }`}
+                    >
                       {n}
                     </button>
                   ))}
                   {pageNumbers[pageNumbers.length - 1] < totalPages && (
                     <>
-                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && <span className="px-1 text-sm text-gray-500">…</span>}
-                      <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
-                        onClick={() => { setPage(totalPages - 1); scrollToTop(); }}>{totalPages}</button>
+                      {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                        <span className="px-1 text-sm text-gray-500">…</span>
+                      )}
+                      <button
+                        className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50"
+                        onClick={() => { setPage(totalPages - 1); scrollToTop(); }}
+                      >
+                        {totalPages}
+                      </button>
                     </>
                   )}
                 </>
 
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                   onClick={() => { setPage((p) => Math.min(totalPages - 1, p + 1)); scrollToTop(); }}
-                  disabled={page === totalPages - 1} title="Următor">→</button>
-                <button className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
+                  disabled={page === totalPages - 1}
+                  title="Următor"
+                >
+                  →
+                </button>
+                <button
+                  className="px-3 py-1.5 text-sm rounded-lg border hover:bg-gray-50 disabled:opacity-50"
                   onClick={() => { setPage(totalPages - 1); scrollToTop(); }}
-                  disabled={page === totalPages - 1} title="Ultima pagină">»</button>
+                  disabled={page === totalPages - 1}
+                  title="Ultima pagină"
+                >
+                  »
+                </button>
               </motion.div>
             </AnimatePresence>
           )}

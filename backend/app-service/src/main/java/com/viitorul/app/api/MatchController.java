@@ -32,6 +32,11 @@ public class MatchController {
         return ResponseEntity.ok(matchService.getAllMatches());
     }
 
+    @GetMapping("/last")
+    public ResponseEntity<MatchDTO> getLastFinished() {
+        return ResponseEntity.ok(matchService.getLastFinished());
+    }
+
     @GetMapping("/page")
     public ResponseEntity<Page<MatchDTO>> getMatchesPaged(
             @RequestParam(name = "q", required = false, defaultValue = "") String q,

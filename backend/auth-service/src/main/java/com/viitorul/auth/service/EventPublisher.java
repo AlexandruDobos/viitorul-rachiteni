@@ -27,6 +27,7 @@ public class EventPublisher {
                 }
         );
     }
+    
     public void sendPasswordResetRequestedEvent(PasswordResetRequestedEvent event) {
         rabbitTemplate.convertAndSend("auth.exchange", "auth.reset", event);
     }

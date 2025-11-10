@@ -82,6 +82,14 @@ public class MatchService {
                 .toList();
     }
 
+    public MatchDTO getLastFinished() {
+        // varianta 1: derived query
+        return matchRepository
+                .findFirstByActiveTrueAndHomeGoalsIsNotNullAndAwayGoalsIsNotNullOrderByDateDescKickoffTimeDescIdDesc()
+                .map(MatchDTO::toDto)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No finished matches"));
+    }
+
     /**
      * ULTIMUL ADĂUGAT: următorul meci (primul din lista „upcoming”).
      */

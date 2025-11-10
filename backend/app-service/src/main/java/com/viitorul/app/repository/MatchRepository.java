@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MatchRepository extends JpaRepository<Match, Long> {
 
@@ -18,6 +19,9 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
             ORDER BY m.date ASC, m.kickoffTime ASC
             """)
     List<Match> findUpcomingMatches();
+
+    Optional<Match> findFirstByActiveTrueAndHomeGoalsIsNotNullAndAwayGoalsIsNotNullOrderByDateDescKickoffTimeDescIdDesc();
+
 
     /**
      * Căutare fără diacritice doar pe numele echipelor + filtrare sezon (ID sau LABEL), ambele opționale.

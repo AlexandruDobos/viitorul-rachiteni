@@ -25,6 +25,7 @@ import AnnouncementsSection from "./components/AnnouncementsSection";
 import DonationsSuccess from "./pages/DonationsSuccess";
 import DonationsCancel from "./pages/DonationsCancel";
 import NextMatchSection from "./components/NextMatchSection";
+import LastResultSection from "./components/LastResultSection";
 import CompactStandings from "./components/CompactStandings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
@@ -227,6 +228,7 @@ const App = () => {
                   <div className="overflow-hidden"><HeroTitle /></div>
                   <div><AnnouncementsSection limit={3} pageSize={3} /></div>
                   <div><NextMatchSection /></div>
+                  <div className="mt-6"><LastResultSection /></div> 
                   <div className="mt-8"><CompactStandings title="Clasament (rezumat)" /></div>
                   <div><PlayersCarousel /></div>
                 </div>

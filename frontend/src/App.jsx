@@ -25,6 +25,7 @@ import AnnouncementsSection from "./components/AnnouncementsSection";
 import DonationsSuccess from "./pages/DonationsSuccess";
 import DonationsCancel from "./pages/DonationsCancel";
 import NextMatchSection from "./components/NextMatchSection";
+import CompactStandings from "./components/CompactStandings";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";

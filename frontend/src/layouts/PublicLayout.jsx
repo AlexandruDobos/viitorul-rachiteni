@@ -51,7 +51,6 @@ export default function PublicLayout() {
             gap-y-6 lg:gap-y-8
             gap-x-6 lg:gap-x-12 xl:gap-x-16
             px-4 sm:px-6 lg:px-10
-            overflow-x-clip
           "
         >
           <aside className="hidden lg:block lg:pr-4">
@@ -61,8 +60,7 @@ export default function PublicLayout() {
             </div>
           </aside>
 
-          <main className="min-w-0 w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6 overflow-x-clip">
-            <div className="lg:hidden mb-5 space-y-3 mt-8">
+          <main className="min-w-0 w-full pt-4 md:pt-6 pb-16 md:pb-20 lg:border-x lg:border-gray-100 lg:px-6 overflow-x-visible">            <div className="lg:hidden mb-5 space-y-3 mt-8">
               <AdsDisplay position="left" />
             </div>
 

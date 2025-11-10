@@ -222,12 +222,12 @@ const App = () => {
               <Route
                 path="/"
                 element={
-                  <div className="overflow-x-hidden">
-                    <div className="overflow-hidden"><HeroTitle /></div>
-                    <div><AnnouncementsSection limit={3} pageSize={3} /></div>
-                    <div className="overflow-hidden"><NextMatchSection /></div>
-                    <div className="overflow-hidden"><PlayersCarousel /></div>
-                  </div>
+                <div>
+                  <div className="overflow-hidden"><HeroTitle /></div>
+                  <div><AnnouncementsSection limit={3} pageSize={3} /></div>
+                  <div><NextMatchSection /></div>
+                  <div><PlayersCarousel /></div>
+                </div>
                 }
               />
 

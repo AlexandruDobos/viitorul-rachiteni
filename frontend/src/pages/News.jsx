@@ -2,7 +2,10 @@
 import React from 'react';
 import AnnouncementsSection from '../components/AnnouncementsSection';
 import JsonLd from '../components/JsonLD';
+
 const News = () => {
+  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+
   return (
     <div className="px-4 space-y-6">
       {/* === JSON-LD (CollectionPage + Breadcrumb) === */}
@@ -11,12 +14,12 @@ const News = () => {
           '@context': 'https://schema.org',
           '@type': 'CollectionPage',
           name: 'Știri – ACS Viitorul Răchiteni',
-          url: `${origin}/stiri`,
+          url: `${siteOrigin}/stiri`,
           about: {
             '@type': 'SportsTeam',
             name: 'ACS Viitorul Răchiteni',
             sport: 'Football',
-            url: origin + '/',
+            url: siteOrigin + '/',
           },
         }}
       />
@@ -25,22 +28,13 @@ const News = () => {
           '@context': 'https://schema.org',
           '@type': 'BreadcrumbList',
           itemListElement: [
-            {
-              '@type': 'ListItem',
-              position: 1,
-              name: 'Acasă',
-              item: `${origin}/`,
-            },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: 'Știri',
-              item: `${origin}/stiri`,
-            },
+            { '@type': 'ListItem', position: 1, name: 'Acasă', item: `${siteOrigin}/` },
+            { '@type': 'ListItem', position: 2, name: 'Știri', item: `${siteOrigin}/stiri` },
           ],
         }}
       />
-      {/* Banner albastru frumos, în tonul site-ului */}
+
+      {/* Banner */}
       <div className="max-w-6xl mx-auto">
         <div className="rounded-2xl p-6 md:p-8 text-white ring-1 ring-indigo-400/40 shadow-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Știri</h1>
@@ -50,8 +44,8 @@ const News = () => {
         </div>
       </div>
 
-      {/* Secțiunea cu listă + căutare live + paginare (4 / pagină) */}
-      <AnnouncementsSection title="Știri" enableSearch pageSize={4} />
+      {/* 6 / pagină pe lista de știri */}
+      <AnnouncementsSection title="Știri" enableSearch pageSize={6} />
     </div>
   );
 };

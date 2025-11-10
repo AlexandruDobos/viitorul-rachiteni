@@ -7,14 +7,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DEFAULT_PAGE_SIZE = 6; // /stiri: 6 pe pagină
 const WINDOW = 5;
 
-/* utils */
+/* ===== utilitare ===== */
 const slugify = (s = '') =>
-  s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  s.toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
 
 function formatDate(iso) {
   try {
-    return new Date(iso).toLocaleString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' });
-  } catch { return iso || ''; }
+    return new Date(iso).toLocaleString('ro-RO', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  } catch {
+    return iso || '';
+  }
 }
 function wordsExcerpt(text = '', maxWords = 26) {
   const words = (text || '').trim().split(/\s+/);
@@ -29,7 +40,7 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* CARD */
+/* ===== CARD ===== */
 function AnnouncementCard({ a, isLCP = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
   const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
@@ -38,25 +49,33 @@ function AnnouncementCard({ a, isLCP = false }) {
     <Link
       to={href}
       title={a.title}
-      className="group block h-full rounded-2xl ring-1 ring-slate-200 bg-white shadow-[0_6px_24px_rgba(15,23,42,0.06)] overflow-hidden transition hover:shadow-[0_10px_28px_rgba(15,23,42,0.10)]"
+      className="
+        group block h-full
+        rounded-2xl ring-1 ring-slate-200 bg-white
+        shadow-[0_6px_24px_rgba(15,23,42,0.06)]
+        overflow-hidden transition hover:shadow-[0_10px_28px_rgba(15,23,42,0.10)]
+      "
     >
       {/* imagine 16:9 */}
       <div className="relative w-full">
         <div className="w-full aspect-[16/9] bg-slate-100" />
-        {imgSrc && (
+        {imgSrc ? (
           <img
             src={imgSrc}
             alt={a.title}
             loading={isLCP ? 'eager' : 'lazy'}
             fetchpriority={isLCP ? 'high' : 'auto'}
             decoding="async"
-            className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-[1.02]"
+            className="
+              absolute inset-0 h-full w-full object-cover object-center
+              transition-transform duration-500 group-hover:scale-[1.02]
+            "
             onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
           />
-        )}
+        ) : null}
       </div>
 
-      {/* conținut */}
+      {/* conținut: titlu / descriere / meta */}
       <div className="grid grid-rows-[auto_1fr_auto] px-4 py-4 sm:px-5 sm:py-5 h-[300px] sm:h-[320px] lg:h-[340px]">
         <h3 className="text-slate-900 font-semibold tracking-tight text-[15px] sm:text-base md:text-[17px] leading-snug line-clamp-3">
           {a.title}
@@ -66,7 +85,7 @@ function AnnouncementCard({ a, isLCP = false }) {
           {wordsExcerpt(a.contentText, 28)}
         </p>
 
-        {/* separator FULL-BLEED -> nu mai e „întrerupt” */}
+        {/* separator FULL-BLEED + meta (nu se mai întrerupe) */}
         <div className="mt-2">
           <div className="-mx-4 sm:-mx-5 border-t border-slate-200" />
           <div className="pt-2 flex items-center justify-between">
@@ -86,12 +105,20 @@ function AnnouncementCard({ a, isLCP = false }) {
   );
 }
 
-/* animații */
-const gridVariants = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut', when: 'beforeChildren', staggerChildren: 0.06 } }, exit: { opacity: 0, y: -8, transition: { duration: 0.2 } } };
-const itemVariants = { hidden: { opacity: 0, y: 12, scale: 0.98 }, show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.28, ease: 'easeOut' } }, exit: { opacity: 0, y: -8, transition: { duration: 0.18 } } };
+/* ===== animații ===== */
+const gridVariants = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut', when: 'beforeChildren', staggerChildren: 0.06 } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.2 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 12, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.28, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.18 } },
+};
 const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { delay: 0.1 } }, exit: { opacity: 0 } };
 
-/* Buton „Vezi toate știrile” (full-width pe mobil) */
+/* Buton „Vezi toate știrile” — full-width pe mobil */
 function ViewAllButton() {
   return (
     <Link
@@ -106,6 +133,7 @@ function ViewAllButton() {
   );
 }
 
+/* Skeleton */
 const SkeletonCard = () => (
   <div className="h-full rounded-2xl ring-1 ring-slate-200 bg-white overflow-hidden">
     <div className="animate-pulse">
@@ -119,7 +147,10 @@ const SkeletonCard = () => (
   </div>
 );
 
-/* SECTION */
+/* ===== COMPONENTA PRINCIPALĂ =====
+   Homepage: limit=3, butonul sub grilă.
+   /stiri: 6/pagină cu paginare.
+*/
 const AnnouncementsSection = ({
   limit,
   pageSize,
@@ -129,16 +160,21 @@ const AnnouncementsSection = ({
   showViewAll = true,
   viewAllPlacement = 'below',
 }) => {
-  // /stiri: 6 (implicit); homepage: limit=3
+  // /stiri: 6/page (DEFAULT_PAGE_SIZE), homepage: 3
   const EFFECTIVE_SIZE = pageSize || (limit ? limit : DEFAULT_PAGE_SIZE);
 
   const [items, setItems] = useState([]);
   const [state, setState] = useState({ loading: false, error: null });
+
+  // paginare /stiri
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  // search /stiri
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
+  // anchor scroll top
   const topRef = useRef(null);
   const scrollToTop = () => {
     if (!topRef.current) return;
@@ -157,10 +193,14 @@ const AnnouncementsSection = ({
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }, [page, totalPages]);
 
+  // fetch
   const fetchPage = async (pageNum = 0, effectiveQuery = '') => {
     try {
       setState({ loading: true, error: null });
-      const params = new URLSearchParams({ page: String(pageNum), size: String(EFFECTIVE_SIZE) });
+      const params = new URLSearchParams({
+        page: String(pageNum),
+        size: String(EFFECTIVE_SIZE),
+      });
       if (!limit && enableSearch) params.set('q', effectiveQuery || '');
 
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
@@ -168,7 +208,8 @@ const AnnouncementsSection = ({
       const data = await res.json();
 
       const content = data.content || [];
-      // SIGURANȚĂ: pe homepage, taie local la 3
+
+      // Siguranță: dacă backendul trimite mai multe, taie local când avem limită.
       setItems(limit ? content.slice(0, limit) : content);
 
       setTotalPages(data.totalPages || 1);
@@ -180,6 +221,8 @@ const AnnouncementsSection = ({
   };
 
   useEffect(() => {
+    // homepage (limit setat): cere doar prima pagină, 3 iteme
+    // /stiri: cere pagina curentă, 6 iteme
     fetchPage(limit ? 0 : page, query);
     if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,10 +241,20 @@ const AnnouncementsSection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
-  const showPager = !limit;
+  /* ---------- GRID (Homepage + /stiri) ---------- */
+  const showPager = !limit; // pe homepage (când limit e setat) ascundem paginarea
+
+  const onClear = () => {
+    setQueryInput('');
+    setPage(0);
+    setQuery('');
+    fetchPage(0, '');
+    scrollToTop();
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {/* header (fără buton aici pe homepage) */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
         {showViewAll && !limit && <ViewAllButton />}
@@ -226,7 +279,7 @@ const AnnouncementsSection = ({
           {queryInput && (
             <button
               type="button"
-              onClick={() => { setQueryInput(''); }}
+              onClick={onClear}
               className="absolute right-2 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-full text-slate-500 hover:text-slate-700"
               aria-label="Șterge căutarea"
               title="Șterge"
@@ -237,10 +290,12 @@ const AnnouncementsSection = ({
         </div>
       )}
 
-      {/* GRID: 1 / 2 / 3 coloane (nu ajunge la 4) */}
+      {/* GRID: 1 / 2 / 3 coloane (nu se duce la 4 nici pe ecrane foarte late) */}
       {state.loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: limit || DEFAULT_PAGE_SIZE }).map((_, i) => <SkeletonCard key={i} />)}
+          {Array.from({ length: limit || DEFAULT_PAGE_SIZE }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
         </div>
       ) : state.error ? (
         <div className="bg-white rounded-2xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
@@ -267,7 +322,7 @@ const AnnouncementsSection = ({
             </motion.div>
           </AnimatePresence>
 
-          {/* buton sub grilă pe homepage */}
+          {/* buton SUB grilă — folosit pe homepage (limit=3) */}
           {showViewAll && limit && (
             <div className="flex justify-center pt-2">
               <ViewAllButton />
@@ -277,7 +332,13 @@ const AnnouncementsSection = ({
           {/* pager doar pe /stiri */}
           {showPager && totalPages > 1 && (
             <AnimatePresence>
-              <motion.div className="flex items-center justify-center gap-2 pt-2" variants={pagerVariants} initial="hidden" animate="show" exit="exit">
+              <motion.div
+                className="flex items-center justify-center gap-2 pt-2"
+                variants={pagerVariants}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+              >
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage(0); scrollToTop(); }} disabled={page === 0} title="Prima pagină">«</button>
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage((p) => Math.max(0, p - 1)); scrollToTop(); }} disabled={page === 0} title="Anterior">←</button>
 

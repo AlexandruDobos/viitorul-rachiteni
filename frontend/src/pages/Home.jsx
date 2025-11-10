@@ -8,6 +8,7 @@ const API_ORIGIN = (() => {
   try { return new URL(BASE_URL).origin; } catch { return BASE_URL || ''; }
 })();
 
+/** Insert a <link rel="preconnect"> once per origin */
 function preconnect(origin, cross = true) {
   if (!origin) return;
   const id = `preconnect-${origin}`;
@@ -20,27 +21,25 @@ function preconnect(origin, cross = true) {
   document.head.appendChild(link);
 }
 
+/** Idle-callback with fallback */
 function onIdle(cb, timeout = 1500) {
   const ric = window.requestIdleCallback || ((fn) => setTimeout(() => fn({ timeRemaining: () => 0 }), timeout));
   return ric(cb, { timeout });
 }
 
 const Home = () => {
+  // Prefetch pentru 3 anunțuri (câte afișăm pe homepage)
   useEffect(() => {
     preconnect(API_ORIGIN);
-
     const ac = new AbortController();
-    // Prefetch pentru EXACT 3
     const q = new URLSearchParams({ page: '0', size: '3' });
 
     fetch(`${BASE_URL}/app/announcements/page?${q.toString()}`, {
-      signal: ac.signal,
-      credentials: 'include',
+      signal: ac.signal, credentials: 'include',
     }).catch(() => {});
 
     fetch(`${BASE_URL}/app/matches/next`, {
-      signal: ac.signal,
-      credentials: 'include',
+      signal: ac.signal, credentials: 'include',
     }).catch(() => {});
 
     const device = window.matchMedia('(max-width: 1023px)').matches ? 'MOBILE' : 'DESKTOP';
@@ -71,7 +70,9 @@ const Home = () => {
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                   <div>
                     <h1 className="text-2xl md:text-3xl font-extrabold">ACS Viitorul Răchiteni</h1>
-                    <p className="text-white/80 mt-1">Știri, rezultate, program și informații despre echipă – totul într-un singur loc.</p>
+                    <p className="text-white/80 mt-1">
+                      Știri, rezultate, program și informații despre echipă – totul într-un singur loc.
+                    </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -84,15 +85,15 @@ const Home = () => {
               </div>
             </section>
 
-            {/* NOUTĂȚI — 3 carduri + buton sub grilă */}
+            {/* NOUTĂȚI — EXACT 3 carduri + buton SUB grilă */}
             <section>
               <AnnouncementsSection
                 variant="grid"
-                limit={3}                 // ← forțează CLAMP la 3
-                pageSize={3}              // ← cere 3 din backend
+                limit={3}                // afișăm 3 pe homepage
+                pageSize={3}             // cerem 3 din backend
                 title="Ultimele noutăți"
                 showViewAll
-                viewAllPlacement="below"  // ← butonul sub grilă
+                viewAllPlacement="below" // butonul sub grilă
               />
             </section>
           </main>

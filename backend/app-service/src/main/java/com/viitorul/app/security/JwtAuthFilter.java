@@ -25,13 +25,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = null;
 
-        // 1) Bearer header (dacă, uneori, îl vei folosi)
         String auth = req.getHeader("Authorization");
         if (auth != null && auth.startsWith("Bearer ")) {
             token = auth.substring(7);
         }
 
-        // 2) Cookie "jwt" (fallback)
         if (token == null && req.getCookies() != null) {
             for (var c : req.getCookies()) {
                 if ("jwt".equals(c.getName()) && c.getValue() != null && !c.getValue().isBlank()) {
@@ -41,9 +39,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
-        if (token != null && jwt.valid(token) &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+        boolean valid = false;
+        if (token != null) {
+            try {
+                valid = jwt.valid(token); // NU lăsa să arunce
+            } catch (Exception ignored) {
+                valid = false; // token invalid/expirat -> continuăm ca anonim
+            }
+        }
 
+        if (valid && SecurityContextHolder.getContext().getAuthentication() == null) {
             String email = jwt.getEmail(token);
 
             var authorities = jwt.getRoles(token).stream()

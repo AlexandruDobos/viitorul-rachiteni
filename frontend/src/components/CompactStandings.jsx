@@ -63,7 +63,7 @@ export default function CompactStandings({ title = 'Clasament' }) {
     <section className="max-w-6xl mx-auto">
       <div className="rounded-2xl ring-1 ring-slate-200 bg-white shadow-[0_6px_24px_rgba(15,23,42,0.06)] overflow-hidden">
         {/* header compact */}
-        <div className="px-4 sm:px-5 py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
+        <div className="px-4 sm:px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-600 text-white">
           <div className="flex items-center justify-between">
             <h2 className="text-sm sm:text-base font-semibold tracking-tight">{title}</h2>
             <Link
@@ -77,7 +77,7 @@ export default function CompactStandings({ title = 'Clasament' }) {
 
         {/* body */}
         {loading ? (
-          <div className="p-6 flex items-center justify-center">
+          <div className="p-5 flex items-center justify-center">
             <div className="h-5 w-5 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin" />
           </div>
         ) : err ? (
@@ -86,44 +86,48 @@ export default function CompactStandings({ title = 'Clasament' }) {
           <div className="p-4 text-sm text-slate-600">Nu există date de clasament.</div>
         ) : (
           <div className="overflow-x-auto">
-            {/* tabel mic (#, ECHIPĂ, MJ, V, E, Î, DG, P) – toate echipele */}
-            <table className="min-w-[560px] w-full text-sm">
+            {/* Mobile: doar #, ECHIPĂ, P; Desktop: toate coloanele, dar compact */}
+            <table className="w-full text-xs sm:text-sm">
               <thead className="bg-slate-50">
                 <tr className="text-slate-700">
-                  <th className="px-3 py-2 text-left w-10">#</th>
-                  <th className="px-3 py-2 text-left">ECHIPĂ</th>
-                  <th className="px-2 py-2 text-center w-12">MJ</th>
-                  <th className="px-2 py-2 text-center w-10">V</th>
-                  <th className="px-2 py-2 text-center w-10">E</th>
-                  <th className="px-2 py-2 text-center w-10">Î</th>
-                  <th className="px-2 py-2 text-center w-12">DG</th>
-                  <th className="px-3 py-2 text-right w-12">P</th>
+                  <th className="px-2 py-1.5 text-left w-8 sm:w-10">#</th>
+                  <th className="px-2 py-1.5 text-left">ECHIPĂ</th>
+
+                  {/* ascunse pe mobil */}
+                  <th className="px-1.5 py-1.5 text-center w-10 hidden md:table-cell">MJ</th>
+                  <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">V</th>
+                  <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">E</th>
+                  <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">Î</th>
+                  <th className="px-1.5 py-1.5 text-center w-12 hidden md:table-cell">DG</th>
+
+                  <th className="px-2 py-1.5 text-right w-12">P</th>
                 </tr>
               </thead>
+
               <tbody>
                 {table.map((r, i) => {
                   const mine = isMyTeam(r.teamName);
                   const rank = Number(r.rank);
-                  const stripe =
-                    rank <= 3
-                      ? 'bg-emerald-50'
-                      : i % 2
-                      ? 'bg-white'
-                      : 'bg-slate-50/60';
+
+                  // alternanță discretă, fără „break” după top 6
+                  const stripe = i % 2 ? 'bg-white' : 'bg-slate-50/40';
 
                   return (
                     <tr
                       key={`${r.teamName}-${rank}`}
-                      className={`${stripe} ${mine ? 'ring-1 ring-emerald-400/60 bg-emerald-50' : ''}`}
+                      className={`${stripe} ${
+                        mine ? 'ring-1 ring-emerald-400/60 bg-emerald-50' : ''
+                      }`}
                     >
-                      <td className="px-3 py-2 font-semibold text-slate-700">{rank}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-2 py-1.5 font-semibold text-slate-700">{rank}</td>
+
+                      <td className="px-2 py-1.5">
                         <div className="flex items-center gap-2">
                           {r.teamLogo && (
                             <img
                               src={r.teamLogo}
                               alt={r.teamName}
-                              className="w-5 h-5 rounded object-cover ring-1 ring-slate-200"
+                              className="w-4 h-4 sm:w-5 sm:h-5 rounded object-cover ring-1 ring-slate-200"
                               loading="lazy"
                               decoding="async"
                             />
@@ -138,18 +142,31 @@ export default function CompactStandings({ title = 'Clasament' }) {
                           </span>
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center text-slate-800">{r.played ?? '-'}</td>
-                      <td className="px-2 py-2 text-center text-slate-800">{r.wins ?? '-'}</td>
-                      <td className="px-2 py-2 text-center text-slate-800">{r.draws ?? '-'}</td>
-                      <td className="px-2 py-2 text-center text-slate-800">{r.losses ?? '-'}</td>
-                      <td className="px-2 py-2 text-center text-slate-800">
+
+                      {/* coloane ascunse pe mobil */}
+                      <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">
+                        {r.played ?? '-'}
+                      </td>
+                      <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">
+                        {r.wins ?? '-'}
+                      </td>
+                      <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">
+                        {r.draws ?? '-'}
+                      </td>
+                      <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">
+                        {r.losses ?? '-'}
+                      </td>
+                      <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">
                         {r.gd >= 0 ? `+${r.gd}` : r.gd}
                       </td>
-                      <td className="px-3 py-2 text-right">
+
+                      <td className="px-2 py-1.5 text-right">
+                        {/* evidențiez DOAR locurile 1–2 */}
                         <span
-                          className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-xs font-bold ${
+                          className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold ${
                             rank <= 2 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'
                           }`}
+                          title={`${r.points ?? 0} puncte`}
                         >
                           {r.points ?? 0}
                         </span>

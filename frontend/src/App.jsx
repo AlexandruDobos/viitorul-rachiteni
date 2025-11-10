@@ -226,6 +226,7 @@ const App = () => {
                   <div className="overflow-hidden"><HeroTitle /></div>
                   <div><AnnouncementsSection limit={3} pageSize={3} /></div>
                   <div><NextMatchSection /></div>
+                  <div className="mt-8"><CompactStandings title="Clasament (rezumat)" /></div>
                   <div><PlayersCarousel /></div>
                 </div>
                 }

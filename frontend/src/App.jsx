@@ -224,7 +224,7 @@ const App = () => {
                 element={
                   <div className="overflow-x-hidden">
                     <div className="overflow-hidden"><HeroTitle /></div>
-                    <div className="overflow-hidden"><AnnouncementsSection limit={3} /></div>
+                    <div ><AnnouncementsSection limit={3} /></div>
                     <div className="overflow-hidden"><NextMatchSection /></div>
                     <div className="overflow-hidden"><PlayersCarousel /></div>
                   </div>

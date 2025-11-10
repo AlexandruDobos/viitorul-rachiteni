@@ -81,14 +81,16 @@ function AnnouncementCard({ a, isLCP = false }) {
           {a.title}
         </h3>
 
-        <p className="mt-1.5 text-sm sm:text-[15px] text-slate-600 line-clamp-2">
-          {wordsExcerpt(a.contentText, 28)}
+        {/* Mai multe rânduri pentru descriere ca să umple natural spațiul
+            (înălțime rămâne fixă pe card) */}
+        <p className="mt-1.5 text-sm sm:text-[15px] text-slate-600 line-clamp-4 sm:line-clamp-3 lg:line-clamp-3">
+          {wordsExcerpt(a.contentText, 50)}
         </p>
 
-        {/* separator FULL-BLEED + meta (nu se mai întrerupe) */}
+        {/* separator FULL-BLEED + meta, spațiu mai strâns */}
         <div className="mt-2">
           <div className="-mx-4 sm:-mx-5 border-t border-slate-200" />
-          <div className="pt-2 flex items-center justify-between">
+          <div className="pt-1.5 flex items-center justify-between">
             <span className="text-xs sm:text-sm font-medium text-indigo-700">
               {formatDate(a.publishedAt)}
             </span>
@@ -148,8 +150,8 @@ const SkeletonCard = () => (
 );
 
 /* ===== COMPONENTA PRINCIPALĂ =====
-   Homepage: limit=3, butonul sub grilă.
-   /stiri: 6/pagină cu paginare.
+   Homepage: limit=3, buton sub grilă.
+   /stiri: 6/pagină cu paginare.  NU mai afișăm buton pe /stiri.
 */
 const AnnouncementsSection = ({
   limit,
@@ -160,21 +162,18 @@ const AnnouncementsSection = ({
   showViewAll = true,
   viewAllPlacement = 'below',
 }) => {
-  // /stiri: 6/page (DEFAULT_PAGE_SIZE), homepage: 3
+  // /stiri: 6/page; homepage: limit(3)
   const EFFECTIVE_SIZE = pageSize || (limit ? limit : DEFAULT_PAGE_SIZE);
 
   const [items, setItems] = useState([]);
   const [state, setState] = useState({ loading: false, error: null });
 
-  // paginare /stiri
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  // search /stiri
   const [queryInput, setQueryInput] = useState('');
   const [query, setQuery] = useState('');
 
-  // anchor scroll top
   const topRef = useRef(null);
   const scrollToTop = () => {
     if (!topRef.current) return;
@@ -208,8 +207,6 @@ const AnnouncementsSection = ({
       const data = await res.json();
 
       const content = data.content || [];
-
-      // Siguranță: dacă backendul trimite mai multe, taie local când avem limită.
       setItems(limit ? content.slice(0, limit) : content);
 
       setTotalPages(data.totalPages || 1);
@@ -221,8 +218,6 @@ const AnnouncementsSection = ({
   };
 
   useEffect(() => {
-    // homepage (limit setat): cere doar prima pagină, 3 iteme
-    // /stiri: cere pagina curentă, 6 iteme
     fetchPage(limit ? 0 : page, query);
     if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -241,23 +236,13 @@ const AnnouncementsSection = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
-  /* ---------- GRID (Homepage + /stiri) ---------- */
-  const showPager = !limit; // pe homepage (când limit e setat) ascundem paginarea
-
-  const onClear = () => {
-    setQueryInput('');
-    setPage(0);
-    setQuery('');
-    fetchPage(0, '');
-    scrollToTop();
-  };
+  const showPager = !limit;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* header (fără buton aici pe homepage) */}
+    <div className="max-w-6xl mx-auto space-y-6" ref={topRef}>
+      {/* header – NU mai arătăm buton aici; pe /stiri oricum nu vrem buton */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
-        {showViewAll && !limit && <ViewAllButton />}
       </div>
 
       {/* search doar pe /stiri */}
@@ -279,7 +264,7 @@ const AnnouncementsSection = ({
           {queryInput && (
             <button
               type="button"
-              onClick={onClear}
+              onClick={() => { setQueryInput(''); setPage(0); setQuery(''); fetchPage(0, ''); scrollToTop(); }}
               className="absolute right-2 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-full text-slate-500 hover:text-slate-700"
               aria-label="Șterge căutarea"
               title="Șterge"
@@ -290,7 +275,7 @@ const AnnouncementsSection = ({
         </div>
       )}
 
-      {/* GRID: 1 / 2 / 3 coloane (nu se duce la 4 nici pe ecrane foarte late) */}
+      {/* GRID: 1/2/3 coloane */}
       {state.loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: limit || DEFAULT_PAGE_SIZE }).map((_, i) => (
@@ -322,9 +307,9 @@ const AnnouncementsSection = ({
             </motion.div>
           </AnimatePresence>
 
-          {/* buton SUB grilă — folosit pe homepage (limit=3) */}
+          {/* buton SUB grilă — DOAR când avem limită (adică pe homepage) */}
           {showViewAll && limit && (
-            <div className="flex justify-center pt-2">
+            <div className="flex justify-center pt-2 mb-8">
               <ViewAllButton />
             </div>
           )}

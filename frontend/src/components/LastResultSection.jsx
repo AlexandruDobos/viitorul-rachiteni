@@ -23,7 +23,7 @@ export default function LastResultSection() {
     (async () => {
       try {
         setLoading(true); setErr('');
-        const res = await fetch(`${BASE_URL}/app/matches/last`, { credentials: 'include' });
+        const res = await fetch(`${BASE_URL}/app/matches/last`);
         if (!res.ok) throw new Error('Nu am găsit ultimul rezultat.');
         const data = await res.json();
         setM(data);

@@ -39,8 +39,8 @@ const Home = () => {
     preconnect(API_ORIGIN);
 
     const ac = new AbortController();
-    // Prefetch aliniat cu limit=6 de pe homepage
-    const q = new URLSearchParams({ page: '0', size: '6' });
+    // Prefetch aliniat cu limit=3 pe homepage
+    const q = new URLSearchParams({ page: '0', size: '3' });
 
     fetch(`${BASE_URL}/app/announcements/page?${q.toString()}`, {
       signal: ac.signal,
@@ -121,14 +121,15 @@ const Home = () => {
               </div>
             </section>
 
-            {/* NOUTĂȚI — GRILĂ IDENTICĂ CU /stiri */}
+            {/* NOUTĂȚI — GRILĂ (3 carduri) + buton sub grilă */}
             <section>
               <AnnouncementsSection
-                variant="grid"   // forțează grilă (nu carusel)
-                limit={6}        // 6 carduri pe homepage
-                pageSize={6}     // pentru fetch inițial
+                variant="grid"     // grilă, nu carusel
+                limit={3}          // 3 carduri pe homepage
+                pageSize={3}       // pentru fetch inițial
                 title="Ultimele noutăți"
-                showViewAll      // afișează butonul „Vezi toate știrile”
+                showViewAll        // afișăm butonul
+                viewAllPlacement="below" // butonul sub grilă, frumos pe mobil
               />
             </section>
           </main>

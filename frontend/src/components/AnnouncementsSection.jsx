@@ -4,13 +4,12 @@ import { Link } from 'react-router-dom';
 import { BASE_URL } from '../utils/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const DEFAULT_PAGE_SIZE = 6; // 3x2 pe ecrane mari
+const DEFAULT_PAGE_SIZE = 6; // /stiri: 6 pe pagină
 const WINDOW = 5;
 
 /* ===== utilitare ===== */
 const slugify = (s = '') =>
-  s
-    .toLowerCase()
+  s.toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]+/g, '-')
@@ -71,7 +70,9 @@ function AnnouncementCard({ a, isLCP = false }) {
               absolute inset-0 h-full w-full object-cover object-center
               transition-transform duration-500 group-hover:scale-[1.02]
             "
-            onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder.png';
+            }}
           />
         ) : null}
       </div>
@@ -81,7 +82,7 @@ function AnnouncementCard({ a, isLCP = false }) {
         className="
           grid grid-rows-[auto_1fr_auto]
           px-4 py-4 sm:px-5 sm:py-5
-          h-[310px] sm:h-[330px] lg:h-[350px]
+          h-[300px] sm:h-[320px] lg:h-[340px]
         "
       >
         {/* titlu – mai mic, până la 3 rânduri */}
@@ -95,34 +96,38 @@ function AnnouncementCard({ a, isLCP = false }) {
           {a.title}
         </h3>
 
-        {/* descriere – scurtă, 2 rânduri, spațiu mic */}
+        {/* descriere – scurtă, 2 rânduri */}
         <p className="mt-1.5 text-sm sm:text-[15px] text-slate-600 line-clamp-2">
           {wordsExcerpt(a.contentText, 28)}
         </p>
 
-        {/* meta – margini mai mici, fără gol mare */}
-        <div className="mt-3 flex items-center justify-between pt-2 border-t border-slate-200">
-          <span className="text-xs sm:text-sm font-medium text-indigo-700">
-            {formatDate(a.publishedAt)}
-          </span>
-          <span
-            className="
-              inline-flex items-center gap-1 text-xs sm:text-sm font-medium
-              text-slate-600 group-hover:text-indigo-700 transition
-            "
-          >
-            Citește
-            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
-            </svg>
-          </span>
+        {/* separator full-bleed + meta
+            (rezolvă problema „liniei întrerupte” în pozele tale) */}
+        <div className="mt-2">
+          <div className="-mx-4 sm:-mx-5 border-t border-slate-200" />
+          <div className="pt-2 flex items-center justify-between">
+            <span className="text-xs sm:text-sm font-medium text-indigo-700">
+              {formatDate(a.publishedAt)}
+            </span>
+            <span
+              className="
+                inline-flex items-center gap-1 text-xs sm:text-sm font-medium
+                text-slate-600 group-hover:text-indigo-700 transition
+              "
+            >
+              Citește
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
+              </svg>
+            </span>
+          </div>
         </div>
       </div>
     </Link>
   );
 }
 
-/* ===== CARUSEL — dacă vrei varianta slider ===== */
+/* ===== CARUSEL (opțional) ===== */
 function HomeAnnouncementsCarousel({ items }) {
   const [page, setPage] = useState(0);
   const pages = useMemo(() => (items?.length ? items : []), [items]);
@@ -213,6 +218,26 @@ const itemVariants = {
 };
 const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { delay: 0.1 } }, exit: { opacity: 0 } };
 
+/* buton reutilizabil – frumos pe mobil (full-width) */
+function ViewAllButton({ className = '' }) {
+  return (
+    <Link
+      to="/stiri"
+      className={
+        'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white ' +
+        'px-5 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 ' +
+        'focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto justify-center ' +
+        className
+      }
+    >
+      Vezi toate știrile
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
+      </svg>
+    </Link>
+  );
+}
+
 const SkeletonCard = () => (
   <div className="h-full rounded-2xl ring-1 ring-slate-200 bg-white overflow-hidden">
     <div className="animate-pulse">
@@ -232,6 +257,8 @@ const SkeletonCard = () => (
      - "carousel" => slider pe homepage
    limit:
      - dacă e setat și variant="grid" => ia doar X anunțuri, fără pager
+   viewAllPlacement:
+     - "header" (implicit) sau "below"
 */
 const AnnouncementsSection = ({
   limit,
@@ -239,9 +266,11 @@ const AnnouncementsSection = ({
   title = 'Ultimele noutăți',
   enableSearch = false,
   variant = 'grid',
-  showViewAll = true, // afișează butonul "Vezi toate știrile" când limit e setat
+  showViewAll = true,
+  viewAllPlacement = 'header',
 }) => {
-  const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
+  // /stiri: 6/pagina; homepage: limit=3
+  const EFFECTIVE_SIZE = pageSize || (limit ? limit : DEFAULT_PAGE_SIZE);
 
   const [items, setItems] = useState([]);
   const [state, setState] = useState({ loading: false, error: null });
@@ -287,7 +316,6 @@ const AnnouncementsSection = ({
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
 
-      // dacă avem limit + variant grid pe homepage, tăiem lista local
       const content = data.content || [];
       setItems(limit && variant === 'grid' ? content.slice(0, limit) : content);
 
@@ -300,7 +328,6 @@ const AnnouncementsSection = ({
   };
 
   useEffect(() => {
-    // pentru variant="carousel" luăm o pagină și lăsăm sliderul să le arate
     fetchPage(variant === 'grid' ? (limit ? 0 : page) : 0, query);
     if (!limit && variant === 'grid') scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -321,28 +348,14 @@ const AnnouncementsSection = ({
 
   /* ---------- HOMEPAGE — CAROUSEL ---------- */
   if (variant === 'carousel') {
-    if (state.loading) {
-      return <div className="max-w-6xl mx-auto"><SkeletonCard /></div>;
-    }
-    if (state.error) {
-      return <div className="max-w-6xl mx-auto"><div className="text-red-700">{state.error}</div></div>;
-    }
-    if (!items.length) {
-      return <div className="max-w-6xl mx-auto"><div className="text-gray-700">Nu există anunțuri momentan.</div></div>;
-    }
+    if (state.loading) return <div className="max-w-6xl mx-auto"><SkeletonCard /></div>;
+    if (state.error) return <div className="max-w-6xl mx-auto"><div className="text-red-700">{state.error}</div></div>;
+    if (!items.length) return <div className="max-w-6xl mx-auto"><div className="text-gray-700">Nu există anunțuri momentan.</div></div>;
     return (
       <div className="max-w-6xl mx-auto">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
-          {showViewAll && (
-            <Link
-              to="/stiri"
-              className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-            >
-              Vezi toate știrile
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" /></svg>
-            </Link>
-          )}
+          {showViewAll && <ViewAllButton />}
         </div>
         <HomeAnnouncementsCarousel items={limit ? items.slice(0, limit) : items} />
       </div>
@@ -362,18 +375,10 @@ const AnnouncementsSection = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* header + buton (și pe homepage) */}
+      {/* header (butonul poate sta aici SAU sub grilă) */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
-        {showViewAll && limit && (
-          <Link
-            to="/stiri"
-            className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50"
-          >
-            Vezi toate știrile
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" /></svg>
-          </Link>
-        )}
+        {showViewAll && limit && viewAllPlacement === 'header' && <ViewAllButton />}
       </div>
 
       {/* search doar pe /stiri */}
@@ -438,7 +443,15 @@ const AnnouncementsSection = ({
             </motion.div>
           </AnimatePresence>
 
-          {showPager && totalPages > 1 && (
+          {/* buton sub grilă – frumos pe mobil */}
+          {showViewAll && limit && viewAllPlacement === 'below' && (
+            <div className="flex justify-center pt-2">
+              <ViewAllButton />
+            </div>
+          )}
+
+          {/* pager numai pe /stiri (fără limit) */}
+          {!limit && totalPages > 1 && (
             <AnimatePresence>
               <motion.div
                 className="flex items-center justify-center gap-2 pt-2"
@@ -447,22 +460,19 @@ const AnnouncementsSection = ({
                 animate="show"
                 exit="exit"
               >
-                {/* pager */}
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage(0); scrollToTop(); }} disabled={page === 0} title="Prima pagină">«</button>
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage((p) => Math.max(0, p - 1)); scrollToTop(); }} disabled={page === 0} title="Anterior">←</button>
-                {/* … numerotare … */}
-                {(() => {
-                  const pageNumbers = Array.from({ length: Math.min(WINDOW, totalPages) }, (_, i) => i + 1); // simplu
-                  return pageNumbers.map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => { setPage(n - 1); scrollToTop(); }}
-                      className={`px-3 py-1.5 text-sm rounded-lg border border-slate-300 ${n - 1 === page ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-slate-50'}`}
-                    >
-                      {n}
-                    </button>
-                  ));
-                })()}
+
+                {pageNumbers.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => { setPage(n - 1); scrollToTop(); }}
+                    className={`px-3 py-1.5 text-sm rounded-lg border border-slate-300 ${n - 1 === page ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-slate-50'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage((p) => Math.min(totalPages - 1, p + 1)); scrollToTop(); }} disabled={page === totalPages - 1} title="Următor">→</button>
                 <button className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50" onClick={() => { setPage(totalPages - 1); scrollToTop(); }} disabled={page === totalPages - 1} title="Ultima pagină">»</button>
               </motion.div>

@@ -36,12 +36,15 @@ function onIdle(cb, timeout = 1500) {
 const Home = () => {
   // --- Network pre-warm and parallel fetches -----------------------------
   useEffect(() => {
+    // 1) Preconnect to API (reduces handshake/TLS time in waterfall)
     preconnect(API_ORIGIN);
 
+    // 2) Start critical data fetches IN PARALLEL (no auth/status wait)
+    //    Even if components refetch, connections + caches are warm.
     const ac = new AbortController();
-    // Prefetch aliniat cu limit=6 de pe homepage
-    const q = new URLSearchParams({ page: '0', size: '6' });
+    const q = new URLSearchParams({ page: '0', size: '4' });
 
+    // Start both without awaiting each other
     fetch(`${BASE_URL}/app/announcements/page?${q.toString()}`, {
       signal: ac.signal,
       credentials: 'include',
@@ -52,20 +55,24 @@ const Home = () => {
       credentials: 'include',
     }).catch(() => {});
 
+    // 3) Defer NON-critical endpoints (ads / social) to idle time
     const device = window.matchMedia('(max-width: 1023px)').matches
       ? 'MOBILE'
       : 'DESKTOP';
 
     const idleId = onIdle(() => {
+      // Fire-and-forget; ignore errors intentionally
       fetch(`${BASE_URL}/app/ads?device=${device}`, { credentials: 'include' }).catch(() => {});
       fetch(`${BASE_URL}/app/social`, { credentials: 'include' }).catch(() => {});
     });
 
     return () => {
       ac.abort();
+      // cancelIdleCallback fallback: clearTimeout is okay for our shim
       (window.cancelIdleCallback || clearTimeout)(idleId);
     };
   }, []);
+
   // -----------------------------------------------------------------------
 
   return (
@@ -73,6 +80,7 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4">
         {/* Layout cu sidebar pe stânga + conținut */}
         <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
+          {/* Un singur Sidebar (stânga) */}
           <aside className="hidden lg:block">
             <Sidebar />
           </aside>
@@ -90,7 +98,7 @@ const Home = () => {
                     </p>
                   </div>
 
-                  {/* CTA rapide */}
+                  {/* CTA rapide (opțional) */}
                   <div className="flex flex-wrap gap-2">
                     <Link
                       to="/squad"
@@ -121,15 +129,9 @@ const Home = () => {
               </div>
             </section>
 
-            {/* NOUTĂȚI — GRILĂ IDENTICĂ CU /stiri */}
+            {/* ANUNȚURI */}
             <section>
-              <AnnouncementsSection
-                variant="grid"   // forțează grilă (nu carusel)
-                limit={6}        // 6 carduri pe homepage
-                pageSize={6}     // pentru fetch inițial
-                title="Ultimele noutăți"
-                showViewAll      // afișează butonul „Vezi toate știrile”
-              />
+              <AnnouncementsSection pageSize={4} />
             </section>
           </main>
         </div>

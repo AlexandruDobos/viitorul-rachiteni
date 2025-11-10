@@ -100,7 +100,7 @@ export default function CompactStandings({ title = 'Clasament' }) {
                   <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">Î</th>
                   <th className="px-1.5 py-1.5 text-center w-12 hidden md:table-cell">DG</th>
 
-                  <th className="px-2 py-1.5 text-right w-12">P</th>
+                  <th className="px-2 py-1.5 text-center w-12">P</th>
                 </tr>
               </thead>
 

@@ -114,134 +114,43 @@ function AnnouncementCard({ a, blueFrame = false, isLCP = false, headingLevel = 
   );
 }
 
-/* ===== CARUSEL – HOME ===== */
-function HomeAnnouncementsCarousel({ items }) {
-  const [page, setPage] = useState(0);
-  const pages = useMemo(() => (items?.length ? items : []), [items]);
-
-  const dragRef = useRef({ startX: 0, deltaX: 0, active: false });
-  const THRESH = 40;
-
-  const prev = () => setPage((p) => Math.max(0, p - 1));
-  const next = () => setPage((p) => Math.min(pages.length - 1, p + 1));
-
-  // swipe
-  const onPointerDown = (e) => {
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    dragRef.current = { startX: x, deltaX: 0, active: true };
-  };
-  const onPointerMove = (e) => {
-    if (!dragRef.current.active) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    dragRef.current.deltaX = x - dragRef.current.startX;
-  };
-  const onPointerUp = () => {
-    if (!dragRef.current.active) return;
-    const { deltaX } = dragRef.current;
-    dragRef.current.active = false;
-    if (Math.abs(deltaX) > THRESH) (deltaX > 0 ? prev() : next());
-  };
-
-  // accesibilitate
-  const onKeyDown = (e) => {
-    if (e.key === 'ArrowLeft') prev();
-    if (e.key === 'ArrowRight') next();
-  };
-
-  const slidePct = pages.length ? 100 / pages.length : 100;
+/* ===== GRID – HOME (înlocuiește caruselul) ===== */
+function HomeAnnouncementsGrid({ items }) {
+  const list = (items || []).slice(0, 4);
 
   return (
-    <section
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-      className="relative select-none"
-      style={{ touchAction: 'pan-y' }}
-      aria-label="Anunțuri"
-    >
-      <div
-        className="relative overflow-hidden rounded-xl"
-        onMouseDown={onPointerDown}
-        onMouseMove={onPointerMove}
-        onMouseUp={onPointerUp}
-        onMouseLeave={onPointerUp}
-        onTouchStart={onPointerDown}
-        onTouchMove={onPointerMove}
-        onTouchEnd={onPointerUp}
-      >
-        {pages.length > 1 && (
-          <>
-            {/* Săgeți – „glassy”, vizibile, 44px touch target */}
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Anterior"
-              disabled={page === 0}
-              className="
-                absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20
-                h-11 w-11 grid place-items-center rounded-full
-                bg-white/70 backdrop-blur-md text-gray-800
-                ring-1 ring-white/60 shadow-md
-                hover:bg-white/90 disabled:opacity-50
-                transition
-              "
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Următor"
-              disabled={page === pages.length - 1}
-              className="
-                absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20
-                h-11 w-11 grid place-items-center rounded-full
-                bg-white/70 backdrop-blur-md text-gray-800
-                ring-1 ring-white/60 shadow-md
-                hover:bg-white/90 disabled:opacity-50
-                transition
-              "
-            >
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
-              </svg>
-            </button>
-          </>
-        )}
-
-        <div
-          className="flex transition-transform duration-500 ease-out"
-          style={{
-            width: `${pages.length * 100}%`,
-            transform: `translateX(-${page * slidePct}%)`,
-          }}
-        >
-          {pages.map((a, i) => (
-            <div
-              key={a.id ?? i}
-              className="flex-shrink-0 px-1 sm:px-2"
-              style={{ width: `${slidePct}%` }}
-            >
-              {/* Home: folosește <h2> în card pentru ierarhie corectă */}
-              <AnnouncementCard a={a} blueFrame isLCP={i === 0} headingLevel={2} />
-            </div>
-          ))}
-        </div>
+    <>
+      {/* 1 col pe mobil, 2 col pe ecrane medii, 4 col pe ecrane mari – exact stil „carduri” */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {list.map((a, i) => (
+          <AnnouncementCard
+            key={a.id ?? i}
+            a={a}
+            blueFrame
+            isLCP={i === 0}
+            headingLevel={2}
+          />
+        ))}
       </div>
-    </section>
+
+      {/* CTA „toate știrile” */}
+      <div className="mt-6 flex justify-center">
+        <Link
+          to="/stiri"
+          className="
+            inline-flex items-center gap-2 rounded-full px-5 py-2.5
+            text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700
+            shadow-md ring-1 ring-blue-700/20 transition
+          "
+          aria-label="Vezi toate știrile"
+        >
+          Vezi toate știrile
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
+          </svg>
+        </Link>
+      </div>
+    </>
   );
 }
 
@@ -272,7 +181,6 @@ const SkeletonCard = () => (
 );
 
 /* ===== COMPONENTA PRINCIPALĂ ===== */
-/* ===== COMPONENTA PRINCIPALĂ ===== */
 const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', enableSearch = false }) => {
   const EFFECTIVE_SIZE = pageSize || limit || DEFAULT_PAGE_SIZE;
 
@@ -291,7 +199,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
   const topRef = useRef(null);
   const scrollToTop = () => {
     if (!topRef.current) return;
-    // offset pentru navbar fix pe mobil (ajustează dacă ai altă înălțime)
     const headerOffset = window.innerWidth < 1024 ? 64 : 0;
     const y = topRef.current.getBoundingClientRect().top + window.scrollY - headerOffset;
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
@@ -332,7 +239,6 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
 
   useEffect(() => {
     fetchPage(limit ? 0 : page, query);
-    // la fiecare schimbare de pagină pe /stiri, urcă la începutul secțiunii
     if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, EFFECTIVE_SIZE]);
@@ -344,18 +250,22 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
       setPage(0);
       setQuery(newQ);
       fetchPage(0, newQ);
-      scrollToTop(); // urcă și când se schimbă căutarea
+      scrollToTop();
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryInput, enableSearch, limit]);
 
-  /* ---------- HOMEPAGE ---------- */
+  /* ---------- HOMEPAGE (limit) ---------- */
   if (limit) {
     if (state.loading) {
       return (
         <div className="max-w-6xl mx-auto">
-          <SkeletonCard />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         </div>
       );
     }
@@ -375,7 +285,8 @@ const AnnouncementsSection = ({ limit, pageSize, title = 'Ultimele noutăți', e
     }
     return (
       <div className="max-w-6xl mx-auto">
-        <HomeAnnouncementsCarousel items={items.slice(0, limit)} />
+        {/* grid în loc de carusel + buton „Vezi toate știrile” */}
+        <HomeAnnouncementsGrid items={items.slice(0, limit)} />
       </div>
     );
   }

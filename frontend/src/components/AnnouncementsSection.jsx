@@ -241,9 +241,9 @@ const AnnouncementsSection = ({
   return (
     <div className="max-w-6xl mx-auto space-y-6" ref={topRef}>
       {/* header – NU mai arătăm buton aici; pe /stiri oricum nu vrem buton */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      {/* <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
-      </div>
+      </div> */}
 
       {/* search doar pe /stiri */}
       {enableSearch && !limit && (

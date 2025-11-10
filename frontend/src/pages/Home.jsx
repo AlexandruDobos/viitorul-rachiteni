@@ -91,7 +91,7 @@ const Home = () => {
                 variant="grid"
                 limit={3}                // afișăm 3 pe homepage
                 pageSize={3}             // cerem 3 din backend
-                title="Ultimele noutăți"
+                //title="Ultimele noutăți"
                 showViewAll
                 viewAllPlacement="below" // butonul sub grilă
               />

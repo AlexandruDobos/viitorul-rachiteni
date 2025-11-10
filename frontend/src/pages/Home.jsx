@@ -34,12 +34,11 @@ function onIdle(cb, timeout = 1500) {
 }
 
 const Home = () => {
-  // --- Network pre-warm and parallel fetches -----------------------------
+  // încălzire rețea + prefetch pentru 3 anunțuri (câte afișăm pe homepage)
   useEffect(() => {
     preconnect(API_ORIGIN);
 
     const ac = new AbortController();
-    // Prefetch aliniat cu limit=3 pe homepage
     const q = new URLSearchParams({ page: '0', size: '3' });
 
     fetch(`${BASE_URL}/app/announcements/page?${q.toString()}`, {
@@ -66,12 +65,10 @@ const Home = () => {
       (window.cancelIdleCallback || clearTimeout)(idleId);
     };
   }, []);
-  // -----------------------------------------------------------------------
 
   return (
     <div className="pt-20">
       <div className="max-w-7xl mx-auto px-4">
-        {/* Layout cu sidebar pe stânga + conținut */}
         <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-6">
           <aside className="hidden lg:block">
             <Sidebar />
@@ -90,46 +87,25 @@ const Home = () => {
                     </p>
                   </div>
 
-                  {/* CTA rapide */}
                   <div className="flex flex-wrap gap-2">
-                    <Link
-                      to="/squad"
-                      className="px-4 py-2 rounded-lg bg-white text-gray-900 font-semibold hover:bg-gray-100"
-                    >
-                      Lotul echipei
-                    </Link>
-                    <Link
-                      to="/results"
-                      className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 hover:bg-white/90"
-                    >
-                      Rezultate
-                    </Link>
-                    <Link
-                      to="/standings"
-                      className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 hover:bg-white/90"
-                    >
-                      Clasament
-                    </Link>
-                    <Link
-                      to="/donations"
-                      className="px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600"
-                    >
-                      Donează
-                    </Link>
+                    <Link to="/squad" className="px-4 py-2 rounded-lg bg-white text-gray-900 font-semibold hover:bg-gray-100">Lotul echipei</Link>
+                    <Link to="/results" className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 hover:bg-white/90">Rezultate</Link>
+                    <Link to="/standings" className="px-4 py-2 rounded-lg bg-gray-100 text-gray-900 hover:bg-white/90">Clasament</Link>
+                    <Link to="/donations" className="px-4 py-2 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600">Donează</Link>
                   </div>
                 </div>
               </div>
             </section>
 
-            {/* NOUTĂȚI — GRILĂ (3 carduri) + buton sub grilă */}
+            {/* NOUTĂȚI — EXACT 3 carduri + buton SUB grilă */}
             <section>
               <AnnouncementsSection
-                variant="grid"     // grilă, nu carusel
-                limit={3}          // 3 carduri pe homepage
-                pageSize={3}       // pentru fetch inițial
+                variant="grid"
+                limit={3}                 // ← arătăm doar 3 pe homepage
+                pageSize={3}              // ← cerem 3 din backend (GET /page?size=3)
                 title="Ultimele noutăți"
-                showViewAll        // afișăm butonul
-                viewAllPlacement="below" // butonul sub grilă, frumos pe mobil
+                showViewAll
+                viewAllPlacement="below"  // ← butonul sub grilă
               />
             </section>
           </main>

@@ -40,7 +40,7 @@ function toAbsoluteUrl(maybeUrl) {
   return `${base}/${path}`;
 }
 
-/* ===== CARD — stil fix, dimensiuni egale ===== */
+/* ===== CARD ===== */
 function AnnouncementCard({ a, isLCP = false }) {
   const imgSrc = toAbsoluteUrl(a.coverUrl);
   const href = `/stiri/${a.id}/${slugify(a.title || '')}`;
@@ -70,51 +70,29 @@ function AnnouncementCard({ a, isLCP = false }) {
               absolute inset-0 h-full w-full object-cover object-center
               transition-transform duration-500 group-hover:scale-[1.02]
             "
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder.png';
-            }}
+            onError={(e) => { e.currentTarget.src = '/placeholder.png'; }}
           />
         ) : null}
       </div>
 
-      {/* conținut fix pe 3 rânduri: titlu/desc/meta */}
-      <div
-        className="
-          grid grid-rows-[auto_1fr_auto]
-          px-4 py-4 sm:px-5 sm:py-5
-          h-[300px] sm:h-[320px] lg:h-[340px]
-        "
-      >
-        {/* titlu – mai mic, până la 3 rânduri */}
-        <h3
-          className="
-            text-slate-900 font-semibold tracking-tight
-            text-[15px] sm:text-base md:text-[17px]
-            leading-snug line-clamp-3
-          "
-        >
+      {/* conținut: titlu / descriere / meta */}
+      <div className="grid grid-rows-[auto_1fr_auto] px-4 py-4 sm:px-5 sm:py-5 h-[300px] sm:h-[320px] lg:h-[340px]">
+        <h3 className="text-slate-900 font-semibold tracking-tight text-[15px] sm:text-base md:text-[17px] leading-snug line-clamp-3">
           {a.title}
         </h3>
 
-        {/* descriere – scurtă, 2 rânduri */}
         <p className="mt-1.5 text-sm sm:text-[15px] text-slate-600 line-clamp-2">
           {wordsExcerpt(a.contentText, 28)}
         </p>
 
-        {/* separator full-bleed + meta
-            (rezolvă problema „liniei întrerupte” în pozele tale) */}
+        {/* separator FULL-BLEED + meta (nu se mai întrerupe) */}
         <div className="mt-2">
           <div className="-mx-4 sm:-mx-5 border-t border-slate-200" />
           <div className="pt-2 flex items-center justify-between">
             <span className="text-xs sm:text-sm font-medium text-indigo-700">
               {formatDate(a.publishedAt)}
             </span>
-            <span
-              className="
-                inline-flex items-center gap-1 text-xs sm:text-sm font-medium
-                text-slate-600 group-hover:text-indigo-700 transition
-              "
-            >
+            <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-slate-600 group-hover:text-indigo-700 transition">
               Citește
               <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" />
@@ -124,84 +102,6 @@ function AnnouncementCard({ a, isLCP = false }) {
         </div>
       </div>
     </Link>
-  );
-}
-
-/* ===== CARUSEL (opțional) ===== */
-function HomeAnnouncementsCarousel({ items }) {
-  const [page, setPage] = useState(0);
-  const pages = useMemo(() => (items?.length ? items : []), [items]);
-  const prev = () => setPage((p) => Math.max(0, p - 1));
-  const next = () => setPage((p) => Math.min(pages.length - 1, p + 1));
-
-  // swipe
-  const dragRef = useRef({ startX: 0, deltaX: 0, active: false });
-  const THRESH = 40;
-  const onPointerDown = (e) => {
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    dragRef.current = { startX: x, deltaX: 0, active: true };
-  };
-  const onPointerMove = (e) => {
-    if (!dragRef.current.active) return;
-    const x = e.touches ? e.touches[0].clientX : e.clientX;
-    dragRef.current.deltaX = x - dragRef.current.startX;
-  };
-  const onPointerUp = () => {
-    if (!dragRef.current.active) return;
-    const { deltaX } = dragRef.current;
-    dragRef.current.active = false;
-    if (Math.abs(deltaX) > THRESH) (deltaX > 0 ? prev() : next());
-  };
-
-  const slidePct = pages.length ? 100 / pages.length : 100;
-
-  return (
-    <section className="relative" style={{ touchAction: 'pan-y' }} aria-label="Anunțuri">
-      <div
-        className="relative overflow-hidden rounded-2xl"
-        onMouseDown={onPointerDown}
-        onMouseMove={onPointerMove}
-        onMouseUp={onPointerUp}
-        onMouseLeave={onPointerUp}
-        onTouchStart={onPointerDown}
-        onTouchMove={onPointerMove}
-        onTouchEnd={onPointerUp}
-      >
-        {pages.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={prev}
-              aria-label="Anterior"
-              disabled={page === 0}
-              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 grid place-items-center rounded-full bg-white/80 backdrop-blur text-slate-800 ring-1 ring-slate-200 shadow hover:bg-white disabled:opacity-50"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M12.7 15.3a1 1 0 01-1.4 0L6 10l5.3-5.3a1 1 0 111.4 1.4L8.83 10l3.87 3.9a1 1 0 010 1.4z" /></svg>
-            </button>
-            <button
-              type="button"
-              onClick={next}
-              aria-label="Următor"
-              disabled={page === pages.length - 1}
-              className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 h-10 w-10 grid place-items-center rounded-full bg-white/80 backdrop-blur text-slate-800 ring-1 ring-slate-200 shadow hover:bg-white disabled:opacity-50"
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M7.3 4.7a1 1 0 011.4 0L14 10l-5.3 5.3a1 1 0 11-1.4-1.4L11.17 10 7.3 6.1a1 1 0 010-1.4z" /></svg>
-            </button>
-          </>
-        )}
-
-        <div
-          className="flex transition-transform duration-500 ease-out"
-          style={{ width: `${pages.length * 100}%`, transform: `translateX(-${page * slidePct}%)` }}
-        >
-          {pages.map((a, i) => (
-            <div key={a.id ?? i} className="flex-shrink-0 px-1 sm:px-2" style={{ width: `${slidePct}%` }}>
-              <AnnouncementCard a={a} isLCP={i === 0} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -218,17 +118,12 @@ const itemVariants = {
 };
 const pagerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { delay: 0.1 } }, exit: { opacity: 0 } };
 
-/* buton reutilizabil – frumos pe mobil (full-width) */
-function ViewAllButton({ className = '' }) {
+/* Buton „Vezi toate știrile” — full-width pe mobil */
+function ViewAllButton() {
   return (
     <Link
       to="/stiri"
-      className={
-        'inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white ' +
-        'px-5 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 ' +
-        'focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto justify-center ' +
-        className
-      }
+      className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-5 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-auto justify-center"
     >
       Vezi toate știrile
       <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -238,6 +133,7 @@ function ViewAllButton({ className = '' }) {
   );
 }
 
+/* Skeleton */
 const SkeletonCard = () => (
   <div className="h-full rounded-2xl ring-1 ring-slate-200 bg-white overflow-hidden">
     <div className="animate-pulse">
@@ -252,13 +148,8 @@ const SkeletonCard = () => (
 );
 
 /* ===== COMPONENTA PRINCIPALĂ =====
-   variant:
-     - "grid" (implicit) => grilă (homepage + /stiri)
-     - "carousel" => slider pe homepage
-   limit:
-     - dacă e setat și variant="grid" => ia doar X anunțuri, fără pager
-   viewAllPlacement:
-     - "header" (implicit) sau "below"
+   Homepage: limit=3, butonul sub grilă.
+   /stiri: 6/pagină cu paginare.
 */
 const AnnouncementsSection = ({
   limit,
@@ -267,9 +158,9 @@ const AnnouncementsSection = ({
   enableSearch = false,
   variant = 'grid',
   showViewAll = true,
-  viewAllPlacement = 'header',
+  viewAllPlacement = 'below',
 }) => {
-  // /stiri: 6/pagina; homepage: limit=3
+  // /stiri: 6/page (DEFAULT_PAGE_SIZE), homepage: 3
   const EFFECTIVE_SIZE = pageSize || (limit ? limit : DEFAULT_PAGE_SIZE);
 
   const [items, setItems] = useState([]);
@@ -310,14 +201,16 @@ const AnnouncementsSection = ({
         page: String(pageNum),
         size: String(EFFECTIVE_SIZE),
       });
-      if (enableSearch && variant === 'grid') params.set('q', effectiveQuery || '');
+      if (!limit && enableSearch) params.set('q', effectiveQuery || '');
 
       const res = await fetch(`${BASE_URL}/app/announcements/page?${params.toString()}`);
       if (!res.ok) throw new Error('Eroare la încărcarea anunțurilor');
       const data = await res.json();
 
       const content = data.content || [];
-      setItems(limit && variant === 'grid' ? content.slice(0, limit) : content);
+
+      // Siguranță: dacă backendul trimite mai multe, taie local când avem limită.
+      setItems(limit ? content.slice(0, limit) : content);
 
       setTotalPages(data.totalPages || 1);
       setState({ loading: false, error: null });
@@ -328,13 +221,15 @@ const AnnouncementsSection = ({
   };
 
   useEffect(() => {
-    fetchPage(variant === 'grid' ? (limit ? 0 : page) : 0, query);
-    if (!limit && variant === 'grid') scrollToTop();
+    // homepage (limit setat): cere doar prima pagină, 3 iteme
+    // /stiri: cere pagina curentă, 6 iteme
+    fetchPage(limit ? 0 : page, query);
+    if (!limit) scrollToTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, EFFECTIVE_SIZE, variant, limit]);
+  }, [page, EFFECTIVE_SIZE, limit]);
 
   useEffect(() => {
-    if (!enableSearch || variant !== 'grid' || limit) return;
+    if (limit || !enableSearch) return;
     const t = setTimeout(() => {
       const newQ = queryInput.trim();
       setPage(0);
@@ -344,23 +239,7 @@ const AnnouncementsSection = ({
     }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryInput, enableSearch, limit, variant]);
-
-  /* ---------- HOMEPAGE — CAROUSEL ---------- */
-  if (variant === 'carousel') {
-    if (state.loading) return <div className="max-w-6xl mx-auto"><SkeletonCard /></div>;
-    if (state.error) return <div className="max-w-6xl mx-auto"><div className="text-red-700">{state.error}</div></div>;
-    if (!items.length) return <div className="max-w-6xl mx-auto"><div className="text-gray-700">Nu există anunțuri momentan.</div></div>;
-    return (
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">{title}</h2>
-          {showViewAll && <ViewAllButton />}
-        </div>
-        <HomeAnnouncementsCarousel items={limit ? items.slice(0, limit) : items} />
-      </div>
-    );
-  }
+  }, [queryInput, enableSearch, limit]);
 
   /* ---------- GRID (Homepage + /stiri) ---------- */
   const showPager = !limit; // pe homepage (când limit e setat) ascundem paginarea
@@ -375,10 +254,10 @@ const AnnouncementsSection = ({
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* header (butonul poate sta aici SAU sub grilă) */}
+      {/* header (fără buton aici pe homepage) */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
-        {showViewAll && limit && viewAllPlacement === 'header' && <ViewAllButton />}
+        {showViewAll && !limit && <ViewAllButton />}
       </div>
 
       {/* search doar pe /stiri */}
@@ -411,7 +290,7 @@ const AnnouncementsSection = ({
         </div>
       )}
 
-      {/* grid */}
+      {/* GRID: 1 / 2 / 3 coloane (nu se duce la 4 nici pe ecrane foarte late) */}
       {state.loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array.from({ length: limit || DEFAULT_PAGE_SIZE }).map((_, i) => (
@@ -419,9 +298,9 @@ const AnnouncementsSection = ({
           ))}
         </div>
       ) : state.error ? (
-        <div className="bg-white rounded-xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
+        <div className="bg-white rounded-2xl p-4 ring-1 ring-red-200 text-red-700">{state.error}</div>
       ) : items.length === 0 ? (
-        <div className="bg-white rounded-xl p-6 ring-1 ring-slate-200 text-slate-600">
+        <div className="bg-white rounded-2xl p-6 ring-1 ring-slate-200 text-slate-600">
           {enableSearch && query ? <>Nu s-a găsit niciun rezultat pentru „<strong>{query}</strong>”.</> : 'Nu există anunțuri momentan.'}
         </div>
       ) : (
@@ -443,15 +322,15 @@ const AnnouncementsSection = ({
             </motion.div>
           </AnimatePresence>
 
-          {/* buton sub grilă – frumos pe mobil */}
-          {showViewAll && limit && viewAllPlacement === 'below' && (
+          {/* buton SUB grilă — folosit pe homepage (limit=3) */}
+          {showViewAll && limit && (
             <div className="flex justify-center pt-2">
               <ViewAllButton />
             </div>
           )}
 
-          {/* pager numai pe /stiri (fără limit) */}
-          {!limit && totalPages > 1 && (
+          {/* pager doar pe /stiri */}
+          {showPager && totalPages > 1 && (
             <AnimatePresence>
               <motion.div
                 className="flex items-center justify-center gap-2 pt-2"

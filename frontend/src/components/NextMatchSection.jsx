@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 const pad = (n) => String(n).padStart(2, "0");
 
-// ⬇️ folosim aceleași clase pentru a rezerva spațiu în ambele stări (loading + loaded)
+// aceeași înălțime ca LastResult
 const CARD_MIN_H = "min-h-[360px] sm:min-h-[380px] md:min-h-[420px] lg:min-h-[440px]";
 
 function useCountdown(targetDate) {
@@ -51,7 +51,6 @@ function TeamBlock({ name, logo, align = "center" }) {
           <motion.img
             src={logo}
             alt={name}
-            // ⬇️ dimensiuni intrinseci + contain → previne CLS când se încarcă imaginea
             width={128}
             height={128}
             loading="eager"
@@ -87,7 +86,6 @@ function TimePill({ value, label }) {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      {/* ⬇️ min-w păstrat → cifrele nu schimbă lățimea când se actualizează */}
       <div className="min-w-[64px] rounded-2xl bg-white px-3 py-2 text-2xl md:text-3xl font-extrabold text-gray-900 shadow ring-1 ring-black/5">
         {value}
       </div>
@@ -140,7 +138,6 @@ export default function NextMatchSection() {
   if (loading) {
     return (
       <section className="my-8">
-        {/* ⬇️ rezervăm aceeași înălțime ca în cardul final → fără sărituri */}
         <div className={`mx-auto max-w-5xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ${CARD_MIN_H}`}>
           <div className="flex items-center gap-3 text-gray-600">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
@@ -155,7 +152,7 @@ export default function NextMatchSection() {
 
   return (
     <section className="my-8">
-      {/* CARD cu fundal ALBASTRU permanent */}
+      {/* CARD albastru */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -164,12 +161,11 @@ export default function NextMatchSection() {
           relative mx-auto max-w-5xl overflow-hidden rounded-3xl
           border border-white/10
           bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600
+          text-white
           ${CARD_MIN_H}
         `}
-        // ⬇️ izolează layout-ul intern; reduce efectele asupra restului paginii
         style={{ contain: "layout paint" }}
       >
-        {/* conținutul este deasupra fundalului albastru */}
         <div className="relative z-10 rounded-3xl p-6 md:p-8">
           {/* Header */}
           <div className="px-2 text-center">
@@ -177,7 +173,7 @@ export default function NextMatchSection() {
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05, duration: 0.35 }}
-              className="text-xl md:text-2xl font-extrabold tracking-tight text-white drop-shadow"
+              className="text-xl md:text-2xl font-extrabold tracking-tight drop-shadow"
             >
               URMĂTORUL MECI
             </motion.h2>
@@ -185,15 +181,14 @@ export default function NextMatchSection() {
               initial={{ scaleX: 0 }}
               animate={{ scaleX: 1 }}
               transition={{ delay: 0.15, duration: 0.45, ease: "easeOut" }}
-              className="origin-center mx-auto mt-2 h-1 w-28 md:w-40 rounded-full bg-white/70"
+              className="origin-center mx-auto mt-2 h-1 w-28 md:w-40 rounded-full bg-white/80"
             />
           </div>
 
-          {/* TEAMS + CENTER INFO */}
+          {/* Teams + center info */}
           <div className="mt-6 grid grid-cols-1 items-center gap-6 md:mt-8 md:grid-cols-[1fr_auto_1fr] md:gap-10">
             <TeamBlock name={match.homeTeamName} logo={match.homeTeamLogo} align="center" />
 
-            {/* VS + date/time/location */}
             <div className="text-center">
               <motion.div
                 className="inline-flex items-center gap-2 rounded-full bg-black text-white px-4 py-1.5 text-sm font-semibold shadow"
@@ -217,7 +212,7 @@ export default function NextMatchSection() {
             <TeamBlock name={match.awayTeamName} logo={match.awayTeamLogo} align="center" />
           </div>
 
-          {/* COUNTDOWN */}
+          {/* Countdown */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -259,6 +254,10 @@ export default function NextMatchSection() {
             </Link>
           </div>
         </div>
+
+        {/* decorative blobs */}
+        <div aria-hidden className="pointer-events-none absolute -top-28 -right-24 w-72 h-72 rounded-full bg-white/15 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -bottom-28 -left-24 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
       </motion.div>
     </section>
   );

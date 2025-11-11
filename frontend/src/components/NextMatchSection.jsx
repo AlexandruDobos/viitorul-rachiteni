@@ -138,7 +138,8 @@ export default function NextMatchSection() {
   if (loading) {
     return (
       <section className="my-8">
-        <div className={`mx-auto max-w-5xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ${CARD_MIN_H}`}>
+        {/* aliniat cu LastResult: max-w-6xl */}
+        <div className={`mx-auto max-w-6xl rounded-2xl border border-gray-100 bg-white p-6 shadow-sm ${CARD_MIN_H}`}>
           <div className="flex items-center gap-3 text-gray-600">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
             Se încarcă următorul meci…
@@ -152,21 +153,21 @@ export default function NextMatchSection() {
 
   return (
     <section className="my-8">
-      {/* CARD albastru */}
       <motion.div
         initial={{ opacity: 0, y: 18, scale: 0.985 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className={`
-          relative mx-auto max-w-5xl overflow-hidden rounded-3xl
-          border border-white/10
+          relative mx-auto max-w-6xl overflow-hidden rounded-3xl
+          ring-1 ring-white/10
           bg-gradient-to-br from-blue-700 via-indigo-600 to-sky-600
           text-white
           ${CARD_MIN_H}
         `}
         style={{ contain: "layout paint" }}
       >
-        <div className="relative z-10 rounded-3xl p-6 md:p-8">
+        {/* padding identic cu LastResult */}
+        <div className="relative z-10 rounded-3xl px-4 sm:px-6 py-6 sm:py-8">
           {/* Header */}
           <div className="px-2 text-center">
             <motion.h2

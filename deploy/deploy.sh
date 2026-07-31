@@ -67,8 +67,17 @@ sudo docker compose "${COMPOSE_FILES[@]}" build --pull \
     auth-service app-service donations-service email-service gateway
 
 echo "==> Recreating containers"
-sudo docker compose "${COMPOSE_FILES[@]}" up -d --no-deps --remove-orphans \
+# NOTE: we intentionally do NOT pass --remove-orphans here. The prod compose
+# may reference services (postgres, rabbitmq, pgadmin, nginx) whose lifecycle is
+# managed separately; --remove-orphans would tear them down and break the site.
+sudo docker compose "${COMPOSE_FILES[@]}" up -d --no-deps \
     auth-service app-service donations-service email-service gateway
+
+echo "==> Ensuring nginx (reverse proxy / TLS) is running"
+# nginx is defined in docker-compose.prod.yml. It mounts host paths for its
+# config and TLS certs, so we only need to make sure the container exists and
+# is up to date with the compose file.
+sudo docker compose "${COMPOSE_FILES[@]}" up -d --no-deps nginx
 
 echo "==> Container status"
 sudo docker compose "${COMPOSE_FILES[@]}" ps

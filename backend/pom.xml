@@ -22,6 +22,8 @@
     <properties>
         <java.version>17</java.version>
         <spring.boot.version>3.2.4</spring.boot.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <surefire.version>3.2.5</surefire.version>
     </properties>
 
     <dependencyManagement>
@@ -56,5 +58,49 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <!--
+          Plugins declared here are inherited by every child module.
+          - Surefire: runs JUnit 5 tests. Configured to not fail the build when
+            a module has no tests (common, for example).
+          - JaCoCo: instruments code and produces a coverage report under
+            target/site/jacoco/index.html for each module after `mvn verify`.
+        -->
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <failIfNoTests>false</failIfNoTests>
+                    <!-- Skip the default Spring Initializr context-load tests
+                         (named *ApplicationTests) since they require a real DB
+                         and are covered by our actual unit / slice tests. -->
+                    <excludes>
+                        <exclude>**/*ApplicationTests.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>

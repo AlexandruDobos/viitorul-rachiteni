@@ -36,25 +36,29 @@ jobs:
         working-directory: backend
         run: mvn -B -ntp compile
 
-      - name: Run unit tests
+      - name: Run unit tests + generate coverage
         working-directory: backend
-        # Skip integration/context-loading tests that require a full Spring
-        # context (they need env vars like JWT_SECRET / DB_URL). We only run
-        # plain unit tests here. Once we add real @DataJpaTest / @WebMvcTest
-        # suites, we drop -Dtest and let all tests run.
-        #
-        # -Dsurefire.failIfNoSpecifiedTests=false because modules like
-        # 'common' have no tests at all, and the exclusion pattern would
-        # otherwise error out on them.
-        run: >-
-          mvn -B -ntp test
-          -Dtest='!*ApplicationTests'
-          -DfailIfNoTests=false
-          -Dsurefire.failIfNoSpecifiedTests=false
+        # `verify` triggers surefire (unit tests) and then JaCoCo's `report`
+        # execution, producing target/site/jacoco/index.html for every module
+        # that has tests. Spring Initializr's *ApplicationTests are excluded
+        # via surefire config in the parent pom.
+        run: mvn -B -ntp verify
 
       - name: Package (skip tests, already ran)
         working-directory: backend
         run: mvn -B -ntp package -DskipTests
+
+      - name: Publish test results
+        # Surface failing tests in the PR checks UI without needing to open
+        # the raw log. `if: always()` so the report is uploaded even when a
+        # test failure caused the previous step to exit non-zero.
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: JUnit tests
+          path: 'backend/**/target/surefire-reports/*.xml'
+          reporter: java-junit
+          fail-on-error: false
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -62,4 +66,13 @@ jobs:
           name: backend-jars
           path: backend/*/target/*.jar
           retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Upload JaCoCo coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage
+          path: 'backend/**/target/site/jacoco/**'
+          retention-days: 14
           if-no-files-found: ignore

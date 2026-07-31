@@ -21,11 +21,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
+        # app-service is compiled with JDK 21 (see backend/app-service/pom.xml
+        # and its Dockerfile which uses maven:3.9.6-eclipse-temurin-21).
+        # Other modules target Java 17 in their POM, but the toolchain must
+        # be able to produce Java 21 bytecode too, so we install JDK 21 in CI.
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
           cache: maven
 
       - name: Compile all modules

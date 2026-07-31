@@ -42,7 +42,15 @@ jobs:
         # context (they need env vars like JWT_SECRET / DB_URL). We only run
         # plain unit tests here. Once we add real @DataJpaTest / @WebMvcTest
         # suites, we drop -Dtest and let all tests run.
-        run: mvn -B -ntp test -Dtest='!*ApplicationTests' -DfailIfNoTests=false
+        #
+        # -Dsurefire.failIfNoSpecifiedTests=false because modules like
+        # 'common' have no tests at all, and the exclusion pattern would
+        # otherwise error out on them.
+        run: >-
+          mvn -B -ntp test
+          -Dtest='!*ApplicationTests'
+          -DfailIfNoTests=false
+          -Dsurefire.failIfNoSpecifiedTests=false
 
       - name: Package (skip tests, already ran)
         working-directory: backend

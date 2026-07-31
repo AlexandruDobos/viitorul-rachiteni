@@ -40,13 +40,13 @@ const PlayerDetails = () => {
   const navigate = useNavigate();
 
   const [player, setPlayer] = useState(null);
-  const [stats, setStats] = useState([]);
+  const [allStats, setAllStats] = useState([]);
   const [expandedMatchIds, setExpandedMatchIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ NOU: filtru sezon
-  const [seasonId, setSeasonId] = useState(''); // '' = toate
-  const [seasonOptions, setSeasonOptions] = useState([]); // [{id,label}]
+  // Filtru sezon după label (același label poate acoperi mai multe competiții)
+  const [seasonLabel, setSeasonLabel] = useState(''); // '' = toate
+  const [seasonOptions, setSeasonOptions] = useState([]); // string[]
 
   const sortStatsDesc = useCallback((arr) => {
     return [...arr].sort((a, b) => {
@@ -61,67 +61,48 @@ const PlayerDetails = () => {
     });
   }, []);
 
-  const fetchStats = useCallback(async (pid, sid) => {
-    const q = sid ? `?seasonId=${sid}` : '';
-    const res = await fetch(`${BASE_URL}/app/matches/player/${pid}/stats${q}`);
-    const data = await res.json();
-    const safe = Array.isArray(data) ? data : [];
-    return sortStatsDesc(safe);
-  }, [sortStatsDesc]);
-
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        // 1) player
         const resPlayer = await fetch(`${BASE_URL}/app/players/${playerId}`);
         const dataPlayer = await resPlayer.json();
         setPlayer(dataPlayer);
 
-        // 2) stats ALL → pentru totaluri + pentru a deduce opțiunile de sezon
-        const allStats = await fetchStats(playerId, '');
-        setStats(allStats);
+        const res = await fetch(`${BASE_URL}/app/matches/player/${playerId}/stats`);
+        const data = await res.json();
+        const safe = Array.isArray(data) ? data : [];
+        const sorted = sortStatsDesc(safe);
+        setAllStats(sorted);
 
-        // construim opțiunile de sezon din răspuns (distinct după seasonId/label)
-        const map = new Map();
-        allStats.forEach(s => {
-          if (s.seasonId && s.seasonLabel) {
-            map.set(s.seasonId, s.seasonLabel);
-          }
-        });
-        const opts = Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-        // sortăm desc după label dacă vrei, sau lăsăm ordinea naturală
-        setSeasonOptions(opts);
+        // Dedupe după label (nu după id) – două competiții pot avea același sezon "2025/2026"
+        const labels = Array.from(
+          new Set(sorted.map(s => s.seasonLabel).filter(Boolean))
+        );
+        // sortare desc pe label (ex: "2025/2026" înainte de "2024/2025")
+        labels.sort((a, b) => b.localeCompare(a));
+        setSeasonOptions(labels);
       } catch (e) {
         console.error('Eroare încărcare player/stats', e);
-        setStats([]);
+        setAllStats([]);
         setSeasonOptions([]);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [playerId, fetchStats]);
+  }, [playerId, sortStatsDesc]);
 
-  // când se schimbă sezonul → re-fetch doar pentru acel sezon
+  // Filtrare client-side după label – toate meciurile din același sezon apar împreună,
+  // indiferent de competiție (campionat, cupă etc.)
+  const stats = useMemo(() => {
+    if (!seasonLabel) return allStats;
+    return allStats.filter(s => s.seasonLabel === seasonLabel);
+  }, [allStats, seasonLabel]);
+
   useEffect(() => {
-    const refetch = async () => {
-      setLoading(true);
-      try {
-        const filtered = await fetchStats(playerId, seasonId || '');
-        setStats(filtered);
-        setExpandedMatchIds([]); // mic reset UX
-      } catch (e) {
-        console.error('Eroare refetch pe sezon', e);
-        setStats([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    // ignoră prima încărcare (când player/stats ALL au fost deja luate)
-    if (player) refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seasonId]);
+    setExpandedMatchIds([]);
+  }, [seasonLabel]);
 
   const toggleExpand = (matchId) => {
     setExpandedMatchIds((prev) =>
@@ -221,13 +202,13 @@ const PlayerDetails = () => {
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Sezon</label>
               <select
-                value={seasonId}
-                onChange={(e) => setSeasonId(e.target.value)}
+                value={seasonLabel}
+                onChange={(e) => setSeasonLabel(e.target.value)}
                 className="w-full max-w-xs rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
               >
                 <option value="">Toate sezoanele</option>
-                {seasonOptions.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.seasonLabel || opt.label || `Sezon #${opt.id}`}</option>
+                {seasonOptions.map(label => (
+                  <option key={label} value={label}>{label}</option>
                 ))}
               </select>
             </div>

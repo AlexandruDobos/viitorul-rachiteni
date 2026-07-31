@@ -169,5 +169,25 @@ class JwtUtilsTest {
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("jwt.secret");
         }
+
+        @Test
+        @DisplayName("accepts a raw secret that contains non-Base64 characters (e.g. '-')")
+        void acceptsRawSecretWithHyphens() {
+            // Regression: an earlier version of JwtUtils only caught
+            // IllegalArgumentException / WeakKeyException when trying the
+            // Base64 path, but jjwt's Decoders.BASE64 actually throws
+            // DecodingException on non-base64 chars, which then leaked out
+            // of ensureSigningKey and blew up token generation.
+            String secretWithHyphens =
+                    "a-very-long-secret-that-is-definitely-more-than-32-bytes-1234567890";
+
+            JwtUtils utils = new JwtUtils();
+            ReflectionTestUtils.setField(utils, "jwtSecret", secretWithHyphens);
+            ReflectionTestUtils.setField(utils, "jwtExpirationMs", ONE_HOUR_MS);
+
+            String token = utils.generateToken("grace@example.com", "USER");
+            assertThat(utils.validateToken(token)).isTrue();
+            assertThat(utils.getEmailFromToken(token)).isEqualTo("grace@example.com");
+        }
     }
 }

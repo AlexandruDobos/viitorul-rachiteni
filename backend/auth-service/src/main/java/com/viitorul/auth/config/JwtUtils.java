@@ -1,6 +1,7 @@
 package com.viitorul.auth.config;
 
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.io.DecodingException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.WeakKeyException;
@@ -32,10 +33,14 @@ public class JwtUtils {
                 rawKey = null;
             }
             // încearcă base64
+            // NOTE: jjwt's Decoders.BASE64 throws DecodingException (a
+            // RuntimeException that is NOT an IllegalArgumentException) when
+            // the input contains non-base64 characters like '-' or '_'. We
+            // treat that the same as a plain "not base64" input.
             try {
                 byte[] dec = Decoders.BASE64.decode(jwtSecret);
                 b64Key = Keys.hmacShaKeyFor(dec);
-            } catch (IllegalArgumentException | WeakKeyException e) {
+            } catch (DecodingException | IllegalArgumentException | WeakKeyException e) {
                 b64Key = null;
             }
             if (rawKey == null && b64Key == null) {

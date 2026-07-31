@@ -155,7 +155,7 @@ const Standings = () => {
                       <th
                         key={c.key}
                         className={`px-3 py-3 font-semibold text-gray-700 ${
-                          c.key === 'points' ? 'text-right' : 'text-left'
+                          c.key === 'points' ? 'text-center w-14' : 'text-left'
                         }`}
                       >
                         {c.label}
@@ -167,7 +167,6 @@ const Standings = () => {
                   {sorted.map((r, idx) => {
                     const mine = isMyTeam(r.teamName);
                     const rankNum = Number(r.rank);
-                    const isTop2 = rankNum === 1 || rankNum === 2;
 
                     return (
                       <tr
@@ -209,14 +208,18 @@ const Standings = () => {
                         <td className="px-3 py-2">
                           {r.gd >= 0 ? `+${r.gd}` : r.gd}
                         </td>
-                        <td className="px-3 py-2 text-right">
-                          {isTop2 ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full font-semibold bg-gray-900 text-white">
-                              {r.points ?? 0}
-                            </span>
-                          ) : (
-                            <span className="text-gray-800">{r.points ?? 0}</span>
-                          )}
+                        <td className="px-3 py-2 text-center">
+                          <span
+                            className={`inline-flex items-center justify-center h-6 min-w-[2rem] px-1.5 rounded-full text-sm font-semibold leading-none whitespace-nowrap ${
+                              rankNum === 1
+                                ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 shadow-sm'
+                                : rankNum === 2
+                                ? 'bg-gradient-to-r from-zinc-300 to-zinc-400 text-zinc-900 shadow-sm'
+                                : 'text-gray-800'
+                            }`}
+                          >
+                            {r.points ?? 0}
+                          </span>
                         </td>
                       </tr>
                     );
@@ -230,7 +233,6 @@ const Standings = () => {
               {sorted.map((r, idx) => {
                 const mine = isMyTeam(r.teamName);
                 const rankNum = Number(r.rank);
-                const isTop2 = rankNum === 1 || rankNum === 2;
 
                 return (
                   <div
@@ -244,8 +246,12 @@ const Standings = () => {
                           {r.teamName}
                         </div>
                       </div>
-                      {isTop2 ? (
-                        <span className="px-2 py-0.5 rounded-full text-sm font-semibold bg-gray-900 text-white">
+                      {rankNum === 1 ? (
+                        <span className="inline-flex items-center justify-center h-6 min-w-[2.5rem] px-2 rounded-full text-sm font-semibold leading-none whitespace-nowrap bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 shadow-sm">
+                          {r.points ?? 0} p
+                        </span>
+                      ) : rankNum === 2 ? (
+                        <span className="inline-flex items-center justify-center h-6 min-w-[2.5rem] px-2 rounded-full text-sm font-semibold leading-none whitespace-nowrap bg-gradient-to-r from-zinc-300 to-zinc-400 text-zinc-900 shadow-sm">
                           {r.points ?? 0} p
                         </span>
                       ) : (

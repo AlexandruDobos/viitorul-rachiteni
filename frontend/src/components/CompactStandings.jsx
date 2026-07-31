@@ -72,7 +72,7 @@ export default function CompactStandings({ title='Clasament' }) {
                   <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">E</th>
                   <th className="px-1.5 py-1.5 text-center w-8 hidden md:table-cell">Î</th>
                   <th className="px-1.5 py-1.5 text-center w-12 hidden md:table-cell">DG</th>
-                  <th className="px-2 py-1.5 text-center w-12">P</th>
+                  <th className="px-2 py-1.5 text-center w-14">P</th>
                 </tr>
               </thead>
               <tbody>
@@ -109,8 +109,14 @@ export default function CompactStandings({ title='Clasament' }) {
                       <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">{r.draws ?? '-'}</td>
                       <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">{r.losses ?? '-'}</td>
                       <td className="px-1.5 py-1.5 text-center text-slate-800 hidden md:table-cell">{r.gd >= 0 ? `+${r.gd}` : r.gd}</td>
-                      <td className="px-2 py-1.5 text-right">
-                        <span className={`inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full text-[11px] sm:text-xs font-bold ${rank <= 2 ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-900'}`}>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className={`inline-flex items-center justify-center h-6 min-w-[1.75rem] px-1.5 rounded-full text-[11px] sm:text-xs font-bold leading-none whitespace-nowrap ${
+                          rank === 1
+                            ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950'
+                            : rank === 2
+                            ? 'bg-gradient-to-r from-zinc-300 to-zinc-400 text-zinc-900'
+                            : 'bg-slate-100 text-slate-900'
+                        }`}>
                           {r.points ?? 0}
                         </span>
                       </td>

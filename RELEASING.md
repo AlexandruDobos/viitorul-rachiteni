@@ -108,17 +108,22 @@ git push origin v1.1.0
 
 ### 6. Deploy pe Hetzner
 
-Momentan manual (până configurăm CI/CD):
+**Automat prin GitHub Actions.**
 
-```bash
-ssh user@hetzner
-cd /path/to/viitorul-rachiteni
-git fetch --tags
-git checkout v1.1.0
-cd backend
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
+Când faci `git push origin v1.1.0`, workflow-ul `Backend Deploy (Hetzner)`
+pornește automat:
+
+1. Se conectează la Hetzner prin SSH
+2. Face `git fetch --tags` și `git checkout v1.1.0`
+3. Rebuild-uiește imaginile Docker afectate
+4. Rulează `docker compose up -d` pentru services
+
+Poți urmări progresul la:
+https://github.com/AlexandruDobos/viitorul-rachiteni/actions
+
+Frontend-ul e deployat automat de **Cloudflare Pages** la push pe `main`.
+
+Pentru detalii complete, vezi [deploy/README.md](./deploy/README.md).
 
 ## Hotfix pentru producție
 
@@ -153,12 +158,20 @@ git push origin --delete hotfix/descriere-scurta
 
 Dacă un release strică producția:
 
+**Opțiunea 1 — prin GitHub Actions (recomandat):**
+
+Actions → **Backend Deploy (Hetzner)** → **Run workflow** → introduci
+`v1.0.0` (sau orice tag anterior) → **Run workflow**.
+
+**Opțiunea 2 — manual pe server:**
+
 ```bash
-ssh user@hetzner
-cd /path/to/viitorul-rachiteni
-git checkout v1.0.0        # versiunea anterioară stabilă
+ssh alexadmin@91.98.112.34
+cd /srv/viitorul-rachiteni
+sudo git fetch --tags
+sudo git checkout v1.0.0
 cd backend
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+sudo docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
 ## Convenții suplimentare

@@ -1,0 +1,65 @@
+name: Backend CI
+
+on:
+  push:
+    branches-ignore:
+      - 'gh-pages'
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+
+jobs:
+  build-and-test:
+    name: Compile, test and package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        # app-service is compiled with JDK 21 (see backend/app-service/pom.xml
+        # and its Dockerfile which uses maven:3.9.6-eclipse-temurin-21).
+        # Other modules target Java 17 in their POM, but the toolchain must
+        # be able to produce Java 21 bytecode too, so we install JDK 21 in CI.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Compile all modules
+        working-directory: backend
+        run: mvn -B -ntp compile
+
+      - name: Run unit tests
+        working-directory: backend
+        # Skip integration/context-loading tests that require a full Spring
+        # context (they need env vars like JWT_SECRET / DB_URL). We only run
+        # plain unit tests here. Once we add real @DataJpaTest / @WebMvcTest
+        # suites, we drop -Dtest and let all tests run.
+        #
+        # -Dsurefire.failIfNoSpecifiedTests=false because modules like
+        # 'common' have no tests at all, and the exclusion pattern would
+        # otherwise error out on them.
+        run: >-
+          mvn -B -ntp test
+          -Dtest='!*ApplicationTests'
+          -DfailIfNoTests=false
+          -Dsurefire.failIfNoSpecifiedTests=false
+
+      - name: Package (skip tests, already ran)
+        working-directory: backend
+        run: mvn -B -ntp package -DskipTests
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jars
+          path: backend/*/target/*.jar
+          retention-days: 7
+          if-no-files-found: ignore

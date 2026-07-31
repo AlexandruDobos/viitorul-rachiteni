@@ -1,0 +1,22 @@
+# CODEOWNERS
+#
+# GitHub uses this file to auto-request reviews from the listed owner(s)
+# whenever a PR touches a matching path. Owners can also be required
+# reviewers via branch protection rules (see docs/branch-protection.md).
+#
+# Syntax: <path pattern>   <@user-or-team> [more owners...]
+
+# Fallback: everything is owned by @AlexandruDobos.
+*                                       @AlexandruDobos
+
+# Backend (Spring Boot services + gateway)
+/backend/                               @AlexandruDobos
+
+# Frontend (Vite + React SPA, served by Cloudflare Pages)
+/frontend/                              @AlexandruDobos
+
+# CI/CD, templates, repo-wide policies
+/.github/                               @AlexandruDobos
+
+# Deployment scripts and remote host layout
+/deploy/                                @AlexandruDobos

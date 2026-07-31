@@ -1,0 +1,72 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in the sections
+        below — the more concrete the report, the faster we can act on it.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected to happen instead.
+      placeholder: |
+        On the player profile page, the "2025/2026" season is shown twice.
+        I expected a single "2025/2026" entry with matches from both competitions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal reproducible steps. Include URLs, user role, and any relevant data.
+      placeholder: |
+        1. Go to https://www.viitorulrachiteni.ro/players/12
+        2. Open the season dropdown
+        3. Observe two "2025/2026" entries
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      multiple: true
+      options:
+        - Frontend (www.viitorulrachiteni.ro)
+        - Backend – auth-service
+        - Backend – app-service
+        - Backend – donations-service
+        - Backend – email-service
+        - Backend – gateway
+        - Deploy / infra (Hetzner, Cloudflare, nginx)
+        - CI/CD (GitHub Actions)
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      description: Git tag (e.g. `v1.0.3`) or short commit SHA, if you know it.
+      placeholder: v1.0.3
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Paste relevant server logs, browser console output, or attach a screenshot.
+      render: shell
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and this bug is not already reported.
+          required: true

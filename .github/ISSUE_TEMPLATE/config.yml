@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Deployment / infra question
+    url: https://github.com/AlexandruDobos/viitorul-rachiteni/blob/main/deploy/README.md
+    about: Read the deployment guide before opening an issue for CI/CD or Hetzner questions.
+  - name: Release / versioning question
+    url: https://github.com/AlexandruDobos/viitorul-rachiteni/blob/main/RELEASING.md
+    about: How releases and rollbacks work.

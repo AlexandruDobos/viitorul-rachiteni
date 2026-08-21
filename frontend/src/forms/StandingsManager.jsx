@@ -32,8 +32,8 @@ export default function StandingsManager() {
       try {
         setLoading(true);
         const [confRes, dataRes] = await Promise.all([
-          fetch(`${BASE_URL}/app/standings/config`),
-          fetch(`${BASE_URL}/app/standings`),
+          fetch(`${BASE_URL}/app/standings/config`, { credentials: 'include' }),
+          fetch(`${BASE_URL}/app/standings`, { credentials: 'include' }),
         ]);
         if (confRes.ok) {
           const conf = await confRes.json();
@@ -73,9 +73,10 @@ export default function StandingsManager() {
       const res = await fetch(`${BASE_URL}/app/standings/scrape`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ url: sourceUrl }),
       });
-      if (!res.ok) throw new Error('Eroare la scraping');
+      if (!res.ok) throw new Error(res.status === 403 ? 'Acces interzis — trebuie să fii logat ca admin' : 'Eroare la scraping');
       const data = await res.json();
       setRows(Array.isArray(data?.rows) ? data.rows : []);
       setLastUpdated(data?.last_updated || new Date().toISOString());
@@ -93,12 +94,13 @@ export default function StandingsManager() {
       const res = await fetch(`${BASE_URL}/app/standings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           sourceUrl: sourceUrl, // camelCase fix
           rows: rows,
         }),
       });
-      if (!res.ok) throw new Error('Eroare la salvare');
+      if (!res.ok) throw new Error(res.status === 403 ? 'Acces interzis — trebuie să fii logat ca admin' : 'Eroare la salvare');
       const data = await res.json();
       setLastUpdated(data?.last_updated || new Date().toISOString());
     } catch (e) {
@@ -116,9 +118,10 @@ export default function StandingsManager() {
       const res = await fetch(`${BASE_URL}/app/standings/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ enabled: next }),
       });
-      if (!res.ok) throw new Error('Nu am putut actualiza programarea');
+      if (!res.ok) throw new Error(res.status === 403 ? 'Acces interzis — trebuie să fii logat ca admin' : 'Nu am putut actualiza programarea');
     } catch (e) {
       setScheduleEnabled(!scheduleEnabled);
       setError(e.message || 'Eroare la actualizarea programării');

@@ -43,7 +43,9 @@ services:
     restart: unless-stopped
 
   # Reverse proxy + TLS termination for api.viitorulrachiteni.ro and pgadmin.viitorulrachiteni.ro
-  # nginx.conf, vhosts, htpasswd and TLS cert are provided on the host and mounted read-only.
+  # nginx.conf, vhosts, htpasswd and TLS certs are provided on the host and mounted read-only.
+  # The vhosts use Let's Encrypt certs from /etc/letsencrypt (renewed by certbot on the host);
+  # mount the whole dir because live/ contains symlinks into archive/.
   nginx:
     image: nginx:1.27.5
     restart: unless-stopped
@@ -58,6 +60,7 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - /etc/ssl/cloudflare:/etc/ssl/cloudflare:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
 
   postgres:
     image: postgres:15

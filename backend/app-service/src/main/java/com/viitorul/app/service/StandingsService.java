@@ -30,9 +30,8 @@ public class StandingsService {
     private final HeadlessPageFetcher pageFetcher; // <- nou
 
     private static final ZoneId ZONE_RO = ZoneId.of("Europe/Bucharest");
-    private static final String UA =
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36";
-    private static final int TIMEOUT_MS = 60000;
+    private static final String UA = HeadlessPageFetcher.USER_AGENT;
+    private static final int TIMEOUT_MS = 15_000;
 
     public StandingsResponseDTO getCurrent() {
         var config = getOrCreateConfig();
